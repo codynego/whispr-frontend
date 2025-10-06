@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUser = async (token: string) => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/auth/me/`, {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/profile/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(res.data);
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshToken = async (refresh: string) => {
     try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/token/refresh/`, {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/users/token/refresh/`, {
         refresh,
       });
       const newAccess = res.data.access;
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const login = async (email: string, password: string) => {
-    const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login/`, { email, password });
+    const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/users/login/`, { email, password });
     localStorage.setItem("access_token", res.data.access);
     localStorage.setItem("refresh_token", res.data.refresh);
     setAccessToken(res.data.access);

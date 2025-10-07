@@ -16,8 +16,7 @@ export default function OAuthCallback() {
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
     const code = query.get("code");
-    const state = query.get("state"); // "provider=gmail"
-    const provider = state?.split("=")[1]; // "gmail"
+    const provider = "gmail"; // or "outlook", depending on your implementation
 
     if (!code || !provider) {
       setStatus("error");

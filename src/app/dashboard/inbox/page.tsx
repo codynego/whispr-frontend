@@ -1,62 +1,105 @@
 "use client";
 
-import { useState } from "react";
-import { Mail, Star, Trash2, Clock, Tag, MoreVertical, Archive } from "lucide-react";
-
-export default function InboxPage() {
-  const [emails, setEmails] = useState([
-    {
-      id: 1,
-      sender: "David Johnson",
-      avatar: "DJ",
-      subject: "Meeting follow-up: Project Proposal",
-      summary: "Just wanted to confirm the next steps for tomorrow's meeting. Let me know if you have any questions.",
-      tag: "Work",
-      important: true,
-      time: "2 min ago",
-    },
-    {
-      id: 2,
-      sender: "Spotify",
-      avatar: "S",
-      subject: "Your subscription is expiring soon",
-      summary: "Renew your plan to continue enjoying ad-free music. Your Premium plan ends on Oct 15.",
-      tag: "Personal",
-      important: false,
-      time: "1 hr ago",
-    },
-    {
-      id: 3,
-      sender: "HR Team",
-      avatar: "HR",
-      subject: "Policy Update: Remote Work",
-      summary: "Please review the new guidelines for flexible work arrangements. Effective immediately.",
-      tag: "Work",
-      important: true,
-      time: "Today, 9:30 AM",
-    },
-  ]);
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { Mail, Star, Trash2, Clock, Tag, Archive } from "lucide-react";
 
 interface Email {
-    id: number;
-    sender: string;
-    avatar: string;
-    subject: string;
-    summary: string;
-    tag: string;
-    important: boolean;
-    time: string;
+  id: number;
+  sender: string;
+  avatar: string;
+  subject: string;
+  summary: string;
+  tag: string;
+  important: boolean;
+  time: string;
 }
 
-const toggleImportant = (id: number): void => {
-    setEmails(emails.map((email: Email) => 
-        email.id === id ? { ...email, important: !email.important } : email
-    ));
-};
+export default function InboxPage() {
+  const { accessToken } = useAuth();
+  const router = useRouter();
+  const [emails, setEmails] = useState<Email[]>([]);
+  const [activeTab, setActiveTab] = useState("all");
+  const [loading, setLoading] = useState(true);
 
-const deleteEmail = (id: number): void => {
+  useEffect(() => {
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchEmails = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/emails/messages/`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (res.status === 401) {
+          console.error("Unauthorized: token invalid or expired");
+          setLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        console.log("Fetched emails data:", data); // Debug log
+        const emailsList = Array.isArray(data) ? data : (data.results || data.emails || []);
+        const formattedEmails = emailsList.map((email: any) => ({
+          ...email,
+          avatar: getInitials(email.sender || email.from_name || 'Unknown'),
+          time: email.date || email.time || 'Unknown',
+          tag: email.label || email.tag || 'Personal',
+          important: email.importance === 'high' || email.importance_score > 0.5 || email.is_important || email.important || false,
+          summary: email.preview || email.body_preview || email.summary || '',
+        }));
+        setEmails(formattedEmails);
+      } catch (err) {
+        console.error("Failed to fetch emails", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmails();
+  }, [accessToken]);
+
+  const getInitials = (name: string): string => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || 'U';
+  };
+
+  const displayedEmails = activeTab === "important" 
+    ? emails.filter((email: Email) => email.important) 
+    : emails;
+
+  const handleEmailClick = (id: number) => {
+    router.push(`/dashboard/inbox/messages/${id}`);
+  };
+
+  const toggleImportant = (id: number): void => {
+    setEmails(emails.map((email: Email) => 
+      email.id === id ? { ...email, important: !email.important } : email
+    ));
+  };
+
+  const deleteEmail = (id: number): void => {
     setEmails(emails.filter((email: Email) => email.id !== id));
-};
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 flex items-center justify-center">
+        <p className="text-gray-600">Loading emails...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100">
@@ -72,20 +115,45 @@ const deleteEmail = (id: number): void => {
                 Inbox
               </h1>
               <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-                AI-detected important emails
+                {activeTab === "important" ? "Important emails" : "All messages"}
               </p>
             </div>
           </div>
         </header>
 
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 mb-6">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "all"
+                ? "border-b-2 border-indigo-600 text-indigo-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            All Messages
+          </button>
+          <button
+            onClick={() => setActiveTab("important")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ml-8 ${
+              activeTab === "important"
+                ? "border-b-2 border-indigo-600 text-indigo-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Important
+          </button>
+        </div>
+
         {/* Email List */}
-        <div className="space-y-3">
-          {emails.map((email) => (
+        <div className="space-y-2">
+          {displayedEmails.map((email: Email) => (
             <article
               key={email.id}
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden"
+              className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden cursor-pointer"
+              onClick={() => handleEmailClick(email.id)}
             >
-              <div className="p-4 sm:p-5">
+              <div className="p-3 sm:p-4">
                 <div className="flex gap-3 sm:gap-4">
                   {/* Avatar */}
                   <div className="flex-shrink-0">
@@ -109,12 +177,12 @@ const deleteEmail = (id: number): void => {
                     </div>
 
                     {/* Subject */}
-                    <p className="text-sm sm:text-base text-gray-700 font-medium mb-2 line-clamp-1">
+                    <p className="text-sm sm:text-base text-gray-700 font-medium mb-1 line-clamp-1">
                       {email.subject}
                     </p>
 
                     {/* Summary */}
-                    <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-3 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-2 leading-relaxed">
                       {email.summary}
                     </p>
 
@@ -134,7 +202,7 @@ const deleteEmail = (id: number): void => {
                       {/* Action Buttons */}
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => toggleImportant(email.id)}
+                          onClick={(e) => { e.stopPropagation(); toggleImportant(email.id); }}
                           className={`p-2 rounded-lg transition-all ${
                             email.important
                               ? "text-yellow-500 hover:bg-yellow-50"
@@ -149,13 +217,14 @@ const deleteEmail = (id: number): void => {
                           />
                         </button>
                         <button
+                          onClick={(e) => e.stopPropagation()}
                           className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                           aria-label="Archive"
                         >
                           <Archive className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => deleteEmail(email.id)}
+                          onClick={(e) => { e.stopPropagation(); deleteEmail(email.id); }}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                           aria-label="Delete"
                         >
@@ -171,13 +240,20 @@ const deleteEmail = (id: number): void => {
         </div>
 
         {/* Empty State (shown when no emails) */}
-        {emails.length === 0 && (
+        {displayedEmails.length === 0 && (
           <div className="text-center py-16">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Mail className="w-10 h-10 text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">All caught up!</h3>
-            <p className="text-sm text-gray-600">No important emails at the moment.</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {activeTab === "important" ? "No important emails" : "All caught up!"}
+            </h3>
+            <p className="text-sm text-gray-600">
+              {activeTab === "important" 
+                ? "No important emails at the moment." 
+                : "No messages at the moment."
+              }
+            </p>
           </div>
         )}
       </div>

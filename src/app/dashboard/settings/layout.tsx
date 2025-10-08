@@ -9,6 +9,7 @@ const tabs = [
   { name: "Account", href: "/dashboard/settings/account", icon: User },
   { name: "Notifications", href: "/dashboard/settings/notifications", icon: Bell },
   { name: "Personality", href: "/dashboard/settings/personality", icon: Brain },
+  { name: "Rules", href: "/dashboard/settings/rules", icon: Menu },
   { name: "Integrations", href: "/dashboard/settings/integrations", icon: Link2 },
 ];
 

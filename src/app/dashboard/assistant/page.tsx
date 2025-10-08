@@ -1,12 +1,19 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { Send, Loader2, Mail, CheckCircle, Bell, MessageCircle, Zap, Calendar, Clock, Menu, X } from "lucide-react";
 
+interface AssistantMessage {
+  id: number;
+  role: 'user' | 'assistant';
+  content: string;
+  created_at: string;
+}
+
 export default function AssistantPage() {
-  const [messages, setMessages] = useState([
-    { sender: "Whispr", text: "Hey there 👋 What can I help you with today?", time: "Now" },
-  ]);
+  const { accessToken } = useAuth();
+  const [messages, setMessages] = useState<AssistantMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -20,21 +27,101 @@ export default function AssistantPage() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  useEffect(() => {
+    if (!accessToken) return;
 
-    const newMessage = { sender: "You", text: input, time: "Now" };
-    setMessages([...messages, newMessage]);
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/chat/`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (res.status === 401) {
+          console.error("Unauthorized");
+          return;
+        }
+
+        const data = await res.json();
+        const messagesList = Array.isArray(data) ? data : (data.results || []);
+        // Sort messages by created_at ascending (oldest first)
+        const sortedMessages: AssistantMessage[] = messagesList.sort((a: AssistantMessage, b: AssistantMessage) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        // Prepend welcome if no messages
+        if (sortedMessages.length === 0) {
+          setMessages([{
+            id: Date.now(),
+            role: 'assistant',
+            content: "Hey there 👋 What can I help you with today?",
+            created_at: new Date().toISOString()
+          }]);
+        } else {
+          setMessages(sortedMessages);
+        }
+      } catch (err) {
+        console.error("Failed to fetch messages", err);
+      }
+    };
+
+    fetchMessages();
+  }, [accessToken]);
+
+  const handleSend = async () => {
+    if (!input.trim() || !accessToken) return;
+
+    const userMessage: AssistantMessage = {
+      id: Date.now(),
+      role: 'user',
+      content: input,
+      created_at: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    const tempInput = input;
     setInput("");
     setLoading(true);
 
-    setTimeout(() => {
-      setMessages(prev => [
-        ...prev,
-        { sender: "Whispr", text: "Got it! Checking your recent important emails...", time: "Now" },
-      ]);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/chat/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          message: tempInput,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const assistantMessage: AssistantMessage = {
+          id: Date.now() + 1,
+          role: 'assistant',
+          content: data.assistant_reply || "Thanks for your message! I'll process that.",
+          created_at: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+      } else {
+        console.error("Failed to send message");
+        setMessages((prev) => [...prev, {
+          id: Date.now() + 1,
+          role: 'assistant',
+          content: "Sorry, something went wrong. Please try again.",
+          created_at: new Date().toISOString(),
+        }]);
+      }
+    } catch (err) {
+      console.error("Send error", err);
+      setMessages((prev) => [...prev, {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: "Network error. Please check your connection.",
+        created_at: new Date().toISOString(),
+      }]);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const quickActions = [
@@ -42,6 +129,11 @@ export default function AssistantPage() {
     { text: "Remind me if boss replies", icon: Bell },
     { text: "Add task from latest email", icon: CheckCircle },
   ];
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 overflow-hidden">
@@ -81,24 +173,24 @@ export default function AssistantPage() {
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-4 min-h-full flex flex-col">
             <div className="flex-1 space-y-4">
-              {messages.map((msg, idx) => (
+              {messages.map((msg) => (
                 <div
-                  key={idx}
-                  className={`flex ${msg.sender === "You" ? "justify-end" : "justify-start"}`}
+                  key={msg.id}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
                     className={`relative max-w-[85%] sm:max-w-[75%] md:max-w-[70%] p-3 sm:p-4 rounded-2xl shadow-sm ${
-                      msg.sender === "You"
+                      msg.role === "user"
                         ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-br-md"
                         : "bg-white text-gray-900 rounded-bl-md border border-gray-200"
                     }`}
                   >
-                    <p className="text-sm sm:text-base break-words">{msg.text}</p>
+                    <p className="text-sm sm:text-base break-words">{msg.content}</p>
                     <p className={`text-xs mt-2 flex items-center gap-1 ${
-                      msg.sender === "You" ? "text-indigo-100" : "text-gray-500"
+                      msg.role === "user" ? "text-indigo-100" : "text-gray-500"
                     }`}>
                       <Clock className="w-3 h-3 flex-shrink-0" />
-                      {msg.time}
+                      {formatTime(msg.created_at)}
                     </p>
                   </div>
                 </div>
@@ -151,7 +243,7 @@ export default function AssistantPage() {
               />
               <button
                 onClick={handleSend}
-                disabled={!input.trim()}
+                disabled={!input.trim() || loading}
                 className="disabled:opacity-50 disabled:cursor-not-allowed p-2 sm:p-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex-shrink-0"
               >
                 <Send className="w-4 h-4 sm:w-5 sm:h-5" />

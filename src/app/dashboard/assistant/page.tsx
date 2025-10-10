@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Send, Loader2, Mail, CheckCircle, Bell, MessageCircle, Zap, Calendar, Clock, Menu, X } from "lucide-react";
 
@@ -10,6 +10,37 @@ interface AssistantMessage {
   content: string;
   created_at: string;
 }
+
+const formatMessage = (content: string): React.JSX.Element => {
+  // First, replace **bold** with <strong>
+  let processed = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+  // Split into intro and bullet parts based on * patterns
+  const parts = processed.split(/\s*\*\s+/);
+
+  if (parts.length === 1) {
+    // No bullets detected
+    return <p className="text-sm sm:text-base break-words mb-0" dangerouslySetInnerHTML={{ __html: processed }} />;
+  }
+
+  const intro = parts[0].trim();
+  const bulletTexts = parts.slice(1).map(text => text.trim());
+
+  const bullets = bulletTexts.map((text, i) => (
+    <li key={i} className="text-sm sm:text-base" dangerouslySetInnerHTML={{ __html: text }} />
+  ));
+
+  return (
+    <div className="space-y-2">
+      {intro && (
+        <p className="text-sm sm:text-base break-words mb-2" dangerouslySetInnerHTML={{ __html: intro }} />
+      )}
+      <ul className="list-disc pl-5 space-y-1">
+        {bullets}
+      </ul>
+    </div>
+  );
+};
 
 export default function AssistantPage() {
   const { accessToken } = useAuth();
@@ -185,7 +216,7 @@ export default function AssistantPage() {
                         : "bg-white text-gray-900 rounded-bl-md border border-gray-200"
                     }`}
                   >
-                    <p className="text-sm sm:text-base break-words">{msg.content}</p>
+                    {formatMessage(msg.content)}
                     <p className={`text-xs mt-2 flex items-center gap-1 ${
                       msg.role === "user" ? "text-indigo-100" : "text-gray-500"
                     }`}>

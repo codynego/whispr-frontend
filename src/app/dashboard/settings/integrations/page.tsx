@@ -96,7 +96,7 @@ export default function IntegrationsTab() {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/emails/deactivate/${accountId}/`,
         {
-          method: "POST",
+          method: "PATCH",
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

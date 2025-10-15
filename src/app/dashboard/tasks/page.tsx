@@ -1,33 +1,153 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { CheckCircle, Clock, Mail } from "lucide-react";
 
-export default function TasksPage() {
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      title: "Follow up with client on proposal",
-      source: "Email from David Johnson",
-      due: "Today",
-      done: false,
-    },
-    {
-      id: 2,
-      title: "Review HR policy update",
-      source: "Email from HR Team",
-      due: "Tomorrow",
-      done: true,
-    },
-  ]);
+interface ApiTask {
+  id: number;
+  input_text: string;
+  related_email_id?: number;
+  due_datetime: string | null;
+  status: "completed" | "pending";
+}
 
-  const toggleTask = (id: number) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id ? { ...task, done: !task.done } : task
-      )
-    );
+interface Task {
+  id: number;
+  title: string;
+  source: string;
+  due: string;
+  done: boolean;
+}
+
+export default function TasksPage() {
+  const { accessToken } = useAuth();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    if (!accessToken) {
+      setError("Please log in to view tasks.");
+      setLoading(false);
+      return;
+    }
+    fetchTasks();
+  }, [accessToken]);
+
+  const fetchTasks = async () => {
+    if (!accessToken) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/tasks/`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (response.status === 401) {
+        console.error("Unauthorized: token invalid or expired");
+        setError("Session expired. Please log in again.");
+        setLoading(false);
+        return;
+      }
+      if (!response.ok) {
+        throw new Error("Failed to fetch tasks");
+      }
+      const data: ApiTask[] = await response.json();
+      const mappedTasks: Task[] = data
+        .map((task: ApiTask) => ({
+          id: task.id,
+          title: task.input_text || "Untitled Task",
+          source: task.related_email_id ? `Email ID: ${task.related_email_id}` : "Whispr AI",
+          due: formatDueDate(task.due_datetime),
+          done: task.status === "completed",
+        }))
+        .sort((a, b) => new Date(a.due === "No Due Date" ? 0 : a.due).getTime() - new Date(b.due === "No Due Date" ? 0 : b.due).getTime());
+      setTasks(mappedTasks);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const formatDueDate = (dueTime: string | null): string => {
+    if (!dueTime) return "No Due Date";
+    const due = new Date(dueTime);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (due >= today && due < tomorrow) return "Today";
+    if (due >= tomorrow && due < new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000)) return "Tomorrow";
+    return due.toLocaleDateString("en-US");
+  };
+
+  const toggleTask = async (id: number) => {
+    if (!accessToken) return;
+
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+
+    setToggling((prev) => ({ ...prev, [id]: true }));
+    const newDoneStatus = !task.done;
+    const updateData = { status: newDoneStatus ? "completed" : "pending" };
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/tasks/${id}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (response.status === 401) {
+        console.error("Unauthorized: token invalid or expired");
+        setError("Session expired. Please log in again.");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to update task");
+      }
+
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...t, done: newDoneStatus } : t
+        )
+      );
+    } catch (err) {
+      console.error("Error toggling task:", err);
+      setError(err instanceof Error ? err.message : "Failed to update task");
+    } finally {
+      setToggling((prev) => ({ ...prev, [id]: false }));
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-lg text-gray-600">Loading tasks...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-lg text-red-600">Error: {error}</div>
+        <button onClick={fetchTasks} className="ml-4 text-blue-600 underline">
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -36,41 +156,47 @@ export default function TasksPage() {
         Automatically generated by WhisprAI from your messages and emails.
       </p>
 
-      <div className="space-y-4">
-        {tasks.map((task) => (
-          <div
-            key={task.id}
-            className="bg-white rounded-xl p-4 shadow-sm border flex justify-between items-center hover:shadow-md transition"
-          >
-            <div>
-              <p
-                className={`font-medium ${
-                  task.done ? "line-through text-gray-400" : "text-gray-800"
+      {tasks.length === 0 ? (
+        <p className="text-gray-500 text-center py-8">No tasks yet.</p>
+      ) : (
+        <div className="space-y-4">
+          {tasks.map((task) => (
+            <div
+              key={task.id}
+              className="bg-white rounded-xl p-4 shadow-sm border flex justify-between items-center hover:shadow-md transition"
+            >
+              <div>
+                <p
+                  className={`font-medium ${
+                    task.done ? "line-through text-gray-400" : "text-gray-800"
+                  }`}
+                >
+                  {task.title}
+                </p>
+                <div className="flex items-center space-x-2 text-sm text-gray-500 mt-1">
+                  <Mail className="w-4 h-4" />
+                  <span>{task.source}</span>
+                  <Clock className="w-4 h-4 ml-3" />
+                  <span>{task.due}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => toggleTask(task.id)}
+                disabled={!!toggling[task.id]}
+                aria-label={`Toggle task completion for ${task.title}`}
+                className={`text-sm font-semibold px-3 py-1 rounded-full disabled:opacity-50 ${
+                  task.done
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-100 text-gray-700 hover:bg-green-50"
                 }`}
               >
-                {task.title}
-              </p>
-              <div className="flex items-center space-x-2 text-sm text-gray-500 mt-1">
-                <Mail className="w-4 h-4" />
-                <span>{task.source}</span>
-                <Clock className="w-4 h-4 ml-3" />
-                <span>{task.due}</span>
-              </div>
+                {toggling[task.id] ? "Updating..." : task.done ? "Done" : "Mark Done"}
+              </button>
             </div>
-
-            <button
-              onClick={() => toggleTask(task.id)}
-              className={`text-sm font-semibold px-3 py-1 rounded-full ${
-                task.done
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-700 hover:bg-green-50"
-              }`}
-            >
-              {task.done ? "Done" : "Mark Done"}
-            </button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

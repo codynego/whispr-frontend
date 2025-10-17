@@ -41,11 +41,7 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
-    ],
-    "scripts": {
-      "lint": "next lint",
-      "lint:fix": "eslint . --fix"
-    },
+    ]
 
   },
 ];

@@ -25,7 +25,7 @@ interface UnifiedMessage {
   subject: string;
   summary: string;
   tag: string;
-  important: boolean;
+  important: 'low' | 'medium' | 'high';
   is_read: boolean;
   time: string;
   channel: 'email' | 'whatsapp' | 'instagram' | 'linkedin' | 'telegram' | 'slack' | 'facebook' | 'internal';
@@ -36,7 +36,7 @@ const channelConfig = {
   email: { 
     icon: Mail, 
     label: 'Email',
-    gradient: 'from-indigo-500 to-purple-600'
+    gradient: 'from-blue-500 to-blue-600'
   },
   whatsapp: { 
     icon: MessageCircle, 
@@ -61,7 +61,7 @@ const channelConfig = {
   slack: { 
     icon: Slack, 
     label: 'Slack',
-    gradient: 'from-red-500 to-purple-600'
+    gradient: 'from-red-500 to-red-600'
   },
   facebook: { 
     icon: Facebook, 
@@ -71,8 +71,40 @@ const channelConfig = {
   internal: { 
     icon: MessageCircle, 
     label: 'Internal',
-    gradient: 'from-indigo-500 to-purple-600'
+    gradient: 'from-blue-500 to-blue-600'
   }
+};
+
+const getStarClasses = (importance: string) => {
+  switch (importance) {
+    case 'low':
+      return 'text-gray-400 bg-gray-50 hover:bg-gray-100';
+    case 'medium':
+      return 'text-amber-500 bg-amber-50 hover:bg-amber-100';
+    case 'high':
+      return 'text-red-500 bg-red-50 hover:bg-red-100';
+    default:
+      return 'text-blue-500 bg-blue-50 hover:bg-blue-100';
+  }
+};
+
+const getImportanceBadgeClasses = (importance: string) => {
+  switch (importance) {
+    case 'low':
+      return 'bg-yellow-100 text-yellow-700';
+    case 'medium':
+      return 'bg-orange-100 text-orange-700';
+    case 'high':
+      return 'bg-red-100 text-red-700';
+    default:
+      return 'bg-gray-100 text-gray-600';
+  }
+};
+
+const cycleImportance = (current: string): 'low' | 'medium' | 'high' => {
+  const levels = ['low', 'medium', 'high'] as const;
+  const index = levels.indexOf(current as any);
+  return levels[(index + 1) % levels.length];
 };
 
 export default function UnifiedInboxPage() {
@@ -124,7 +156,6 @@ export default function UnifiedInboxPage() {
     fetchAccounts();
   }, [accessToken]);
 
-  // Filter accounts when channel changes
   useEffect(() => {
     if (channelFilter === "all") {
       setFilteredAccounts(accounts);
@@ -174,7 +205,7 @@ export default function UnifiedInboxPage() {
 
       const data = await res.json();
       const messagesList = Array.isArray(data) ? data : (data.results || data.messages || []);
-      
+
       if (data.total_items) setTotalMessages(data.total_items);
       if (data.total_pages) setTotalPages(data.total_pages);
       
@@ -185,7 +216,7 @@ export default function UnifiedInboxPage() {
         time: formatTime(msg.received_at || msg.date || msg.time || 'Unknown'),
         tag: msg.label || msg.tag || 'Personal',
         channel: msg.channel || 'email',
-        important: msg.importance === 'high' || msg.important || false,
+        important: msg.importance || 'low',
         is_read: msg.is_read || false,
         summary: msg.body || msg.preview || msg.body_preview || msg.snippet || msg.summary || msg.content || '',
         thread_id: msg.thread_id || null,
@@ -229,9 +260,9 @@ export default function UnifiedInboxPage() {
     router.push(`/dashboard/inbox/messages/${channel}/${id}`);
   };
 
-  const toggleImportant = (id: number): void => {
+  const cycleMessageImportance = (id: number): void => {
     setMessages(messages.map((msg: UnifiedMessage) => 
-      msg.id === id ? { ...msg, important: !msg.important } : msg
+      msg.id === id ? { ...msg, important: cycleImportance(msg.important) } : msg
     ));
   };
 
@@ -270,10 +301,13 @@ export default function UnifiedInboxPage() {
     return <IconComponent className="w-4 h-4" />;
   };
 
-  // Get empty state message based on current filters
   const getEmptyStateMessage = () => {
     if (searchQuery.trim()) {
       return `No messages found for "${searchQuery}"${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
+    }
+    
+    if (importanceFilter) {
+      return `No ${importanceFilter} importance messages${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
     }
     
     if (activeTab === "important") {
@@ -296,6 +330,10 @@ export default function UnifiedInboxPage() {
       return "Try adjusting your search terms or filters";
     }
     
+    if (importanceFilter) {
+      return "Messages of this importance level will appear here when received";
+    }
+    
     if (channelFilter !== "all") {
       return "Messages from this channel will appear here when received";
     }
@@ -308,8 +346,8 @@ export default function UnifiedInboxPage() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
-            <div className="w-14 h-14 border-4 border-indigo-100 rounded-2xl animate-pulse"></div>
-            <div className="absolute inset-0 w-14 h-14 border-4 border-transparent border-t-indigo-600 rounded-2xl animate-spin"></div>
+            <div className="w-14 h-14 border-4 border-blue-100 rounded-2xl animate-pulse"></div>
+            <div className="absolute inset-0 w-14 h-14 border-4 border-transparent border-t-blue-600 rounded-2xl animate-spin"></div>
           </div>
           <div className="text-center">
             <p className="text-sm font-semibold text-gray-900">Loading messages</p>
@@ -333,7 +371,7 @@ export default function UnifiedInboxPage() {
           <div className="flex items-start justify-between gap-6 mb-8">
             <div className="flex items-start gap-5">
               <div className="relative">
-                <div className="w-14 h-14 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-200/50 ring-4 ring-indigo-50">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-200/50 ring-4 ring-blue-50">
                   <MessageCircle className="w-7 h-7 text-white" strokeWidth={2.5} />
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
@@ -344,7 +382,7 @@ export default function UnifiedInboxPage() {
                 </h1>
                 <div className="flex items-center gap-3 text-sm">
                   <p className="text-gray-600">
-                    <span className="font-semibold text-indigo-600">{messages.length}</span> of {totalMessages} {tabLabel.toLowerCase()}
+                    <span className="font-semibold text-blue-600">{messages.length}</span> of {totalMessages} {tabLabel.toLowerCase()}
                   </p>
                   {channelFilter !== "all" && (
                     <>
@@ -367,8 +405,8 @@ export default function UnifiedInboxPage() {
               </div>
               <div className="px-4 py-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
                 <div className="flex items-center gap-2 text-sm">
-                  <Sparkles className="w-4 h-4 text-amber-600" />
-                  <span className="font-semibold text-gray-900">{messages.filter(m => m.important).length}</span>
+                  <Sparkles className="w-4 h-4 text-blue-600" />
+                  <span className="font-semibold text-gray-900">{messages.filter(m => m.important === 'high').length}</span>
                   <span className="text-gray-500">important</span>
                 </div>
               </div>
@@ -381,7 +419,7 @@ export default function UnifiedInboxPage() {
               onClick={() => handleTabClick("all")}
               className={`relative px-6 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 ${
                 activeTab === "all"
-                  ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-200/50"
+                  ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200/50"
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
               }`}
             >
@@ -394,7 +432,7 @@ export default function UnifiedInboxPage() {
               onClick={() => handleTabClick("important")}
               className={`relative px-6 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 flex items-center gap-2 ${
                 activeTab === "important"
-                  ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-200/50"
+                  ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200/50"
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
               }`}
             >
@@ -405,7 +443,7 @@ export default function UnifiedInboxPage() {
               onClick={() => handleTabClick("unread")}
               className={`relative px-6 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 ${
                 activeTab === "unread"
-                  ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-200/50"
+                  ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200/50"
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
               }`}
             >
@@ -414,7 +452,7 @@ export default function UnifiedInboxPage() {
                 <span className={`ml-2 px-2 py-0.5 text-xs font-bold rounded-full ${
                   activeTab === "unread" 
                     ? "bg-white/20 text-white" 
-                    : "bg-indigo-100 text-indigo-600"
+                    : "bg-blue-100 text-blue-600"
                 }`}>
                   {messages.filter(m => !m.is_read).length}
                 </span>
@@ -424,7 +462,7 @@ export default function UnifiedInboxPage() {
         </header>
 
         {/* Modern Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
           {/* Search */}
           <div className="relative md:col-span-1">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -433,7 +471,7 @@ export default function UnifiedInboxPage() {
               placeholder="Search messages..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all shadow-sm hover:shadow-md"
+              className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all shadow-sm hover:shadow-md"
             />
           </div>
           
@@ -449,20 +487,14 @@ export default function UnifiedInboxPage() {
             <select
               value={channelFilter}
               onChange={(e) => setChannelFilter(e.target.value)}
-              className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all appearance-none cursor-pointer shadow-sm hover:shadow-md"
+              className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all appearance-none cursor-pointer shadow-sm hover:shadow-md"
             >
               <option value="all">All Channels</option>
-              {Object.entries(channelConfig).map(([key, config]) => {
-                const IconComponent = config.icon;
-                return (
-                  <option key={key} value={key}>
-                    <div className="flex items-center gap-2">
-                      <IconComponent className="w-4 h-4" />
-                      {config.label}
-                    </div>
-                  </option>
-                );
-              })}
+              {Object.entries(channelConfig).map(([key, config]) => (
+                <option key={key} value={key}>
+                  {config.label}
+                </option>
+              ))}
             </select>
             <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
@@ -476,7 +508,7 @@ export default function UnifiedInboxPage() {
                 const val = e.target.value;
                 setAccountFilter(val === "all" ? null : val);
               }}
-              className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all appearance-none cursor-pointer shadow-sm hover:shadow-md"
+              className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all appearance-none cursor-pointer shadow-sm hover:shadow-md"
             >
               <option value="all">
                 {channelFilter === "all" ? "All Accounts" : `All ${channelConfig[channelFilter as keyof typeof channelConfig]?.label} Accounts`}
@@ -489,113 +521,114 @@ export default function UnifiedInboxPage() {
             </select>
             <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
+
+          {/* Importance Filter */}
+          <div className="relative">
+            <Star className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
+            <select
+              value={importanceFilter || "all"}
+              onChange={(e) => setImportanceFilter(e.target.value === "all" ? null : e.target.value)}
+              className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all appearance-none cursor-pointer shadow-sm hover:shadow-md"
+            >
+              <option value="all">All Importance</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+            <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
         </div>
 
-        {/* Message List - Ultra Modern Cards */}
-        <div className="space-y-2">
+        {/* Message List - Compact Modern Cards */}
+        <div className="space-y-1.5">
           {messages.map((message: UnifiedMessage) => {
             const config = channelConfig[message.channel] || channelConfig.internal;
             return (
               <article
                 key={`${message.channel}-${message.id}`}
-                className={`group bg-white rounded-2xl border transition-all duration-300 overflow-hidden cursor-pointer hover:scale-[1.01] ${
+                className={`group bg-white rounded-xl border transition-all duration-200 overflow-hidden cursor-pointer hover:shadow-lg ${
                   !message.is_read 
-                    ? 'border-indigo-200 bg-gradient-to-r from-indigo-50/50 to-purple-50/30 shadow-sm hover:shadow-xl hover:shadow-indigo-100/50' 
-                    : 'border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-xl'
+                    ? 'border-blue-200 bg-blue-50/30 hover:border-blue-300 hover:shadow-blue-100/50' 
+                    : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => handleMessageClick(message.id, message.channel)}
               >
-                <div className="px-5 py-4">
-                  <div className="flex gap-4 items-center">
-                    {/* Avatar */}
-                    <div className="flex-shrink-0">
-                      <div className={`w-11 h-11 bg-gradient-to-br ${config.gradient} rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-200/50 ring-2 ring-white`}>
+                <div className="px-4 py-2.5">
+                  <div className="flex items-center gap-3">
+                    {/* Unread Indicator */}
+                    {!message.is_read && (
+                      <div className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0"></div>
+                    )}
+
+                    {/* Avatar with Channel Indicator */}
+                    <div className="flex-shrink-0 relative">
+                      <div className={`w-9 h-9 bg-gradient-to-br ${config.gradient} rounded-lg flex items-center justify-center text-white font-semibold text-xs shadow-sm`}>
                         {message.avatar}
+                      </div>
+                      <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white rounded-md flex items-center justify-center border border-gray-200">
+                        {getChannelIcon(message.channel)}
                       </div>
                     </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 flex items-center gap-4">
-                      {/* Channel Badge */}
-                      <div className="flex-shrink-0 hidden lg:block">
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
-                          {getChannelIcon(message.channel)}
-                          <span className="text-xs font-semibold text-gray-700">
-                            {config.label}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Sender */}
-                      <div className="w-40 flex-shrink-0">
-                        <h3 className={`text-sm font-bold truncate ${
-                          !message.is_read ? 'text-gray-900' : 'text-gray-700'
+                    {/* Main Content */}
+                    <div className="flex-1 min-w-0 grid grid-cols-12 gap-3 items-center">
+                      {/* Sender - 2 columns */}
+                      <div className="col-span-12 sm:col-span-2 min-w-0">
+                        <h3 className={`text-sm truncate ${
+                          !message.is_read ? 'font-bold text-gray-900' : 'font-medium text-gray-700'
                         }`}>
                           {message.sender}
                         </h3>
                       </div>
 
-                      {/* Subject & Summary */}
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm truncate ${
-                          !message.is_read ? 'text-gray-900' : 'text-gray-600'
-                        }`}>
-                          <span className={!message.is_read ? 'font-bold' : 'font-semibold'}>{message.subject}</span>
-                          <span className="text-gray-500 font-normal ml-2">— {message.summary}</span>
-                        </p>
+                      {/* Subject & Preview - 6 columns */}
+                      <div className="col-span-12 sm:col-span-6 min-w-0 flex items-center gap-2">
+                        <span className={`text-sm truncate ${!message.is_read ? 'font-semibold text-gray-900' : 'font-medium text-gray-600'}`}>
+                          {message.subject}
+                        </span>
+                        <span className="hidden lg:inline text-sm truncate text-gray-500">
+                          {message.summary}
+                        </span>
                       </div>
 
-                      {/* Tag */}
-                      {message.tag && (
-                        <div className="flex-shrink-0 hidden xl:block">
-                          <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg ${
-                            message.tag === "Work"
-                              ? "bg-blue-50 text-blue-700 border border-blue-100"
-                              : "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                          }`}>
-                            <Tag className="w-3 h-3" />
-                            {message.tag}
-                          </span>
+                      {/* Metadata - 4 columns */}
+                      <div className="col-span-12 sm:col-span-4 flex items-center justify-end gap-2">
+                        {/* Importance Badge */}
+                        <span className={`hidden xl:inline-flex items-center px-2 py-0.5 text-xs font-medium rounded ${getImportanceBadgeClasses(message.important)}`}>
+                          {message.important.charAt(0).toUpperCase() + message.important.slice(1)}
+                        </span>
+
+                        {/* Time */}
+                        <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
+                          {message.time.split(',')[0]}
+                        </span>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); cycleMessageImportance(message.id); }}
+                            className={`p-1.5 rounded-md transition-all ${getStarClasses(message.important)}`}
+                            aria-label="Cycle importance"
+                          >
+                            <Star
+                              className={`w-3.5 h-3.5 ${message.important === 'high' ? 'fill-current' : ''}`}
+                            />
+                          </button>
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
+                            aria-label="Archive"
+                          >
+                            <Archive className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deleteMessage(message.id); }}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
+                            aria-label="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                      )}
-
-                      {/* Time */}
-                      <div className="flex-shrink-0 hidden sm:flex items-center gap-2 text-xs font-medium text-gray-500 w-28 justify-end">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{message.time.split(',')[0]}</span>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); toggleImportant(message.id); }}
-                          className={`p-2 rounded-lg transition-all ${
-                            message.important
-                              ? "text-amber-500 bg-amber-50 hover:bg-amber-100"
-                              : "text-gray-400 hover:text-amber-500 hover:bg-amber-50"
-                          }`}
-                          aria-label="Toggle important"
-                        >
-                          <Star
-                            className={`w-4 h-4 ${
-                              message.important ? "fill-amber-500" : ""
-                            }`}
-                          />
-                        </button>
-                        <button
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                          aria-label="Archive"
-                        >
-                          <Archive className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); deleteMessage(message.id); }}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          aria-label="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -627,7 +660,7 @@ export default function UnifiedInboxPage() {
                     onClick={() => handlePageChange(pageNum)}
                     className={`px-4 py-2.5 text-sm font-semibold rounded-xl transition-all ${
                       currentPage === pageNum
-                        ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-200/50"
+                        ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200/50"
                         : "text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm hover:shadow-md"
                     }`}
                   >
@@ -643,7 +676,7 @@ export default function UnifiedInboxPage() {
                   onClick={() => handlePageChange(totalPages)}
                   className={`px-4 py-2.5 text-sm font-semibold rounded-xl transition-all ${
                     currentPage === totalPages
-                      ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-200/50"
+                      ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200/50"
                       : "text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm hover:shadow-md"
                   }`}
                 >
@@ -666,11 +699,11 @@ export default function UnifiedInboxPage() {
         {/* Modern Empty State */}
         {messages.length === 0 && !loading && (
           <div className="text-center py-24">
-            <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-100/50">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-100/50">
               {channelFilter === "all" ? (
-                <MessageCircle className="w-10 h-10 text-indigo-400" strokeWidth={2} />
+                <MessageCircle className="w-10 h-10 text-blue-400" strokeWidth={2} />
               ) : (
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
                   {getChannelDisplayIcon(channelFilter)}
                 </div>
               )}

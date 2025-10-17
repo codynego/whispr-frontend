@@ -7,6 +7,14 @@ interface AuthContextType {
   user: any;
   accessToken: string | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (data: {
+    email: string;
+    password: string;
+    password_confirm: string;
+    whatsapp: string;
+    first_name: string;
+    last_name: string;
+  }) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -68,6 +76,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     router.push("/dashboard");
   };
 
+  const register = async (data: {
+    email: string;
+    password: string;
+    password_confirm: string;
+    whatsapp: string;
+    first_name: string;
+    last_name: string;
+  }) => {
+    // First, create the user via the registration endpoint
+    await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/users/register/`, data);
+    
+    // Then, automatically log in the new user
+    await login(data.email, data.password);
+  };
+
   const logout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
@@ -77,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, accessToken, login, register, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

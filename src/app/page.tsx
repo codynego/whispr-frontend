@@ -86,7 +86,7 @@ export default function WhisprLandingPage() {
                     </p>
                     <div className="p-3 bg-white rounded-lg border-l-4 border-blue-500">
                       <p className="text-xs text-gray-500 mb-2">Suggested reply to Mark:</p>
-                      <p className="text-sm text-gray-700">"Got it—reviewing the timeline now. I&apos;ll send updated dates by Thursday EOD."</p>
+                      <p className="text-sm text-gray-700">Got it—reviewing the timeline now. I&apos;ll send updated dates by Thursday EOD.</p>
                     </div>
                   </div>
                   <div className="flex justify-end">

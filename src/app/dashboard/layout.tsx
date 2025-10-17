@@ -180,7 +180,7 @@ const handleVoiceCommand: VoiceCommandHandler = (command: string) => {
                 <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                 <span className="text-sm font-medium text-gray-900">Listening...</span>
               </div>
-              <p className="text-xs text-gray-600 mt-1">Try: "Open menu" or "Toggle sidebar"</p>
+              <p className="text-xs text-gray-600 mt-1">Try: &quot;Open menu&quot; or &quot;Toggle sidebar&quot;</p>
             </div>
           )}
           

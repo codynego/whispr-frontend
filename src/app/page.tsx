@@ -56,7 +56,7 @@ export default function WhisprLandingPage() {
               </div>
               
               <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 leading-tight">
-                The AI That Catches What You'd Miss
+                The AI That Catches What You&apos;d Miss
               </h1>
               
               <p className="text-xl text-gray-600 leading-relaxed">
@@ -86,7 +86,7 @@ export default function WhisprLandingPage() {
                     </p>
                     <div className="p-3 bg-white rounded-lg border-l-4 border-blue-500">
                       <p className="text-xs text-gray-500 mb-2">Suggested reply to Mark:</p>
-                      <p className="text-sm text-gray-700">"Got it—reviewing the timeline now. I'll send updated dates by Thursday EOD."</p>
+                      <p className="text-sm text-gray-700">"Got it—reviewing the timeline now. I&apos;ll send updated dates by Thursday EOD."</p>
                     </div>
                   </div>
                   <div className="flex justify-end">
@@ -107,7 +107,7 @@ export default function WhisprLandingPage() {
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-            You're Drowning in Email—And Missing What Matters
+            You&apos;re Drowning in Email—And Missing What Matters
           </h2>
           <p className="text-xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto">
             Critical messages get buried. Long threads eat hours. Follow-ups fall through cracks. Whispr fixes all three.
@@ -212,10 +212,10 @@ export default function WhisprLandingPage() {
       <section id="about" className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-center mb-4">
-            Built for People Who Can't Afford to Miss Anything
+            Built for People Who Can&apos;t Afford to Miss Anything
           </h2>
           <p className="text-lg text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-            Whether you're managing clients, leading teams, or juggling projects—Whispr keeps you in control.
+            Whether you&apos;re managing clients, leading teams, or juggling projects—Whispr keeps you in control.
           </p>
           
           <div className="grid md:grid-cols-3 gap-8">
@@ -252,7 +252,7 @@ export default function WhisprLandingPage() {
           <div className="bg-white rounded-2xl p-8 sm:p-12 shadow-sm border border-gray-200">
             <Quote className="w-10 h-10 text-gray-300 mb-6" />
             <blockquote className="text-xl sm:text-2xl text-gray-700 mb-6 leading-relaxed">
-              Whispr cut my email stress in half and gave me back a full day every week. I haven't missed a single important message since switching.
+              Whispr cut my email stress in half and gave me back a full day every week. I haven&apos;t missed a single important message since switching.
             </blockquote>
             <cite className="text-gray-600 font-semibold not-italic">— Alex Rivera, Serial Founder & Beta User</cite>
             
@@ -308,8 +308,8 @@ export default function WhisprLandingPage() {
           ) : (
             <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
               <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
-              <p className="text-xl font-semibold text-green-800 mb-2">You're on the list!</p>
-              <p className="text-gray-600">We'll email you when early access opens.</p>
+              <p className="text-xl font-semibold text-green-800 mb-2">You&apos;re on the list!</p>
+              <p className="text-gray-600">We&apos;ll email you when early access opens.</p>
             </div>
           )}
         </div>
@@ -318,7 +318,7 @@ export default function WhisprLandingPage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-400">© 2025 Whispr. Built for people who can't afford to miss anything.</p>
+          <p className="text-gray-400">© 2025 Whispr. Built for people who can&apos;t afford to miss anything.</p>
         </div>
       </footer>
     </div>

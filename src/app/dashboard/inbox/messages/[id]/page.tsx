@@ -97,7 +97,7 @@ export default function MessageDetailPage() {
         <div className="text-center space-y-4 p-8 bg-white/60 backdrop-blur-sm rounded-3xl border border-slate-200/60 shadow-xl">
           <Mail className="w-16 h-16 mx-auto text-slate-300" />
           <h2 className="text-xl font-semibold text-slate-800">Message not found</h2>
-          <p className="text-slate-600">The message you're looking for doesn't exist or has been removed.</p>
+          <p className="text-slate-600">The message you are looking for does not exist or has been removed.</p>
           <button
             onClick={() => router.back()}
             className="mt-6 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg shadow-indigo-600/30 hover:shadow-xl hover:shadow-indigo-600/40 hover:-translate-y-0.5"

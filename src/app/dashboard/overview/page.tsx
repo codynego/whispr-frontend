@@ -108,7 +108,7 @@ export default function OverviewPage() {
               </span>
             </li>
             <li className="flex justify-between items-center p-3 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl">
-              <span className="text-sm font-medium text-gray-800">Review today's team summary</span>
+              <span className="text-sm font-medium text-gray-800">Review today&apos;s team summary</span>
               <span className="text-xs font-semibold bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full">
                 Pending
               </span>

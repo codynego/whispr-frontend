@@ -7,7 +7,7 @@ interface FormData {
   email: string;
 }
 
-export default function WhisprLandingPage() {
+export default function WhisoneLandingPage() {
   const [formData, setFormData] = useState<FormData>({ name: "", email: "" });
   const [submitted, setSubmitted] = useState(false);
 
@@ -29,7 +29,7 @@ export default function WhisprLandingPage() {
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="text-2xl font-bold text-gray-900">Whispr</div>
+            <div className="text-2xl font-bold text-gray-900">Whisone</div>
             <nav className="hidden md:flex space-x-8">
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
               <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</a>
@@ -82,7 +82,7 @@ export default function WhisprLandingPage() {
                   </div>
                   <div className="bg-blue-50 rounded-lg p-4 space-y-3">
                     <p className="text-sm text-gray-800">
-                      <strong className="text-blue-700">Whispr:</strong> 3 clients replied—Sarah confirmed the project scope, Mark requested timeline changes (needs response by Friday), and Lisa sent contract revisions.
+                      <strong className="text-blue-700">Whisone:</strong> 3 clients replied—Sarah confirmed the project scope, Mark requested timeline changes (needs response by Friday), and Lisa sent contract revisions.
                     </p>
                     <div className="p-3 bg-white rounded-lg border-l-4 border-blue-500">
                       <p className="text-xs text-gray-500 mb-2">Suggested reply to Mark:</p>
@@ -110,7 +110,7 @@ export default function WhisprLandingPage() {
             You&apos;re Drowning in Email—And Missing What Matters
           </h2>
           <p className="text-xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto">
-            Critical messages get buried. Long threads eat hours. Follow-ups fall through cracks. Whispr fixes all three.
+            Critical messages get buried. Long threads eat hours. Follow-ups fall through cracks. Whisone fixes all three.
           </p>
           <div className="grid md:grid-cols-3 gap-8 text-left">
             <div className="p-6 rounded-xl bg-gray-50">
@@ -137,10 +137,10 @@ export default function WhisprLandingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Chat Naturally—Whispr Does the Rest
+              Chat Naturally—Whisone Does the Rest
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              No complicated setup. Just type what you need, and Whispr handles the heavy lifting.
+              No complicated setup. Just type what you need, and Whisone handles the heavy lifting.
             </p>
           </div>
 
@@ -215,7 +215,7 @@ export default function WhisprLandingPage() {
             Built for People Who Can&apos;t Afford to Miss Anything
           </h2>
           <p className="text-lg text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-            Whether you&apos;re managing clients, leading teams, or juggling projects—Whispr keeps you in control.
+            Whether you&apos;re managing clients, leading teams, or juggling projects—Whisone keeps you in control.
           </p>
           
           <div className="grid md:grid-cols-3 gap-8">
@@ -252,7 +252,7 @@ export default function WhisprLandingPage() {
           <div className="bg-white rounded-2xl p-8 sm:p-12 shadow-sm border border-gray-200">
             <Quote className="w-10 h-10 text-gray-300 mb-6" />
             <blockquote className="text-xl sm:text-2xl text-gray-700 mb-6 leading-relaxed">
-              Whispr cut my email stress in half and gave me back a full day every week. I haven&apos;t missed a single important message since switching.
+              Whisone cut my email stress in half and gave me back a full day every week. I haven&apos;t missed a single important message since switching.
             </blockquote>
             <cite className="text-gray-600 font-semibold not-italic">— Alex Rivera, Serial Founder & Beta User</cite>
             
@@ -270,10 +270,10 @@ export default function WhisprLandingPage() {
         <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Get Whispr Before Spots Run Out
+              Get Whisone Before Spots Run Out
             </h2>
             <p className="text-lg text-gray-600">
-              Secure early access and let Whispr handle your inbox: alerting you to what matters, summarizing endless threads, and drafting replies—all automatically.
+              Secure early access and let Whisone handle your inbox: alerting you to what matters, summarizing endless threads, and drafting replies—all automatically.
             </p>
           </div>
 
@@ -318,7 +318,7 @@ export default function WhisprLandingPage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-400">© 2025 Whispr. Built for people who can&apos;t afford to miss anything.</p>
+          <p className="text-gray-400">© 2025 Whisone. Built for people who can&apos;t afford to miss anything.</p>
         </div>
       </footer>
     </div>

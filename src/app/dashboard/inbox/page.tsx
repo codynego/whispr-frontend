@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { 
   Mail, Star, Trash2, Clock, Tag, Archive, Search, Filter, 
   ChevronLeft, ChevronRight, MessageCircle, Send, Linkedin, 
-  Instagram, Phone, Slack, Facebook, Sparkles, TrendingUp
+  Instagram, Slack, Facebook, Sparkles, TrendingUp
 } from "lucide-react";
 
 interface Account {

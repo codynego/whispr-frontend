@@ -15,7 +15,7 @@ export default function LoginPage() {
       setLoading(true);
       await login(email, password);
     } catch (err: any) {
-      setError("Invalid credentials");
+      setError(`Invalid credentials { message: ${err.message} }`);
     } finally {
       setLoading(false);
     }

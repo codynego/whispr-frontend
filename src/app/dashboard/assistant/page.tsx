@@ -13,7 +13,7 @@ interface AssistantMessage {
 
 const formatMessage = (content: string): React.JSX.Element => {
   // First, replace **bold** with <strong>
-  let processed = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  const processed = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
   // Split into intro and bullet parts based on * patterns
   const parts = processed.split(/\s*\*\s+/);
@@ -327,7 +327,7 @@ export default function AssistantPage() {
                 <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-sm text-gray-900 mb-2">1 task due tomorrow</p>
-                  <p className="text-xs text-gray-700 mb-2">"Follow up with client on proposal."</p>
+                  <p className="text-xs text-gray-700 mb-2">Follow up with client on proposal.</p>
                   <div className="flex items-center gap-1 text-xs text-gray-600">
                     <Calendar className="w-3 h-3 flex-shrink-0" />
                     Due: Oct 7, 2025

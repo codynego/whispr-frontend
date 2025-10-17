@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { CheckCircle, Clock, Mail } from "lucide-react";
+import { Clock, Mail } from "lucide-react";
 
 interface ApiTask {
   id: number;

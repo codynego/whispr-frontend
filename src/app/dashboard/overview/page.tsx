@@ -55,7 +55,12 @@ export default function OverviewPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const currentDate = new Date('2025-10-17').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  const currentDate = new Date().toLocaleDateString('en-US', {
+  weekday: 'long',
+  month: 'short',
+  day: 'numeric'
+});
+
 
   const lineChartRef = useRef<Chart | null>(null);
 

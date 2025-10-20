@@ -19,7 +19,7 @@ export default function IntegrationsTab() {
     const fetchAccounts = async () => {
       setFetchLoading(true);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/emails/accounts/`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/accounts/`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -54,7 +54,7 @@ export default function IntegrationsTab() {
     setLoading(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/emails/oauth-url/${provider}/`,
+        `${process.env.NEXT_PUBLIC_API_URL}/unified/emails/oauth/init/`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -94,7 +94,7 @@ export default function IntegrationsTab() {
     setLoading(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/emails/deactivate/${accountId}/`,
+        `${process.env.NEXT_PUBLIC_API_URL}/unified/accounts/${accountId}/deactivate/`,
         {
           method: "PATCH",
           headers: {
@@ -127,7 +127,7 @@ export default function IntegrationsTab() {
     setSyncStatus((prev) => ({ ...prev, [accountId]: 'syncing' }));
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/emails/sync/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/messages/sync/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -214,7 +214,7 @@ export default function IntegrationsTab() {
                 const status = syncStatus[account.id] || 'idle';
                 return (
                   <div key={account.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <span>{getProviderDisplayName(account.provider)}: {account.email_address}</span>
+                    <span>{getProviderDisplayName(account.provider)}: {account.address_or_id}</span>
                     <div className="flex items-center gap-2">
                       <Button
                         variant={getSyncButtonVariant(status)}

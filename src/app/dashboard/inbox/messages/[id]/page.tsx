@@ -33,18 +33,33 @@ import {
   X
 } from "lucide-react";
 
+interface Attachment {
+  name: string;
+  url: string;
+  type: string;
+  size?: string;
+}
+
 interface Message {
   id: string;
-  subject: string;
   sender: string;
-  from_name?: string;
-  received_at: string;
-  body_html?: string;
-  body?: string;
-  to?: string;
-  cc?: string;
-  bcc?: string;
-  attachments?: Array<{ name: string; url: string; type: string; size?: string }>;
+  sender_name?: string;
+  sent_at: string;
+  content?: string;
+  recipients?: string | string[];
+  attachments?: Attachment[];
+  channel?: string;
+  // Additional fields from serializer
+  conversation?: number;
+  external_id?: string;
+  metadata?: any;
+  importance?: string;
+  importance_score?: number;
+  is_read?: boolean;
+  is_starred?: boolean;
+  is_incoming?: boolean;
+  // For email-specific, assume subject in metadata
+  subject?: string; // Fallback or from metadata
 }
 
 export default function MessageDetailPanel({ onClose }: { onClose?: () => void }) {
@@ -61,7 +76,15 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
   const [showSmartReplies, setShowSmartReplies] = useState(true);
   const [showActions, setShowActions] = useState(false);
 
-  const source = "gmail"; // This would come from API in real implementation
+  const getChannelSource = (channel?: string) => {
+    const channelMap: Record<string, { icon: string; label: string; color: string }> = {
+      email: { icon: "📧", label: "Email", color: "bg-red-50 text-red-700 border-red-200" },
+      gmail: { icon: "📧", label: "Gmail", color: "bg-red-50 text-red-700 border-red-200" },
+      whatsapp: { icon: "💬", label: "WhatsApp", color: "bg-green-50 text-green-700 border-green-200" },
+      slack: { icon: "🏢", label: "Slack", color: "bg-purple-50 text-purple-700 border-purple-200" }
+    };
+    return channelMap[channel || 'email'] || channelMap.email;
+  };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "Unknown date";
@@ -115,15 +138,6 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
       .slice(0, 2);
   };
 
-  const getSourceBadge = () => {
-    const sources = {
-      gmail: { icon: "📧", label: "Gmail", color: "bg-red-50 text-red-700 border-red-200" },
-      whatsapp: { icon: "💬", label: "WhatsApp", color: "bg-green-50 text-green-700 border-green-200" },
-      slack: { icon: "🏢", label: "Slack", color: "bg-purple-50 text-purple-700 border-purple-200" }
-    };
-    return sources[source as keyof typeof sources] || sources.gmail;
-  };
-
   const smartReplies = [
     "Sure, I'll get back to you by tomorrow.",
     "Yes, that works perfectly.",
@@ -137,7 +151,7 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/emails/messages/${id}/`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/messages/${id}/`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -146,6 +160,7 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
         if (!res.ok) throw new Error(`Failed to fetch message: ${res.statusText}`);
         const data = await res.json();
         setMessage(data);
+        setIsStarred(data.is_starred || false);
       } catch (error) {
         console.error("Error fetching message:", error);
         setError(error instanceof Error ? error.message : "Failed to load message");
@@ -192,7 +207,19 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
     );
   }
 
-  const sourceBadge = getSourceBadge();
+  const sourceBadge = getChannelSource(message.channel);
+
+  // Fallback subject from metadata if available, else "(No subject)"
+  const subject = message.subject || (message.metadata?.subject as string) || "(No subject)";
+
+  // Body content - if email, use metadata.html_body, else use content
+  const bodyContent = message.channel === 'email' 
+    ? (message.metadata?.html_body || message.content || "<p class='text-slate-400 italic'>This message has no content</p>") 
+    : (message.content || "<p class='text-slate-400 italic'>This message has no content</p>");
+
+  // Handle recipients as string or array
+  const recipientsStr = Array.isArray(message.recipients) ? message.recipients.join(', ') : message.recipients || '';
+  const recipientsArray = recipientsStr.split(',').map(r => r.trim()).filter(r => r);
 
   return (
     <div className="flex h-full bg-slate-50 relative">
@@ -214,11 +241,11 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-xs sm:text-sm font-semibold text-blue-700">
-                      {getInitials(message.from_name || message.sender)}
+                      {getInitials(message.sender_name || message.sender)}
                     </span>
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 text-sm sm:text-base truncate">{message.from_name || message.sender}</p>
+                    <p className="font-semibold text-slate-900 text-sm sm:text-base truncate">{message.sender_name || message.sender}</p>
                     <div className="group relative inline-block">
                       <span className={`inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 rounded-full border text-xs font-medium ${sourceBadge.color}`}>
                         <span>{sourceBadge.icon}</span>
@@ -315,15 +342,15 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
 
             {/* Subject */}
             <h1 className="text-lg sm:text-2xl font-bold text-slate-900 mb-2 sm:mb-3 break-words">
-              {message.subject || "(No subject)"}
+              {subject}
             </h1>
 
             {/* Sender info with collapsible details */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-xs sm:text-sm min-w-0">
-                <span className="text-slate-600 truncate">to {message.to?.split(',')[0] || 'me'}</span>
-                {message.to && message.to.split(',').length > 1 && (
-                  <span className="text-slate-400 flex-shrink-0">+{message.to.split(',').length - 1}</span>
+                <span className="text-slate-600 truncate">to {recipientsArray[0] || 'me'}</span>
+                {recipientsArray.length > 1 && (
+                  <span className="text-slate-400 flex-shrink-0">+{recipientsArray.length - 1}</span>
                 )}
                 <button
                   onClick={() => setShowDetails(!showDetails)}
@@ -332,7 +359,7 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                   {showDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-xs sm:text-sm text-slate-500 flex-shrink-0">{formatDate(message.received_at)}</p>
+              <p className="text-xs sm:text-sm text-slate-500 flex-shrink-0">{formatDate(message.sent_at)}</p>
             </div>
 
             {/* Expanded details */}
@@ -342,22 +369,16 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                   <span className="text-slate-600 font-medium">From:</span>
                   <span className="text-slate-900 break-all">{message.sender}</span>
                 </div>
-                {message.to && (
+                {recipientsStr && (
                   <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-2">
                     <span className="text-slate-600 font-medium">To:</span>
-                    <span className="text-slate-900 break-all">{message.to}</span>
-                  </div>
-                )}
-                {message.cc && (
-                  <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-2">
-                    <span className="text-slate-600 font-medium">Cc:</span>
-                    <span className="text-slate-900 break-all">{message.cc}</span>
+                    <span className="text-slate-900 break-all">{recipientsStr}</span>
                   </div>
                 )}
                 <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-2">
                   <span className="text-slate-600 font-medium">Date:</span>
                   <span className="text-slate-900">
-                    {new Date(message.received_at).toLocaleString('en-US', {
+                    {new Date(message.sent_at).toLocaleString('en-US', {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
@@ -368,6 +389,12 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                     })}
                   </span>
                 </div>
+                {message.channel && (
+                  <div className="grid grid-cols-[60px_1fr] sm:grid-cols-[80px_1fr] gap-2">
+                    <span className="text-slate-600 font-medium">Channel:</span>
+                    <span className="text-slate-900">{sourceBadge.label}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -379,7 +406,7 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
             <div
               className="prose prose-sm sm:prose prose-slate max-w-none prose-p:text-slate-700 prose-p:leading-relaxed prose-headings:text-slate-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-slate-900 prose-ul:text-slate-700 prose-ol:text-slate-700 break-words"
               dangerouslySetInnerHTML={{
-                __html: message.body_html || message.body || "<p class='text-slate-400 italic'>This message has no content</p>",
+                __html: bodyContent,
               }}
             />
 
@@ -402,6 +429,7 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                       <div className="flex-1 min-w-0">
                         <p className="text-xs sm:text-sm font-medium text-slate-900 truncate">{att.name}</p>
                         <p className="text-xs text-slate-500">{att.type}</p>
+                        {att.size && <p className="text-xs text-slate-500">{att.size}</p>}
                       </div>
                       <a
                         href={att.url}
@@ -502,7 +530,7 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                   Summary
                 </h4>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  This thread is about rescheduling a shoot for next week.
+                  {message.metadata?.summary || "This thread is about rescheduling a shoot for next week."}
                 </p>
               </div>
 
@@ -513,7 +541,7 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                   Next Step Suggestion
                 </h4>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  You might want to confirm new date availability.
+                  {message.metadata?.next_step_suggestion || "You might want to confirm new date availability."}
                 </p>
               </div>
 
@@ -524,15 +552,17 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                   Actionable Data
                 </h4>
                 <div className="space-y-2">
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-start gap-2">
-                      <Calendar className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm">
-                        <p className="font-medium text-blue-900">Oct 25, 2 PM</p>
-                        <p className="text-blue-700">Studio A</p>
+                  {message.metadata?.actionable_data ? (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-start gap-2">
+                        <Calendar className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm">
+                          <p className="font-medium text-blue-900">{message.metadata.actionable_data.date || "Oct 25, 2 PM"}</p>
+                          <p className="text-blue-700">{message.metadata.actionable_data.location || "Studio A"}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -543,17 +573,33 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                   People & Organizations
                 </h4>
                 <div className="space-y-2">
-                  <button className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors text-left">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <User className="w-4 h-4 text-blue-600" />
+                  {message.metadata?.people_and_orgs ? (
+                    message.metadata.people_and_orgs.map((person: any, idx: number) => (
+                      <button key={idx} className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors text-left">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <User className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-slate-900">{person.name}</p>
+                            <p className="text-xs text-slate-500">{person.role}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <button className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors text-left">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">Jane Doe</p>
+                          <p className="text-xs text-slate-500">Client</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-900">Jane Doe</p>
-                        <p className="text-xs text-slate-500">Client</p>
-                      </div>
-                    </div>
-                  </button>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -564,7 +610,7 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                   Related Threads
                 </h4>
                 <p className="text-sm text-slate-500 italic">
-                  No related conversations found.
+                  {message.metadata?.related_threads ? "Related conversations found." : "No related conversations found."}
                 </p>
               </div>
 
@@ -614,7 +660,7 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                   Summary
                 </h4>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  This thread is about rescheduling a shoot for next week.
+                  {message.metadata?.summary || "This thread is about rescheduling a shoot for next week."}
                 </p>
               </div>
 
@@ -625,7 +671,7 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                   Next Step Suggestion
                 </h4>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  You might want to confirm new date availability.
+                  {message.metadata?.next_step_suggestion || "You might want to confirm new date availability."}
                 </p>
               </div>
 
@@ -636,15 +682,17 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                   Actionable Data
                 </h4>
                 <div className="space-y-2">
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-start gap-2">
-                      <Calendar className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm">
-                        <p className="font-medium text-blue-900">Oct 25, 2 PM</p>
-                        <p className="text-blue-700">Studio A</p>
+                  {message.metadata?.actionable_data ? (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-start gap-2">
+                        <Calendar className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm">
+                          <p className="font-medium text-blue-900">{message.metadata.actionable_data.date || "Oct 25, 2 PM"}</p>
+                          <p className="text-blue-700">{message.metadata.actionable_data.location || "Studio A"}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -655,17 +703,33 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                   People & Organizations
                 </h4>
                 <div className="space-y-2">
-                  <button className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors text-left">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <User className="w-4 h-4 text-blue-600" />
+                  {message.metadata?.people_and_orgs ? (
+                    message.metadata.people_and_orgs.map((person: any, idx: number) => (
+                      <button key={idx} className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors text-left">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <User className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-slate-900">{person.name}</p>
+                            <p className="text-xs text-slate-500">{person.role}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <button className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors text-left">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">Jane Doe</p>
+                          <p className="text-xs text-slate-500">Client</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-900">Jane Doe</p>
-                        <p className="text-xs text-slate-500">Client</p>
-                      </div>
-                    </div>
-                  </button>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -676,7 +740,7 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                   Related Threads
                 </h4>
                 <p className="text-sm text-slate-500 italic">
-                  No related conversations found.
+                  {message.metadata?.related_threads ? "Related conversations found." : "No related conversations found."}
                 </p>
               </div>
 

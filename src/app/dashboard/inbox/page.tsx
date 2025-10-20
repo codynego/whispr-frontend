@@ -17,7 +17,7 @@ interface Account {
   connected: boolean;
 }
 
-interface UnifiedMessage {
+interface UnifiedConversation {
   id: number;
   account_id?: number;
   sender: string;
@@ -30,6 +30,10 @@ interface UnifiedMessage {
   time: string;
   channel: 'email' | 'whatsapp' | 'instagram' | 'linkedin' | 'telegram' | 'slack' | 'facebook' | 'internal';
   thread_id?: string;
+  is_incoming?: boolean;
+  messages_count: number;
+  next_step_suggestion?: string;
+  is_archived: boolean;
 }
 
 const channelConfig = {
@@ -110,7 +114,7 @@ const cycleImportance = (current: string): 'low' | 'medium' | 'high' => {
 export default function UnifiedInboxPage() {
   const { accessToken } = useAuth();
   const router = useRouter();
-  const [messages, setMessages] = useState<UnifiedMessage[]>([]);
+  const [conversations, setConversations] = useState<UnifiedConversation[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [filteredAccounts, setFilteredAccounts] = useState<Account[]>([]);
   const [activeTab, setActiveTab] = useState("all");
@@ -122,7 +126,7 @@ export default function UnifiedInboxPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalMessages, setTotalMessages] = useState(0);
+  const [totalConversations, setTotalConversations] = useState(0);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -133,7 +137,7 @@ export default function UnifiedInboxPage() {
 
     const fetchAccounts = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/accounts/all/`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/accounts/`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -146,8 +150,15 @@ export default function UnifiedInboxPage() {
 
         const data = await res.json();
         const accountsList = Array.isArray(data) ? data : (data.results || []);
-        setAccounts(accountsList);
-        setFilteredAccounts(accountsList);
+        const mappedAccounts = accountsList.map((acc: any) => ({
+          id: acc.id.toString(),
+          name: acc.address_or_id || acc.provider || 'Account',
+          channel: acc.channel,
+          address: acc.address_or_id,
+          connected: acc.is_active
+        }));
+        setAccounts(mappedAccounts);
+        setFilteredAccounts(mappedAccounts);
       } catch (err) {
         console.error("Failed to fetch accounts", err);
       }
@@ -167,7 +178,7 @@ export default function UnifiedInboxPage() {
     }
   }, [channelFilter, accounts]);
 
-  const fetchMessages = async () => {
+  const fetchConversations = async () => {
     if (!accessToken) {
       setLoading(false);
       return;
@@ -175,7 +186,7 @@ export default function UnifiedInboxPage() {
 
     setLoading(true);
     try {
-      let url = `${process.env.NEXT_PUBLIC_API_URL}/unified/messages/`;
+      let url = `${process.env.NEXT_PUBLIC_API_URL}/unified/conversations/`;
       const params = new URLSearchParams();
       
       if (channelFilter !== "all") params.append('channel', channelFilter);
@@ -204,26 +215,30 @@ export default function UnifiedInboxPage() {
       }
 
       const data = await res.json();
-      const messagesList = Array.isArray(data) ? data : (data.results || data.messages || []);
+      const conversationsList = Array.isArray(data) ? data : (data.results || data.conversations || []);
 
-      if (data.total_items) setTotalMessages(data.total_items);
+      if (data.total_items) setTotalConversations(data.total_items);
       if (data.total_pages) setTotalPages(data.total_pages);
       
-      const formattedMessages = messagesList.map((msg: any) => ({
-        ...msg,
-        account_id: msg.account_id || null,
-        avatar: getInitials(msg.sender || msg.from_name || 'Unknown'),
-        time: formatTime(msg.received_at || msg.date || msg.time || 'Unknown'),
-        tag: msg.label || msg.tag || 'Personal',
-        channel: msg.channel || 'email',
-        important: msg.importance || 'low',
-        is_read: msg.is_read || false,
-        summary: msg.body || msg.preview || msg.body_preview || msg.snippet || msg.summary || msg.content || '',
-        thread_id: msg.thread_id || null,
+      const formattedConversations = conversationsList.map((conv: any) => ({
+        ...conv,
+        account_id: conv.account?.id || null,
+        avatar: getInitials(conv.last_sender || 'Unknown'),
+        time: formatTime(conv.last_message_at),
+        tag: conv.label || 'Personal',
+        channel: conv.channel || 'email',
+        important: conv.importance || 'low',
+        is_read: conv.is_read || false,
+        summary: conv.summary || (conv.last_message ? (conv.last_message.content || '').substring(0, 100) + (conv.last_message.content && conv.last_message.content.length > 100 ? '...' : '') : ''),
+        thread_id: conv.thread_id,
+        subject: conv.title || '(No Subject)',
+        messages_count: conv.messages_count || 0,
+        next_step_suggestion: conv.next_step_suggestion,
+        is_archived: conv.is_archived || false,
       }));
-      setMessages(formattedMessages);
+      setConversations(formattedConversations);
     } catch (err) {
-      console.error("Failed to fetch messages", err);
+      console.error("Failed to fetch conversations", err);
     } finally {
       setLoading(false);
     }
@@ -231,11 +246,11 @@ export default function UnifiedInboxPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-    fetchMessages();
+    fetchConversations();
   }, [accessToken, channelFilter, accountFilter, importanceFilter, readFilter, searchQuery]);
 
   useEffect(() => {
-    fetchMessages();
+    fetchConversations();
   }, [currentPage]);
 
   const getInitials = (name: string): string => {
@@ -256,18 +271,18 @@ export default function UnifiedInboxPage() {
     }
   };
 
-  const handleMessageClick = (id: number, channel: string) => {
-    router.push(`/dashboard/inbox/messages/${channel}/${id}`);
+  const handleConversationClick = (id: number) => {
+    router.push(`/dashboard/inbox/conversations/${id}`);
   };
 
-  const cycleMessageImportance = (id: number): void => {
-    setMessages(messages.map((msg: UnifiedMessage) => 
-      msg.id === id ? { ...msg, important: cycleImportance(msg.important) } : msg
+  const cycleConversationImportance = (id: number): void => {
+    setConversations(conversations.map((conv: UnifiedConversation) => 
+      conv.id === id ? { ...conv, important: cycleImportance(conv.important) } : conv
     ));
   };
 
-  const deleteMessage = (id: number): void => {
-    setMessages(messages.filter((msg: UnifiedMessage) => msg.id !== id));
+  const deleteConversation = (id: number): void => {
+    setConversations(conversations.filter((conv: UnifiedConversation) => conv.id !== id));
   };
 
   const handleTabClick = (tab: string) => {
@@ -303,26 +318,26 @@ export default function UnifiedInboxPage() {
 
   const getEmptyStateMessage = () => {
     if (searchQuery.trim()) {
-      return `No messages found for "${searchQuery}"${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
+      return `No conversations found for "${searchQuery}"${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
     }
     
     if (importanceFilter) {
-      return `No ${importanceFilter} importance messages${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
+      return `No ${importanceFilter} importance conversations${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
     }
     
     if (activeTab === "important") {
-      return `No important messages${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
+      return `No important conversations${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
     }
     
     if (activeTab === "unread") {
-      return `No unread messages${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
+      return `No unread conversations${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
     }
     
     if (channelFilter !== "all") {
-      return `No messages in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}`;
+      return `No conversations in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}`;
     }
     
-    return "No messages at the moment. Enjoy the peace!";
+    return "No conversations at the moment. Enjoy the peace!";
   };
 
   const getEmptyStateSubMessage = () => {
@@ -331,14 +346,14 @@ export default function UnifiedInboxPage() {
     }
     
     if (importanceFilter) {
-      return "Messages of this importance level will appear here when received";
+      return "Conversations of this importance level will appear here when started";
     }
     
     if (channelFilter !== "all") {
-      return "Messages from this channel will appear here when received";
+      return "Conversations from this channel will appear here when started";
     }
     
-    return "All your messages from connected channels will appear here";
+    return "All your conversations from connected channels will appear here";
   };
 
   if (loading) {
@@ -350,7 +365,7 @@ export default function UnifiedInboxPage() {
             <div className="absolute inset-0 w-14 h-14 border-4 border-transparent border-t-blue-600 rounded-2xl animate-spin"></div>
           </div>
           <div className="text-center">
-            <p className="text-sm font-semibold text-gray-900">Loading messages</p>
+            <p className="text-sm font-semibold text-gray-900">Loading conversations</p>
             <p className="text-xs text-gray-500 mt-1">Please wait...</p>
           </div>
         </div>
@@ -358,8 +373,8 @@ export default function UnifiedInboxPage() {
     );
   }
 
-  const tabLabel = activeTab === "important" ? "Important messages" : 
-                   activeTab === "unread" ? "Unread messages" : "All messages";
+  const tabLabel = activeTab === "important" ? "Important conversations" : 
+                   activeTab === "unread" ? "Unread conversations" : "All conversations";
 
   const channelLabel = channelFilter === "all" ? "all channels" : channelConfig[channelFilter as keyof typeof channelConfig]?.label.toLowerCase();
 
@@ -382,7 +397,7 @@ export default function UnifiedInboxPage() {
                 </h1>
                 <div className="flex items-center gap-3 text-sm">
                   <p className="text-gray-600">
-                    <span className="font-semibold text-blue-600">{messages.length}</span> of {totalMessages} {tabLabel.toLowerCase()}
+                    <span className="font-semibold text-blue-600">{conversations.length}</span> of {totalConversations} {tabLabel.toLowerCase()}
                   </p>
                   {channelFilter !== "all" && (
                     <>
@@ -399,14 +414,14 @@ export default function UnifiedInboxPage() {
               <div className="px-4 py-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
                 <div className="flex items-center gap-2 text-sm">
                   <TrendingUp className="w-4 h-4 text-emerald-600" />
-                  <span className="font-semibold text-gray-900">{messages.filter(m => !m.is_read).length}</span>
+                  <span className="font-semibold text-gray-900">{conversations.filter(c => !c.is_read).length}</span>
                   <span className="text-gray-500">unread</span>
                 </div>
               </div>
               <div className="px-4 py-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
                 <div className="flex items-center gap-2 text-sm">
                   <Sparkles className="w-4 h-4 text-blue-600" />
-                  <span className="font-semibold text-gray-900">{messages.filter(m => m.important === 'high').length}</span>
+                  <span className="font-semibold text-gray-900">{conversations.filter(c => c.important === 'high').length}</span>
                   <span className="text-gray-500">important</span>
                 </div>
               </div>
@@ -423,7 +438,7 @@ export default function UnifiedInboxPage() {
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
               }`}
             >
-              All Messages
+              All Conversations
               {activeTab === "all" && (
                 <div className="absolute inset-0 bg-white/20 rounded-xl"></div>
               )}
@@ -448,13 +463,13 @@ export default function UnifiedInboxPage() {
               }`}
             >
               Unread
-              {messages.filter(m => !m.is_read).length > 0 && (
+              {conversations.filter(c => !c.is_read).length > 0 && (
                 <span className={`ml-2 px-2 py-0.5 text-xs font-bold rounded-full ${
                   activeTab === "unread" 
                     ? "bg-white/20 text-white" 
                     : "bg-blue-100 text-blue-600"
                 }`}>
-                  {messages.filter(m => !m.is_read).length}
+                  {conversations.filter(c => !c.is_read).length}
                 </span>
               )}
             </button>
@@ -468,7 +483,7 @@ export default function UnifiedInboxPage() {
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search messages..."
+              placeholder="Search conversations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all shadow-sm hover:shadow-md"
@@ -539,34 +554,34 @@ export default function UnifiedInboxPage() {
           </div>
         </div>
 
-        {/* Message List - Compact Modern Cards */}
+        {/* Conversation List - Compact Modern Cards */}
         <div className="space-y-1.5">
-          {messages.map((message: UnifiedMessage) => {
-            const config = channelConfig[message.channel] || channelConfig.internal;
+          {conversations.map((conversation: UnifiedConversation) => {
+            const config = channelConfig[conversation.channel] || channelConfig.internal;
             return (
               <article
-                key={`${message.channel}-${message.id}`}
+                key={conversation.id}
                 className={`group bg-white rounded-xl border transition-all duration-200 overflow-hidden cursor-pointer hover:shadow-lg ${
-                  !message.is_read 
+                  !conversation.is_read 
                     ? 'border-blue-200 bg-blue-50/30 hover:border-blue-300 hover:shadow-blue-100/50' 
                     : 'border-gray-200 hover:border-gray-300'
-                }`}
-                onClick={() => handleMessageClick(message.id, message.channel)}
+                } ${conversation.is_archived ? 'opacity-60' : ''}`}
+                onClick={() => handleConversationClick(conversation.id)}
               >
                 <div className="px-4 py-2.5">
                   <div className="flex items-center gap-3">
                     {/* Unread Indicator */}
-                    {!message.is_read && (
+                    {!conversation.is_read && !conversation.is_archived && (
                       <div className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0"></div>
                     )}
 
                     {/* Avatar with Channel Indicator */}
                     <div className="flex-shrink-0 relative">
                       <div className={`w-9 h-9 bg-gradient-to-br ${config.gradient} rounded-lg flex items-center justify-center text-white font-semibold text-xs shadow-sm`}>
-                        {message.avatar}
+                        {conversation.avatar}
                       </div>
                       <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white rounded-md flex items-center justify-center border border-gray-200">
-                        {getChannelIcon(message.channel)}
+                        {getChannelIcon(conversation.channel)}
                       </div>
                     </div>
 
@@ -575,43 +590,48 @@ export default function UnifiedInboxPage() {
                       {/* Sender - 2 columns */}
                       <div className="col-span-12 sm:col-span-2 min-w-0">
                         <h3 className={`text-sm truncate ${
-                          !message.is_read ? 'font-bold text-gray-900' : 'font-medium text-gray-700'
+                          !conversation.is_read ? 'font-bold text-gray-900' : 'font-medium text-gray-700'
                         }`}>
-                          {message.sender}
+                          {conversation.sender}
                         </h3>
                       </div>
 
                       {/* Subject & Preview - 6 columns */}
                       <div className="col-span-12 sm:col-span-6 min-w-0 flex items-center gap-2">
-                        <span className={`text-sm truncate ${!message.is_read ? 'font-semibold text-gray-900' : 'font-medium text-gray-600'}`}>
-                          {message.subject}
+                        <span className={`text-sm truncate ${!conversation.is_read ? 'font-semibold text-gray-900' : 'font-medium text-gray-600'}`}>
+                          {conversation.subject}
                         </span>
                         <span className="hidden lg:inline text-sm truncate text-gray-500">
-                          {message.summary}
+                          — {conversation.summary}
                         </span>
                       </div>
 
                       {/* Metadata - 4 columns */}
                       <div className="col-span-12 sm:col-span-4 flex items-center justify-end gap-2">
+                        {/* Messages Count */}
+                        <span className="hidden md:inline text-xs font-medium text-gray-500 whitespace-nowrap">
+                          {conversation.messages_count} msgs
+                        </span>
+
                         {/* Importance Badge */}
-                        <span className={`hidden xl:inline-flex items-center px-2 py-0.5 text-xs font-medium rounded ${getImportanceBadgeClasses(message.important)}`}>
-                          {message.important.charAt(0).toUpperCase() + message.important.slice(1)}
+                        <span className={`hidden xl:inline-flex items-center px-2 py-0.5 text-xs font-medium rounded ${getImportanceBadgeClasses(conversation.important)}`}>
+                          {conversation.important.charAt(0).toUpperCase() + conversation.important.slice(1)}
                         </span>
 
                         {/* Time */}
                         <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
-                          {message.time.split(',')[0]}
+                          {conversation.time.split(',')[0]}
                         </span>
 
                         {/* Actions */}
                         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                           <button
-                            onClick={(e) => { e.stopPropagation(); cycleMessageImportance(message.id); }}
-                            className={`p-1.5 rounded-md transition-all ${getStarClasses(message.important)}`}
+                            onClick={(e) => { e.stopPropagation(); cycleConversationImportance(conversation.id); }}
+                            className={`p-1.5 rounded-md transition-all ${getStarClasses(conversation.important)}`}
                             aria-label="Cycle importance"
                           >
                             <Star
-                              className={`w-3.5 h-3.5 ${message.important === 'high' ? 'fill-current' : ''}`}
+                              className={`w-3.5 h-3.5 ${conversation.important === 'high' ? 'fill-current' : ''}`}
                             />
                           </button>
                           <button
@@ -622,7 +642,7 @@ export default function UnifiedInboxPage() {
                             <Archive className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={(e) => { e.stopPropagation(); deleteMessage(message.id); }}
+                            onClick={(e) => { e.stopPropagation(); deleteConversation(conversation.id); }}
                             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
                             aria-label="Delete"
                           >
@@ -697,7 +717,7 @@ export default function UnifiedInboxPage() {
         )}
 
         {/* Modern Empty State */}
-        {messages.length === 0 && !loading && (
+        {conversations.length === 0 && !loading && (
           <div className="text-center py-24">
             <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-100/50">
               {channelFilter === "all" ? (

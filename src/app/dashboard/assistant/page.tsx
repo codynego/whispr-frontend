@@ -156,9 +156,9 @@ export default function AssistantPage() {
   };
 
   const quickActions = [
-    { text: "Summarize today's emails", icon: Mail },
-    { text: "Remind me if boss replies", icon: Bell },
-    { text: "Add task from latest email", icon: CheckCircle },
+  { text: "@Summarize today's emails", icon: Mail },
+  { text: "@Reply to pending messages", icon: Send },
+  { text: "@Find follow-ups due today", icon: Clock },
   ];
 
   const formatTime = (dateString: string) => {

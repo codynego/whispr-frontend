@@ -6,7 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { 
   Mail, Star, Trash2, Clock, Tag, Archive, Search, Filter, 
   ChevronLeft, ChevronRight, MessageCircle, Send, Linkedin, 
-  Instagram, Slack, Facebook, Sparkles, TrendingUp
+  Instagram, Slack, Facebook, Sparkles, TrendingUp, X, Loader2,
+  CheckCheck, Circle
 } from "lucide-react";
 
 interface Account {
@@ -40,68 +41,63 @@ const channelConfig = {
   email: { 
     icon: Mail, 
     label: 'Email',
-    gradient: 'from-blue-500 to-blue-600'
+    gradient: 'from-blue-500 to-blue-600',
+    color: 'text-blue-600'
   },
   whatsapp: { 
     icon: MessageCircle, 
     label: 'WhatsApp',
-    gradient: 'from-green-500 to-green-600'
+    gradient: 'from-emerald-500 to-emerald-600',
+    color: 'text-emerald-600'
   },
   instagram: { 
     icon: Instagram, 
     label: 'Instagram',
-    gradient: 'from-pink-500 to-purple-600'
+    gradient: 'from-pink-500 to-purple-600',
+    color: 'text-pink-600'
   },
   linkedin: { 
     icon: Linkedin, 
     label: 'LinkedIn',
-    gradient: 'from-blue-500 to-blue-600'
+    gradient: 'from-blue-500 to-blue-600',
+    color: 'text-blue-600'
   },
   telegram: { 
     icon: Send, 
     label: 'Telegram',
-    gradient: 'from-blue-400 to-blue-500'
+    gradient: 'from-sky-400 to-sky-500',
+    color: 'text-sky-600'
   },
   slack: { 
     icon: Slack, 
     label: 'Slack',
-    gradient: 'from-red-500 to-red-600'
+    gradient: 'from-violet-500 to-violet-600',
+    color: 'text-violet-600'
   },
   facebook: { 
     icon: Facebook, 
     label: 'Facebook',
-    gradient: 'from-blue-600 to-blue-700'
+    gradient: 'from-blue-600 to-blue-700',
+    color: 'text-blue-600'
   },
   internal: { 
     icon: MessageCircle, 
     label: 'Internal',
-    gradient: 'from-blue-500 to-blue-600'
+    gradient: 'from-slate-500 to-slate-600',
+    color: 'text-slate-600'
   }
 };
 
 const getStarClasses = (importance: string) => {
   switch (importance) {
     case 'low':
-      return 'text-gray-400 bg-gray-50 hover:bg-gray-100';
+      return 'text-slate-400 hover:text-slate-600 hover:bg-slate-50';
     case 'medium':
-      return 'text-amber-500 bg-amber-50 hover:bg-amber-100';
+      return 'text-amber-500 hover:text-amber-600 hover:bg-amber-50';
     case 'high':
-      return 'text-red-500 bg-red-50 hover:bg-red-100';
+      return 'text-red-500 hover:text-red-600 hover:bg-red-50';
     default:
-      return 'text-blue-500 bg-blue-50 hover:bg-blue-100';
-  }
-};
-
-const getImportanceBadgeClasses = (importance: string) => {
-  switch (importance) {
-    case 'low':
-      return 'bg-yellow-100 text-yellow-700';
-    case 'medium':
-      return 'bg-orange-100 text-orange-700';
-    case 'high':
-      return 'bg-red-100 text-red-700';
-    default:
-      return 'bg-gray-100 text-gray-600';
+      return 'text-slate-400 hover:text-blue-600 hover:bg-blue-50';
   }
 };
 
@@ -265,7 +261,24 @@ export default function UnifiedInboxPage() {
   const formatTime = (timeString: string): string => {
     try {
       const date = new Date(timeString);
-      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+      if (diffHours < 24) {
+        if (diffHours < 1) {
+          const mins = Math.floor(diffMs / (1000 * 60));
+          return mins < 1 ? 'Just now' : `${mins}m ago`;
+        }
+        return `${Math.floor(diffHours)}h ago`;
+      }
+
+      if (diffDays < 7) {
+        return date.toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+      }
+
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     } catch {
       return timeString;
     }
@@ -307,202 +320,207 @@ export default function UnifiedInboxPage() {
   const getChannelIcon = (channel: string) => {
     const config = channelConfig[channel as keyof typeof channelConfig] || channelConfig.internal;
     const IconComponent = config.icon;
-    return <IconComponent className="w-3.5 h-3.5" />;
+    return <IconComponent className="w-3 h-3" />;
   };
 
   const getChannelDisplayIcon = (channel: string) => {
     const config = channelConfig[channel as keyof typeof channelConfig] || channelConfig.internal;
     const IconComponent = config.icon;
-    return <IconComponent className="w-4 h-4" />;
+    return <IconComponent className="w-4 h-4 text-white" />;
   };
 
   const getEmptyStateMessage = () => {
     if (searchQuery.trim()) {
-      return `No conversations found for "${searchQuery}"${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
-    }
-    
-    if (importanceFilter) {
-      return `No ${importanceFilter} importance conversations${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
+      return `No conversations found for "${searchQuery}"`;
     }
     
     if (activeTab === "important") {
-      return `No important conversations${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
+      return "No important conversations";
     }
     
     if (activeTab === "unread") {
-      return `No unread conversations${channelFilter !== "all" ? ` in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}` : ''}`;
+      return "All caught up!";
     }
     
     if (channelFilter !== "all") {
       return `No conversations in ${channelConfig[channelFilter as keyof typeof channelConfig]?.label}`;
     }
     
-    return "No conversations at the moment. Enjoy the peace!";
+    return "No conversations yet";
   };
 
   const getEmptyStateSubMessage = () => {
     if (searchQuery.trim()) {
-      return "Try adjusting your search terms or filters";
+      return "Try different search terms or adjust your filters";
     }
     
-    if (importanceFilter) {
-      return "Conversations of this importance level will appear here when started";
+    if (activeTab === "unread") {
+      return "You've read all your conversations";
     }
     
-    if (channelFilter !== "all") {
-      return "Conversations from this channel will appear here when started";
-    }
-    
-    return "All your conversations from connected channels will appear here";
+    return "Conversations from connected channels will appear here";
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
-            <div className="w-14 h-14 border-4 border-blue-100 rounded-2xl animate-pulse"></div>
-            <div className="absolute inset-0 w-14 h-14 border-4 border-transparent border-t-blue-600 rounded-2xl animate-spin"></div>
+            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-blue-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1s' }}></div>
           </div>
-          <div className="text-center">
-            <p className="text-sm font-semibold text-gray-900">Loading conversations</p>
-            <p className="text-xs text-gray-500 mt-1">Please wait...</p>
-          </div>
+          <p className="text-sm font-medium text-slate-600">Loading conversations...</p>
         </div>
       </div>
     );
   }
 
-  const tabLabel = activeTab === "important" ? "Important conversations" : 
-                   activeTab === "unread" ? "Unread conversations" : "All conversations";
-
-  const channelLabel = channelFilter === "all" ? "all channels" : channelConfig[channelFilter as keyof typeof channelConfig]?.label.toLowerCase();
+  const unreadCount = conversations.filter(c => !c.is_read).length;
+  const importantCount = conversations.filter(c => c.important === 'high').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Modern Header */}
-        <header className="mb-8">
-          <div className="flex items-start justify-between gap-6 mb-8">
-            <div className="flex items-start gap-5">
-              <div className="relative">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-200/50 ring-4 ring-blue-50">
-                  <MessageCircle className="w-7 h-7 text-white" strokeWidth={2.5} />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+        {/* Header */}
+        <header className="mb-6 md:mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="relative flex-shrink-0">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200/50">
+                  <Mail className="w-7 h-7 text-white" strokeWidth={2.5} />
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+                {unreadCount > 0 && (
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full border-2 border-white flex items-center justify-center">
+                    <span className="text-xs font-bold text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                  </div>
+                )}
               </div>
               <div>
-                <h1 className="text-4xl font-bold text-gray-900 tracking-tight mb-1.5">
+                <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-2">
                   Unified Inbox
                 </h1>
-                <div className="flex items-center gap-3 text-sm">
-                  <p className="text-gray-600">
-                    <span className="font-semibold text-blue-600">{conversations.length}</span> of {totalConversations} {tabLabel.toLowerCase()}
+                <div className="flex flex-wrap items-center gap-2 md:gap-3 text-sm">
+                  <p className="text-slate-600">
+                    <span className="font-semibold text-blue-600">{conversations.length}</span> of <span className="font-semibold">{totalConversations}</span> conversations
                   </p>
                   {channelFilter !== "all" && (
                     <>
-                      <span className="text-gray-300">•</span>
-                      <p className="text-gray-500">from {channelLabel}</p>
+                      <span className="text-slate-300">•</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-br ${channelConfig[channelFilter as keyof typeof channelConfig]?.gradient}`}></div>
+                        <span className="text-slate-600">{channelConfig[channelFilter as keyof typeof channelConfig]?.label}</span>
+                      </div>
                     </>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="hidden lg:flex items-center gap-3">
-              <div className="px-4 py-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
-                <div className="flex items-center gap-2 text-sm">
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
-                  <span className="font-semibold text-gray-900">{conversations.filter(c => !c.is_read).length}</span>
-                  <span className="text-gray-500">unread</span>
+            {/* Stats Cards */}
+            <div className="flex items-center gap-3 flex-wrap lg:flex-nowrap">
+              <div className="px-4 py-3 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Circle className="w-4 h-4 text-blue-600 fill-current" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold text-slate-900">{unreadCount}</div>
+                    <div className="text-xs text-slate-500">Unread</div>
+                  </div>
                 </div>
               </div>
-              <div className="px-4 py-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
-                <div className="flex items-center gap-2 text-sm">
-                  <Sparkles className="w-4 h-4 text-blue-600" />
-                  <span className="font-semibold text-gray-900">{conversations.filter(c => c.important === 'high').length}</span>
-                  <span className="text-gray-500">important</span>
+              <div className="px-4 py-3 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                    <Star className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold text-slate-900">{importantCount}</div>
+                    <div className="text-xs text-slate-500">Important</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Modern Tabs */}
-          <div className="flex items-center gap-2 p-1.5 bg-white rounded-2xl border border-gray-200 shadow-sm w-fit">
+          {/* Tabs */}
+          <div className="flex items-center gap-2 p-1.5 bg-white rounded-xl border border-slate-200 shadow-sm w-fit overflow-x-auto">
             <button
               onClick={() => handleTabClick("all")}
-              className={`relative px-6 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 ${
+              className={`px-4 md:px-6 py-2.5 text-sm font-semibold rounded-lg transition-all whitespace-nowrap ${
                 activeTab === "all"
                   ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200/50"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
-              All Conversations
-              {activeTab === "all" && (
-                <div className="absolute inset-0 bg-white/20 rounded-xl"></div>
-              )}
+              All
             </button>
             <button
               onClick={() => handleTabClick("important")}
-              className={`relative px-6 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 flex items-center gap-2 ${
+              className={`px-4 md:px-6 py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${
                 activeTab === "important"
                   ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200/50"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
               <Star className="w-3.5 h-3.5" />
               Important
+              {importantCount > 0 && activeTab !== "important" && (
+                <span className="px-1.5 py-0.5 text-xs font-bold bg-amber-100 text-amber-600 rounded-full">
+                  {importantCount}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleTabClick("unread")}
-              className={`relative px-6 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 ${
+              className={`px-4 md:px-6 py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${
                 activeTab === "unread"
                   ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200/50"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
               Unread
-              {conversations.filter(c => !c.is_read).length > 0 && (
-                <span className={`ml-2 px-2 py-0.5 text-xs font-bold rounded-full ${
+              {unreadCount > 0 && (
+                <span className={`px-1.5 py-0.5 text-xs font-bold rounded-full ${
                   activeTab === "unread" 
                     ? "bg-white/20 text-white" 
                     : "bg-blue-100 text-blue-600"
                 }`}>
-                  {conversations.filter(c => !c.is_read).length}
+                  {unreadCount}
                 </span>
               )}
             </button>
           </div>
         </header>
 
-        {/* Modern Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+        {/* Filters */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           {/* Search */}
-          <div className="relative md:col-span-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="relative sm:col-span-2 lg:col-span-1">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search conversations..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all shadow-sm hover:shadow-md"
+              className="w-full pl-11 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-all"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
           
           {/* Channel Filter */}
           <div className="relative">
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-none z-10">
-              {channelFilter === "all" ? (
-                <MessageCircle className="w-4 h-4 text-gray-400" />
-              ) : (
-                getChannelDisplayIcon(channelFilter)
-              )}
-            </div>
             <select
               value={channelFilter}
               onChange={(e) => setChannelFilter(e.target.value)}
-              className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all appearance-none cursor-pointer shadow-sm hover:shadow-md"
+              className="w-full pl-4 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer shadow-sm"
             >
               <option value="all">All Channels</option>
               {Object.entries(channelConfig).map(([key, config]) => (
@@ -511,145 +529,142 @@ export default function UnifiedInboxPage() {
                 </option>
               ))}
             </select>
-            <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 h-4 text-gray-400 pointer-events-none" />
+            <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 h-4 text-slate-400 pointer-events-none" />
           </div>
 
           {/* Account Filter */}
           <div className="relative">
-            <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
             <select
               value={accountFilter === null ? "all" : accountFilter}
               onChange={(e) => {
                 const val = e.target.value;
                 setAccountFilter(val === "all" ? null : val);
               }}
-              className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all appearance-none cursor-pointer shadow-sm hover:shadow-md"
+              className="w-full pl-4 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer shadow-sm"
             >
-              <option value="all">
-                {channelFilter === "all" ? "All Accounts" : `All ${channelConfig[channelFilter as keyof typeof channelConfig]?.label} Accounts`}
-              </option>
+              <option value="all">All Accounts</option>
               {filteredAccounts.map((acc) => (
                 <option key={acc.id} value={acc.id}>
-                  {acc.name} ({acc.address})
+                  {acc.name}
                 </option>
               ))}
             </select>
-            <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 h-4 text-gray-400 pointer-events-none" />
+            <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 h-4 text-slate-400 pointer-events-none" />
           </div>
 
           {/* Importance Filter */}
           <div className="relative">
-            <Star className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
             <select
               value={importanceFilter || "all"}
               onChange={(e) => setImportanceFilter(e.target.value === "all" ? null : e.target.value)}
-              className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all appearance-none cursor-pointer shadow-sm hover:shadow-md"
+              className="w-full pl-4 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer shadow-sm"
             >
-              <option value="all">All Importance</option>
+              <option value="all">All Priority</option>
               <option value="low">Low</option>
               <option value="medium">Medium</option>
               <option value="high">High</option>
             </select>
-            <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 h-4 text-gray-400 pointer-events-none" />
+            <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 h-4 text-slate-400 pointer-events-none" />
           </div>
         </div>
 
-        {/* Conversation List - Compact Modern Cards */}
-        <div className="space-y-1.5">
+        {/* Conversations */}
+        <div className="space-y-2">
           {conversations.map((conversation: UnifiedConversation) => {
             const config = channelConfig[conversation.channel] || channelConfig.internal;
+            const IconComponent = config.icon;
+            
             return (
               <article
                 key={conversation.id}
-                className={`group bg-white rounded-xl border transition-all duration-200 overflow-hidden cursor-pointer hover:shadow-lg ${
+                className={`group relative bg-white rounded-xl border-2 transition-all duration-200 cursor-pointer hover:shadow-lg overflow-hidden ${
                   !conversation.is_read 
-                    ? 'border-blue-200 bg-blue-50/30 hover:border-blue-300 hover:shadow-blue-100/50' 
-                    : 'border-gray-200 hover:border-gray-300'
-                } ${conversation.is_archived ? 'opacity-60' : ''}`}
+                    ? 'border-blue-200 bg-blue-50/30 hover:border-blue-400' 
+                    : 'border-slate-200 hover:border-slate-300'
+                } ${conversation.is_archived ? 'opacity-50' : ''}`}
                 onClick={() => handleConversationClick(conversation.id)}
               >
-                <div className="px-4 py-2.5">
-                  <div className="flex items-center gap-3">
-                    {/* Unread Indicator */}
-                    {!conversation.is_read && !conversation.is_archived && (
-                      <div className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0"></div>
+                <div className="px-4 md:px-5 py-3.5">
+                  <div className="flex items-center gap-3 md:gap-4">
+                    {/* Unread indicator */}
+                    {!conversation.is_read && (
+                      <div className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0 animate-pulse"></div>
                     )}
 
-                    {/* Avatar with Channel Indicator */}
-                    <div className="flex-shrink-0 relative">
-                      <div className={`w-9 h-9 bg-gradient-to-br ${config.gradient} rounded-lg flex items-center justify-center text-white font-semibold text-xs shadow-sm`}>
+                    {/* Avatar */}
+                    <div className="relative flex-shrink-0">
+                      <div className={`w-11 h-11 bg-gradient-to-br ${config.gradient} rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
                         {conversation.avatar}
                       </div>
-                      <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white rounded-md flex items-center justify-center border border-gray-200">
-                        {getChannelIcon(conversation.channel)}
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-lg flex items-center justify-center border-2 border-white shadow-md">
+                        <IconComponent className={`w-3 h-3 ${config.color}`} />
                       </div>
                     </div>
 
-                    {/* Main Content */}
-                    <div className="flex-1 min-w-0 grid grid-cols-12 gap-3 items-center">
-                      {/* Sender - 2 columns */}
-                      <div className="col-span-12 sm:col-span-2 min-w-0">
-                        <h3 className={`text-sm truncate ${
-                          !conversation.is_read ? 'font-bold text-gray-900' : 'font-medium text-gray-700'
-                        }`}>
-                          {conversation.sender}
-                        </h3>
-                      </div>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-3 mb-1">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className={`text-sm md:text-base truncate ${
+                              !conversation.is_read ? 'font-bold text-slate-900' : 'font-semibold text-slate-700'
+                            }`}>
+                              {conversation.sender}
+                            </h3>
+                            {conversation.important === 'high' && (
+                              <Star className="w-4 h-4 text-red-500 fill-current flex-shrink-0" />
+                            )}
+                          </div>
+                          <p className={`text-sm md:text-base truncate mb-1 ${
+                            !conversation.is_read ? 'font-semibold text-slate-900' : 'font-medium text-slate-600'
+                          }`}>
+                            {conversation.subject}
+                          </p>
+                          <p className="text-sm text-slate-500 truncate">
+                            {conversation.summary}
+                          </p>
+                        </div>
 
-                      {/* Subject & Preview - 6 columns */}
-                      <div className="col-span-12 sm:col-span-6 min-w-0 flex items-center gap-2">
-                        <span className={`text-sm truncate ${!conversation.is_read ? 'font-semibold text-gray-900' : 'font-medium text-gray-600'}`}>
-                          {conversation.subject}
-                        </span>
-                        <span className="hidden lg:inline text-sm truncate text-gray-500">
-                          — {conversation.summary}
-                        </span>
-                      </div>
-
-                      {/* Metadata - 4 columns */}
-                      <div className="col-span-12 sm:col-span-4 flex items-center justify-end gap-2">
-                        {/* Messages Count */}
-                        <span className="hidden md:inline text-xs font-medium text-gray-500 whitespace-nowrap">
-                          {conversation.messages_count} msgs
-                        </span>
-
-                        {/* Importance Badge */}
-                        <span className={`hidden xl:inline-flex items-center px-2 py-0.5 text-xs font-medium rounded ${getImportanceBadgeClasses(conversation.important)}`}>
-                          {conversation.important.charAt(0).toUpperCase() + conversation.important.slice(1)}
-                        </span>
-
-                        {/* Time */}
-                        <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
-                          {conversation.time.split(',')[0]}
-                        </span>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); cycleConversationImportance(conversation.id); }}
-                            className={`p-1.5 rounded-md transition-all ${getStarClasses(conversation.important)}`}
-                            aria-label="Cycle importance"
-                          >
-                            <Star
-                              className={`w-3.5 h-3.5 ${conversation.important === 'high' ? 'fill-current' : ''}`}
-                            />
-                          </button>
-                          <button
-                            onClick={(e) => e.stopPropagation()}
-                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
-                            aria-label="Archive"
-                          >
-                            <Archive className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); deleteConversation(conversation.id); }}
-                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
-                            aria-label="Delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        {/* Right column */}
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                          <span className="text-xs font-medium text-slate-500 whitespace-nowrap">
+                            {conversation.time}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 text-xs font-medium text-slate-600 bg-slate-100 rounded-md">
+                              {conversation.messages_count}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                      <button
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          cycleConversationImportance(conversation.id); 
+                        }}
+                        className={`p-2 rounded-lg transition-all ${getStarClasses(conversation.important)}`}
+                        title="Toggle importance"
+                      >
+                        <Star className={`w-4 h-4 ${conversation.important === 'high' ? 'fill-current' : ''}`} />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); }}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        title="Archive"
+                      >
+                        <Archive className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); deleteConversation(conversation.id); }}
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -658,13 +673,13 @@ export default function UnifiedInboxPage() {
           })}
         </div>
 
-        {/* Modern Pagination */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-8">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
             >
               <ChevronLeft className="w-4 h-4" />
               Previous
@@ -681,7 +696,7 @@ export default function UnifiedInboxPage() {
                     className={`px-4 py-2.5 text-sm font-semibold rounded-xl transition-all ${
                       currentPage === pageNum
                         ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200/50"
-                        : "text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm hover:shadow-md"
+                        : "text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md"
                     }`}
                   >
                     {pageNum}
@@ -689,7 +704,7 @@ export default function UnifiedInboxPage() {
                 );
               })}
               {totalPages > 5 && currentPage < totalPages - 2 && (
-                <span className="px-3 py-2 text-sm font-semibold text-gray-400">...</span>
+                <span className="px-3 py-2 text-sm font-semibold text-slate-400">...</span>
               )}
               {totalPages > 5 && (
                 <button
@@ -697,7 +712,7 @@ export default function UnifiedInboxPage() {
                   className={`px-4 py-2.5 text-sm font-semibold rounded-xl transition-all ${
                     currentPage === totalPages
                       ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200/50"
-                      : "text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm hover:shadow-md"
+                      : "text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md"
                   }`}
                 >
                   {totalPages}
@@ -708,7 +723,7 @@ export default function UnifiedInboxPage() {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
             >
               Next
               <ChevronRight className="w-4 h-4" />
@@ -716,22 +731,22 @@ export default function UnifiedInboxPage() {
           </div>
         )}
 
-        {/* Modern Empty State */}
+        {/* Empty State */}
         {conversations.length === 0 && !loading && (
           <div className="text-center py-24">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-100/50">
+            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-slate-100 to-slate-200 rounded-3xl flex items-center justify-center">
               {channelFilter === "all" ? (
-                <MessageCircle className="w-10 h-10 text-blue-400" strokeWidth={2} />
+                <MessageCircle className="w-10 h-10 text-slate-400" />
               ) : (
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
+                <div className={`w-12 h-12 bg-gradient-to-br ${channelConfig[channelFilter as keyof typeof channelConfig]?.gradient} rounded-2xl flex items-center justify-center`}>
                   {getChannelDisplayIcon(channelFilter)}
                 </div>
               )}
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">
+            <h3 className="text-xl font-bold text-slate-900 mb-3">
               {getEmptyStateMessage()}
             </h3>
-            <p className="text-sm text-gray-500 max-w-sm mx-auto">
+            <p className="text-sm text-slate-500 max-w-md mx-auto">
               {getEmptyStateSubMessage()}
             </p>
           </div>

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 interface UserProfile {
@@ -17,6 +18,12 @@ interface UserProfile {
   plan: string;
   is_active: boolean;
   date_joined: string;
+}
+
+interface PasswordFormData {
+  old_password: string;
+  new_password: string;
+  confirm_password: string;
 }
 
 export default function AccountTab() {
@@ -31,8 +38,15 @@ export default function AccountTab() {
     is_active: false,
     date_joined: "",
   });
+  const [passwordFormData, setPasswordFormData] = useState<PasswordFormData>({
+    old_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!accessToken) {
@@ -71,6 +85,11 @@ export default function AccountTab() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleSave = async () => {
     if (!accessToken) return;
 
@@ -103,9 +122,38 @@ export default function AccountTab() {
     }
   };
 
-  const handleChangePassword = () => {
-    // Implement password change logic, e.g., open a modal or redirect
-    toast.info("Password change feature coming soon");
+  const handleChangePassword = async () => {
+    if (!accessToken) return;
+
+    setPasswordSaving(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/update-password/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          old_password: passwordFormData.old_password,
+          new_password: passwordFormData.new_password,
+          confirm_password: passwordFormData.confirm_password,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Password updated successfully");
+        setPasswordDialogOpen(false);
+        setPasswordFormData({ old_password: "", new_password: "", confirm_password: "" });
+      } else {
+        const errorData = await res.json();
+        toast.error(errorData.detail || "Failed to update password");
+      }
+    } catch (err) {
+      console.error("Password update error", err);
+      toast.error("Failed to update password");
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
   if (loading) {
@@ -176,9 +224,64 @@ export default function AccountTab() {
           <Button onClick={handleSave} disabled={saving}>
             {saving ? "Saving..." : "Save Changes"}
           </Button>
-          <Button variant="outline" onClick={handleChangePassword} disabled={saving}>
-            Change Password
-          </Button>
+          <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" disabled={saving}>
+                Change Password
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Change Password</DialogTitle>
+                <DialogDescription>
+                  Enter your old password and new password to update your account security.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="old_password">Old Password</Label>
+                  <Input
+                    id="old_password"
+                    name="old_password"
+                    type="password"
+                    value={passwordFormData.old_password}
+                    onChange={handlePasswordInputChange}
+                    placeholder="Enter your current password"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="new_password">New Password</Label>
+                  <Input
+                    id="new_password"
+                    name="new_password"
+                    type="password"
+                    value={passwordFormData.new_password}
+                    onChange={handlePasswordInputChange}
+                    placeholder="Enter your new password"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="confirm_password">Confirm New Password</Label>
+                  <Input
+                    id="confirm_password"
+                    name="confirm_password"
+                    type="password"
+                    value={passwordFormData.confirm_password}
+                    onChange={handlePasswordInputChange}
+                    placeholder="Confirm your new password"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleChangePassword} disabled={passwordSaving}>
+                  {passwordSaving ? "Updating..." : "Update Password"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {formData.plan && (

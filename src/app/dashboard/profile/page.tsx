@@ -127,7 +127,7 @@ export default function ProfilePage() {
               onClick={() => handleNavigate("/dashboard/settings/account")}
             >
               <Lock className="w-4 h-4 text-gray-500" />
-              Change password
+              Update Profile & Password
             </li>
             <li 
               className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100/50 transition-colors cursor-pointer"

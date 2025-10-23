@@ -12,10 +12,12 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Edit3 } from "lucide-react";
 
-interface UserEmailRule {
+interface UserRule {
   id: number;
+  user?: string;
   name: string;
   rule_type: string;
+  channel: string;
   value: string | null;
   importance: string;
   is_active: boolean;
@@ -28,6 +30,11 @@ interface RuleType {
   label: string;
 }
 
+interface ChannelChoice {
+  value: string;
+  label: string;
+}
+
 interface ImportanceChoice {
   value: string;
   label: string;
@@ -36,13 +43,14 @@ interface ImportanceChoice {
 interface FormData {
   name: string;
   rule_type: string;
+  channel: string;
   value: string;
   importance: string;
   is_active: boolean;
 }
 
-const RULE_TYPES = [
-  { value: "sender", label: "Sender Email" },
+const RULE_TYPES: RuleType[] = [
+  { value: "sender", label: "Sender" },
   { value: "keyword", label: "Keyword in Subject/Body" },
   { value: "subject", label: "Subject Contains" },
   { value: "body", label: "Body Contains" },
@@ -51,7 +59,13 @@ const RULE_TYPES = [
   { value: "ai", label: "AI Context Rule" },
 ];
 
-const IMPORTANCE_CHOICES = [
+const CHANNEL_CHOICES: ChannelChoice[] = [
+  { value: "email", label: "Email" },
+  { value: "sms", label: "SMS" },
+  // Add more channels as needed
+];
+
+const IMPORTANCE_CHOICES: ImportanceChoice[] = [
   { value: "low", label: "Low" },
   { value: "medium", label: "Medium" },
   { value: "high", label: "High" },
@@ -59,13 +73,14 @@ const IMPORTANCE_CHOICES = [
 
 export default function RulesTab() {
   const { accessToken } = useAuth();
-  const [rules, setRules] = useState<UserEmailRule[]>([]);
+  const [rules, setRules] = useState<UserRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
-  const [editingRule, setEditingRule] = useState<UserEmailRule | null>(null);
+  const [editingRule, setEditingRule] = useState<UserRule | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     rule_type: "",
+    channel: "email",
     value: "",
     importance: "medium",
     is_active: true,
@@ -83,7 +98,7 @@ export default function RulesTab() {
   const fetchRules = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/emails/user-rules/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/rules/`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -102,16 +117,20 @@ export default function RulesTab() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSelectChange = (key: keyof FormData, value: string) => {
+    setFormData({ ...formData, [key]: value });
   };
 
   const handleSubmit = async () => {
     if (!accessToken) return;
     setSubmitLoading(true);
     const url = editingRule
-      ? `${process.env.NEXT_PUBLIC_API_URL}/emails/user-rules/${editingRule.id}/`
-      : `${process.env.NEXT_PUBLIC_API_URL}/emails/user-rules/`;
+      ? `${process.env.NEXT_PUBLIC_API_URL}/unified/rules/${editingRule.id}/`
+      : `${process.env.NEXT_PUBLIC_API_URL}/unified/rules/`;
     const method = editingRule ? "PUT" : "POST";
     try {
       const res = await fetch(url, {
@@ -140,7 +159,7 @@ export default function RulesTab() {
     if (!accessToken) return;
     setSubmitLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/emails/user-rules/${id}/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/rules/${id}/`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -158,11 +177,11 @@ export default function RulesTab() {
     }
   };
 
-  const handleToggleActive = async (rule: UserEmailRule) => {
+  const handleToggleActive = async (rule: UserRule) => {
     if (!accessToken) return;
     setSubmitLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/emails/user-rules/${rule.id}/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/rules/${rule.id}/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -186,6 +205,7 @@ export default function RulesTab() {
     setFormData({
       name: "",
       rule_type: "",
+      channel: "email",
       value: "",
       importance: "medium",
       is_active: true,
@@ -194,11 +214,12 @@ export default function RulesTab() {
     setFormOpen(false);
   };
 
-  const openForm = (rule?: UserEmailRule) => {
+  const openForm = (rule?: UserRule) => {
     if (rule) {
       setFormData({
         name: rule.name,
         rule_type: rule.rule_type,
+        channel: rule.channel,
         value: rule.value || "",
         importance: rule.importance,
         is_active: rule.is_active,
@@ -218,8 +239,8 @@ export default function RulesTab() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Email Rules</CardTitle>
-          <CardDescription>Manage custom rules for email processing and importance scoring.</CardDescription>
+          <CardTitle>Message Rules</CardTitle>
+          <CardDescription>Manage custom rules for message processing and importance scoring across channels.</CardDescription>
         </CardHeader>
         <CardContent>
           <Dialog open={formOpen} onOpenChange={setFormOpen}>
@@ -230,7 +251,7 @@ export default function RulesTab() {
               <DialogHeader>
                 <DialogTitle>{editingRule ? "Edit Rule" : "Create New Rule"}</DialogTitle>
                 <DialogDescription>
-                  {editingRule ? "Update your email rule settings." : "Create a new email rule to customize email processing."}
+                  {editingRule ? "Update your message rule settings." : "Create a new message rule to customize processing."}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -245,13 +266,26 @@ export default function RulesTab() {
                   />
                 </div>
                 <div>
+                  <Label htmlFor="channel">Channel</Label>
+                  <Select value={formData.channel} onValueChange={(value) => handleSelectChange("channel", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select channel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CHANNEL_CHOICES.map((ch) => (
+                        <SelectItem key={ch.value} value={ch.value}>{ch.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label htmlFor="rule_type">Rule Type</Label>
-                  <Select name="rule_type" value={formData.rule_type} onValueChange={(value: string) => setFormData({ ...formData, rule_type: value })}>
+                  <Select value={formData.rule_type} onValueChange={(value) => handleSelectChange("rule_type", value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select rule type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {RULE_TYPES.map((type: RuleType) => (
+                      {RULE_TYPES.map((type) => (
                         <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
                       ))}
                     </SelectContent>
@@ -271,7 +305,7 @@ export default function RulesTab() {
                 )}
                 <div>
                   <Label htmlFor="importance">Importance</Label>
-                  <Select name="importance" value={formData.importance} onValueChange={(value) => setFormData({ ...formData, importance: value })}>
+                  <Select value={formData.importance} onValueChange={(value) => handleSelectChange("importance", value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select importance" />
                     </SelectTrigger>
@@ -314,6 +348,7 @@ export default function RulesTab() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Channel</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Value</TableHead>
                   <TableHead>Importance</TableHead>
@@ -325,6 +360,11 @@ export default function RulesTab() {
                 {rules.map((rule) => (
                   <TableRow key={rule.id}>
                     <TableCell>{rule.name}</TableCell>
+                    <TableCell>
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">
+                        {CHANNEL_CHOICES.find((ch) => ch.value === rule.channel)?.label || rule.channel}
+                      </span>
+                    </TableCell>
                     <TableCell>{RULE_TYPES.find((t) => t.value === rule.rule_type)?.label}</TableCell>
                     <TableCell className="max-w-xs truncate">{rule.value || "-"}</TableCell>
                     <TableCell>
@@ -355,6 +395,7 @@ export default function RulesTab() {
                       <Button
                         variant="destructive"
                         size="sm"
+                        className="bg-blue-600 hover:bg-blue-700"
                         onClick={() => handleDelete(rule.id)}
                         disabled={submitLoading}
                       >

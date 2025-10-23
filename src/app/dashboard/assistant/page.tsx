@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Send, Loader2, Mail, CheckCircle, Bell, MessageCircle, Zap, Calendar, Clock, Menu, X } from "lucide-react";
+import { Send, Loader2, Mail, CheckCircle, Bell, MessageCircle, Zap, Calendar, Clock, Menu, X, Settings, User } from "lucide-react";
 
 interface AssistantMessage {
   id: number;
@@ -156,9 +156,9 @@ export default function AssistantPage() {
   };
 
   const quickActions = [
-  { text: "@Summarize today's emails", icon: Mail },
-  { text: "@Reply to pending messages", icon: Send },
-  { text: "@Find follow-ups due today", icon: Clock },
+  { text: "Summarize today's emails", icon: Mail },
+  { text: "Reply to pending messages", icon: Send },
+  { text: "Find follow-ups due today", icon: Clock },
   ];
 
   const formatTime = (dateString: string) => {
@@ -166,14 +166,20 @@ export default function AssistantPage() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const recentInteractions = [
+    { id: 1, title: "Email Summary", time: "2 min ago", icon: Mail },
+    { id: 2, title: "Task Reminders", time: "1 hour ago", icon: Clock },
+    { id: 3, title: "Quick Reply Draft", time: "Today", icon: Send },
+  ];
+
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 overflow-hidden">
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col w-full relative">
+      <div className="flex-1 flex flex-col w-full relative xl:ml-0">
         {/* Header */}
         <header className="flex justify-between items-center px-4 sm:px-6 py-4 bg-white/80 backdrop-blur-sm border-b border-gray-200 flex-shrink-0 z-10">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <div className="p-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-md flex-shrink-0">
+            <div className="p-2 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-md flex-shrink-0">
               <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
@@ -212,13 +218,13 @@ export default function AssistantPage() {
                   <div
                     className={`relative max-w-[85%] sm:max-w-[75%] md:max-w-[70%] p-3 sm:p-4 rounded-2xl shadow-sm ${
                       msg.role === "user"
-                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-br-md"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-br-md"
                         : "bg-white text-gray-900 rounded-bl-md border border-gray-200"
                     }`}
                   >
                     {formatMessage(msg.content)}
                     <p className={`text-xs mt-2 flex items-center gap-1 ${
-                      msg.role === "user" ? "text-indigo-100" : "text-gray-500"
+                      msg.role === "user" ? "text-blue-100" : "text-gray-500"
                     }`}>
                       <Clock className="w-3 h-3 flex-shrink-0" />
                       {formatTime(msg.created_at)}
@@ -230,7 +236,7 @@ export default function AssistantPage() {
               {loading && (
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-white rounded-2xl border border-gray-200 shadow-sm">
-                    <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
+                    <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
                   </div>
                   <div className="text-sm text-gray-600">
                     Whispr is typing...
@@ -256,7 +262,7 @@ export default function AssistantPage() {
                   className="flex items-center gap-2 bg-white hover:bg-gray-50 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium text-gray-700 border border-gray-200 transition-all hover:shadow-sm hover:border-gray-300"
                   onClick={() => setInput(action.text)}
                 >
-                  <action.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 flex-shrink-0" />
+                  <action.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 flex-shrink-0" />
                   <span className="truncate">{action.text}</span>
                 </button>
               ))}
@@ -275,7 +281,7 @@ export default function AssistantPage() {
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || loading}
-                className="disabled:opacity-50 disabled:cursor-not-allowed p-2 sm:p-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex-shrink-0"
+                className="disabled:opacity-50 disabled:cursor-not-allowed p-2 sm:p-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg flex-shrink-0"
               >
                 <Send className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
@@ -284,20 +290,17 @@ export default function AssistantPage() {
         </div>
       </div>
 
-      {/* Context Sidebar */}
+      {/* Navigation Sidebar */}
       <aside className={`
-        fixed xl:static top-0 right-0 h-full w-80 max-w-[85%] sm:max-w-sm
-        bg-white border-l border-gray-200 shadow-2xl xl:shadow-none
+        fixed xl:static top-0 left-0 h-full w-64 max-w-[80%] sm:max-w-md
+        bg-white border-r border-gray-200 shadow-lg xl:shadow-none
         transform transition-transform duration-300 ease-in-out z-50
-        ${sidebarOpen ? 'translate-x-0' : 'translate-x-full xl:translate-x-0'}
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'}
       `}>
-        <div className="h-full overflow-y-auto p-4 sm:p-6">
+        <div className="h-full flex flex-col">
           {/* Mobile Close Button */}
-          <div className="flex justify-between items-center mb-6 xl:hidden">
-            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <Zap className="w-4 h-4 text-indigo-600" />
-              Quick Context
-            </h2>
+          <div className="flex justify-between items-center p-4 border-b border-gray-200 xl:hidden">
+            <h2 className="text-lg font-bold text-gray-900">Navigation</h2>
             <button 
               onClick={() => setSidebarOpen(false)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -306,46 +309,63 @@ export default function AssistantPage() {
             </button>
           </div>
 
-          <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2 hidden xl:flex">
-            <Zap className="w-4 h-4 text-indigo-600" />
-            Quick Context
-          </h2>
-
-          <div className="space-y-4">
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <Mail className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-sm text-gray-900 mb-1">2 new important emails</p>
-                  <p className="text-xs text-gray-600">From: manager@company.com</p>
+          {/* Sidebar Content */}
+          <nav className="flex-1 overflow-y-auto p-4">
+            {/* User Profile */}
+            <div className="mb-6 p-4 bg-blue-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 text-sm">John Doe</p>
+                  <p className="text-xs text-gray-600">john@company.com</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-sm text-gray-900 mb-2">1 task due tomorrow</p>
-                  <p className="text-xs text-gray-700 mb-2">Follow up with client on proposal.</p>
-                  <div className="flex items-center gap-1 text-xs text-gray-600">
-                    <Calendar className="w-3 h-3 flex-shrink-0" />
-                    Due: Oct 7, 2025
+            {/* Recent Interactions */}
+            <div className="space-y-2 mb-6">
+              <h3 className="font-semibold text-gray-900 text-sm flex items-center gap-2 mb-3">
+                <Zap className="w-4 h-4 text-blue-600" />
+                Recent Interactions
+              </h3>
+              {recentInteractions.map((interaction) => (
+                <button
+                  key={interaction.id}
+                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                  onClick={() => {
+                    setInput(`Continue with: ${interaction.title}`);
+                    setSidebarOpen(false);
+                  }}
+                >
+                  <interaction.icon className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-900 truncate">{interaction.title}</p>
+                    <p className="text-xs text-gray-500 truncate">{interaction.time}</p>
                   </div>
-                </div>
-              </div>
+                </button>
+              ))}
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <Bell className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-sm text-gray-900 mb-1">Active reminders</p>
-                  <p className="text-xs text-gray-600">You have 3 active email reminders set</p>
-                </div>
+            {/* Settings */}
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="font-semibold text-gray-900 text-sm mb-3 flex items-center gap-2">
+                <Settings className="w-4 h-4 text-blue-600" />
+                Settings
+              </h3>
+              <div className="space-y-2">
+                <button className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors text-left text-sm text-gray-700">
+                  <Mail className="w-4 h-4 text-gray-600" />
+                  Email Preferences
+                </button>
+                <button className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors text-left text-sm text-gray-700">
+                  <Bell className="w-4 h-4 text-gray-600" />
+                  Notifications
+                </button>
               </div>
             </div>
-          </div>
+          </nav>
         </div>
       </aside>
 

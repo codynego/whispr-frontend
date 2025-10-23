@@ -12,14 +12,14 @@ interface Summary {
 }
 
 interface ChannelBreakdown {
-  email: number;
-  whatsapp: number;
+  [key: string]: number;
 }
 
 interface Stats {
+  total_channels: number;
   total_messages: number;
   unread_messages: number;
-  important_emails: number;
+  important_messages: number;
   channel_breakdown: ChannelBreakdown;
 }
 
@@ -34,10 +34,10 @@ interface Task {
 }
 
 interface Performance {
-  response_time_avg: string;
-  ai_replies_sent: number;
+  ai_tasks_completed: number;
   important_threads: number;
   missed_messages: number;
+  connected_channels: number;
   trend: string;
 }
 
@@ -72,7 +72,7 @@ export default function OverviewPage() {
 
     const fetchData = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/dashboard/overview/`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/overview/`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -148,13 +148,13 @@ export default function OverviewPage() {
   const inboxInsights = {
     total: stats.total_messages,
     unread: stats.unread_messages,
-    prioritized: stats.important_emails,
-    responseTime: `${performance.trend} faster than yesterday`,
-    channels: {
-      email: stats.total_messages > 0 ? Math.round((stats.channel_breakdown.email / stats.total_messages) * 100) : 0,
-      whatsapp: stats.total_messages > 0 ? Math.round((stats.channel_breakdown.whatsapp / stats.total_messages) * 100) : 0,
-      others: 100 - (stats.total_messages > 0 ? Math.round((stats.channel_breakdown.email / stats.total_messages) * 100) : 0) - (stats.total_messages > 0 ? Math.round((stats.channel_breakdown.whatsapp / stats.total_messages) * 100) : 0),
-    },
+    prioritized: stats.important_messages,
+    responseTime: performance.trend,
+    channels: Object.entries(stats.channel_breakdown).reduce((acc, [channel, count]) => {
+      const percentage = stats.total_messages > 0 ? Math.round((count / stats.total_messages) * 100) : 0;
+      acc[channel] = percentage;
+      return acc;
+    }, {} as Record<string, number>),
   };
 
   const focusSuggestions = summary.suggestions[0] || "You’ve got important threads that require fast replies. Should I bring them up first?";
@@ -170,10 +170,10 @@ export default function OverviewPage() {
   const aiSuggestions = summary.suggestions.slice(1);
 
   const performanceMetrics = [
-    { metric: "Avg Response Time", today: performance.response_time_avg, trend: "↓ Faster" },
-    { metric: "Important Threads", today: performance.important_threads, trend: "↑" },
-    { metric: "AI Helped Replies", today: performance.ai_replies_sent, trend: "+3" },
-    { metric: "Missed Messages", today: performance.missed_messages, trend: "👍" },
+    { metric: "AI Tasks Completed", today: performance.ai_tasks_completed.toString(), trend: "↑" },
+    { metric: "Important Threads", today: performance.important_threads.toString(), trend: performance.trend },
+    { metric: "Missed Messages", today: performance.missed_messages.toString(), trend: "↓" },
+    { metric: "Connected Channels", today: performance.connected_channels.toString(), trend: "👍" },
   ];
 
   const aiComment = `Great consistency today, ${userName} — you’ve replied well. Trend: ${performance.trend}`;
@@ -181,7 +181,7 @@ export default function OverviewPage() {
   const compactStats = {
     totalMessages: stats.total_messages,
     unread: stats.unread_messages,
-    urgent: stats.important_emails,
+    urgent: stats.important_messages,
     tasksPending: tasks.filter((t: Task) => !t.is_completed).length,
     tasksCompleted: tasks.filter((t: Task) => t.is_completed).length,
     trend: performance.trend,
@@ -224,7 +224,7 @@ export default function OverviewPage() {
         {/* Compact Summary */}
         <section className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Inbox Summary</h2>
-          <p className="text-gray-700 mb-4">{stats.total_messages} new messages, {stats.unread_messages} unread, {stats.important_emails} urgent</p>
+          <p className="text-gray-700 mb-4">{stats.total_messages} new messages, {stats.unread_messages} unread, {stats.important_messages} urgent</p>
           <p className="text-gray-700 mb-4">Tasks: {compactStats.tasksPending} pending | {compactStats.tasksCompleted} completed</p>
           <p className="text-green-600 font-medium">Trend: {compactStats.trend}</p>
           <div className="h-32 mt-4">
@@ -305,9 +305,9 @@ export default function OverviewPage() {
                 </div>
                 <div className="mt-4 space-y-1 text-xs">
                   <p><span className="font-semibold">Top Channels:</span></p>
-                  <p>Email {inboxInsights.channels.email}%</p>
-                  <p>WhatsApp {inboxInsights.channels.whatsapp}%</p>
-                  <p>Others {inboxInsights.channels.others}%</p>
+                  {Object.entries(inboxInsights.channels).map(([channel, percentage]) => (
+                    <p key={channel}>{channel} {percentage}%</p>
+                  ))}
                 </div>
               </div>
               <div className="h-48">

@@ -145,7 +145,7 @@ export default function WhisoneLandingPage() {
             <div className="p-6 rounded-xl bg-white">
               <Mail className="w-10 h-10 text-blue-600 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Buried Priorities</h3>
-              <p className="text-gray-600">Key emails vanish in the flood. You miss deadlines and deals.</p>
+              <p className="text-gray-600">Key emails vanish in the flood. You miss deadlines, deals, and game-changing opportunities—like that partnership pitch buried in 500 unread messages.</p>
             </div>
             <div className="p-6 rounded-xl bg-white">
               <Zap className="w-10 h-10 text-indigo-600 mb-4" />
@@ -284,6 +284,62 @@ export default function WhisoneLandingPage() {
               </div>
               <h3 className="text-xl font-semibold text-gray-900">Teams & Leaders</h3>
               <p className="text-gray-600">Sync escalations and commitments. Lead without the lag.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Case Study */}
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Case Study: How Whisone Can Save a $50K Deal
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Meet Jordan, a freelance consultant buried under 200+ emails weekly. Here&apos;s how Whisone turned near-miss into major win.
+            </p>
+          </div>
+          <div className="grid lg:grid-cols-2 gap-8 items-center">
+            <div className="space-y-6">
+              <div className="bg-gray-50 rounded-xl p-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">The Crisis</h3>
+                <p className="text-gray-600">Jordan&apos;s inbox exploded with client threads. A key prospect email from TechCorp—proposing a $50K project—got lost in the shuffle. By the time Jordan spotted it three days later, the window had closed. &quot;I nearly lost everything,&quot; Jordan recalls.</p>
+              </div>
+              <div className="bg-blue-50 rounded-xl p-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Whisone to the Rescue</h3>
+                <p className="text-gray-600">After connecting her inbox, Jordan asked via WhatsApp: &quot;Flag any high-value leads in unread emails.&quot; Whisone pinged instantly: &quot;TechCorp proposal detected—$50K opportunity, expires Friday. Draft reply?&quot; Jordan reviewed the AI-suggested response, hit send, and sealed the deal that afternoon.</p>
+              </div>
+              <div className="bg-green-50 rounded-xl p-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">The Win</h3>
+                <p className="text-gray-600">&quot;Whisone didn&apos;t just save the deal—it gave me back control. Now, I close opportunities faster than ever, without the dread of &apos;did I miss something?&apos;&quot; Jordan now handles 30% more clients, stress-free.</p>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+                <div className="space-y-4">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-700 font-mono">Flag any high-value leads in unread emails</p>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-4 space-y-3">
+                    <p className="text-sm text-gray-800">
+                      <strong className="text-blue-700">Whisone:</strong> <strong>🚨 High-priority alert:</strong> TechCorp proposal ($50K project) buried in unread. Expires Friday. Key points: 3-month contract, remote OK.
+                    </p>
+                    <div className="p-3 bg-white rounded-lg border-l-4 border-green-500">
+                      <p className="text-xs text-gray-500 mb-2">Suggested reply:</p>
+                      <p className="text-sm text-gray-700">Excited about the $50K opportunity—let&apos;s hop on a quick call to align on scope. Available Thursday?</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <button className="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors">
+                      Edit
+                    </button>
+                    <button className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
+                      Send & Schedule Call
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

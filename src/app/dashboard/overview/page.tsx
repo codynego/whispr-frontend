@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Calendar, MessageCircle, Zap, Clock, TrendingUp, TrendingDown, CheckCircle, Eye, Settings, Sparkles, Mail, MessageSquare, FileText, User, Brain } from "lucide-react";
+import { MessageCircle, Zap, Clock, TrendingUp, TrendingDown, CheckCircle, Eye, Settings, Sparkles, Mail, MessageSquare, FileText, User, Brain } from "lucide-react";
 import Chart from "chart.js/auto";
 import { useAuth } from "@/context/AuthContext";
 

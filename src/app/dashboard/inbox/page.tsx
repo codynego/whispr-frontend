@@ -4,10 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { 
-  Mail, Star, Trash2, Clock, Tag, Archive, Search, Filter, 
+  Mail, Star, Trash2, Archive, Search, 
   ChevronLeft, ChevronRight, MessageCircle, Send, Linkedin, 
-  Instagram, Slack, Facebook, Sparkles, TrendingUp, X, Loader2,
-  CheckCheck, Circle
+  Instagram, Slack, Facebook, X, Circle
 } from "lucide-react";
 
 interface Account {

@@ -6,7 +6,6 @@ import { useAuth } from "@/context/AuthContext";
 import { 
   ArrowLeft, 
   Mail, 
-  User, 
   Loader2, 
   Star, 
   Tag,

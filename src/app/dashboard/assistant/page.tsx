@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Send, Loader2, Mail, CheckCircle, Bell, MessageCircle, Zap, Calendar, Clock, Menu, X, Settings, User } from "lucide-react";
+import { Send, Loader2, Mail, CheckCircle, Bell, MessageCircle, Zap,  Clock, Menu, X, Settings, User } from "lucide-react";
 
 interface AssistantMessage {
   id: number;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { ArrowRight, CreditCard, Calendar, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowRight, CreditCard, CheckCircle, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Subscription {

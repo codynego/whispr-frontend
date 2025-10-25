@@ -1,5 +1,5 @@
 "use client"
-import { Mail, Search, Send, FileText, Calendar, CheckCircle, Users, Quote, Zap, Bell, MessageCircle } from "lucide-react";
+import { Mail, Search, Send, FileText, Calendar, CheckCircle, Users, Quote, Zap, Bell, MessageCircle, ArrowRight, Check } from "lucide-react";
 
 export default function WhisoneLandingPage() {
   const handleGetEarlyAccess = () => {
@@ -92,8 +92,48 @@ export default function WhisoneLandingPage() {
         </div>
       </section>
 
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-20 bg-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              How Whisone Works—In 3 Simple Steps
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Connect once, chat forever. No apps, no hassle—just your inbox tamed via WhatsApp.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center space-y-4">
+              <div className="inline-flex w-16 h-16 mx-auto bg-blue-50 rounded-full items-center justify-center">
+                <Check className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Connect Your Inbox</h3>
+              <p className="text-gray-600">Link Gmail or Outlook in seconds. Whisone scans securely—no data leaves your control.</p>
+            </div>
+
+            <div className="text-center space-y-4">
+              <div className="inline-flex w-16 h-16 mx-auto bg-indigo-50 rounded-full items-center justify-center">
+                <MessageCircle className="w-8 h-8 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Chat on WhatsApp</h3>
+              <p className="text-gray-600">Text Whisone like a friend: "Summarize my unread emails" or "Draft reply to boss." Instant magic.</p>
+            </div>
+
+            <div className="text-center space-y-4">
+              <div className="inline-flex w-16 h-16 mx-auto bg-green-50 rounded-full items-center justify-center">
+                <ArrowRight className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Act and Move On</h3>
+              <p className="text-gray-600">Get alerts, summaries, drafts, and tasks right in chat. Reply, archive, or schedule—with one tap.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Problem Statement */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
             You're Drowning in Email. Whisone Pulls You Out.
@@ -102,17 +142,17 @@ export default function WhisoneLandingPage() {
             Buried alerts. Endless threads. Forgotten follow-ups. You lose hours—and opportunities. Whisone stops it cold.
           </p>
           <div className="grid md:grid-cols-3 gap-8 text-left">
-            <div className="p-6 rounded-xl bg-gray-50">
+            <div className="p-6 rounded-xl bg-white">
               <Mail className="w-10 h-10 text-blue-600 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Buried Priorities</h3>
               <p className="text-gray-600">Key emails vanish in the flood. You miss deadlines and deals.</p>
             </div>
-            <div className="p-6 rounded-xl bg-gray-50">
+            <div className="p-6 rounded-xl bg-white">
               <Zap className="w-10 h-10 text-indigo-600 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Wasted Hours</h3>
               <p className="text-gray-600">You hunt threads, rewrite replies, switch tabs nonstop.</p>
             </div>
-            <div className="p-6 rounded-xl bg-gray-50">
+            <div className="p-6 rounded-xl bg-white">
               <CheckCircle className="w-10 h-10 text-green-600 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Dropped Balls</h3>
               <p className="text-gray-600">Tasks hide in inboxes. Nothing tracks. Deals stall.</p>
@@ -122,7 +162,7 @@ export default function WhisoneLandingPage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
+      <section id="features" className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
@@ -134,7 +174,7 @@ export default function WhisoneLandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="p-6 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-blue-50 rounded-lg">
                   <Bell className="w-6 h-6 text-blue-600" />
@@ -146,7 +186,7 @@ export default function WhisoneLandingPage() {
               </div>
             </div>
 
-            <div className="p-6 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-indigo-50 rounded-lg">
                   <Search className="w-6 h-6 text-indigo-600" />
@@ -158,7 +198,7 @@ export default function WhisoneLandingPage() {
               </div>
             </div>
 
-            <div className="p-6 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-purple-50 rounded-lg">
                   <Send className="w-6 h-6 text-purple-600" />
@@ -170,7 +210,7 @@ export default function WhisoneLandingPage() {
               </div>
             </div>
 
-            <div className="p-6 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-green-50 rounded-lg">
                   <FileText className="w-6 h-6 text-green-600" />
@@ -182,7 +222,7 @@ export default function WhisoneLandingPage() {
               </div>
             </div>
 
-            <div className="md:col-span-2 p-6 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="md:col-span-2 p-6 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-amber-50 rounded-lg">
                   <Calendar className="w-6 h-6 text-amber-600" />
@@ -198,7 +238,7 @@ export default function WhisoneLandingPage() {
       </section>
 
       {/* WhatsApp Mini Subsection */}
-      <section className="py-12 bg-white">
+      <section className="py-12 bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 rounded-full mb-6">
             <MessageCircle className="w-4 h-4 text-green-600" />

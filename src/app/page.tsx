@@ -43,7 +43,7 @@ export default function WhisoneLandingPage() {
               </h1>
               
               <p className="text-xl text-gray-600 leading-relaxed">
-                Whisone's natural AI chat spots urgent alerts, searches instantly, drafts smart replies, and pulls tasks automatically. Nothing slips through.
+                Whisone&apos;s natural AI chat spots urgent alerts, searches instantly, drafts smart replies, and pulls tasks automatically. Nothing slips through.
               </p>
               <p className="text-xl text-gray-600 leading-relaxed">
                 And the best part—you can access everything right from WhatsApp.
@@ -75,7 +75,7 @@ export default function WhisoneLandingPage() {
                     </p>
                     <div className="p-3 bg-white rounded-lg border-l-4 border-blue-500">
                       <p className="text-xs text-gray-500 mb-2">Suggested reply to Mark:</p>
-                      <p className="text-sm text-gray-700">Got it—reviewing the timeline now. I'll send updated dates by Thursday EOD.</p>
+                      <p className="text-sm text-gray-700">Got it—reviewing the timeline now. I&apos;ll send updated dates by Thursday EOD.</p>
                     </div>
                   </div>
                   <div className="flex justify-end">
@@ -136,7 +136,7 @@ export default function WhisoneLandingPage() {
       <section className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-            You're Drowning in Email. Whisone Pulls You Out.
+            You&apos;re Drowning in Email. Whisone Pulls You Out.
           </h2>
           <p className="text-xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto">
             Buried alerts. Endless threads. Forgotten follow-ups. You lose hours—and opportunities. Whisone stops it cold.
@@ -181,7 +181,7 @@ export default function WhisoneLandingPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">Smart Alerts</h3>
-                  <p className="text-gray-600">Say "flag urgent client updates"—get instant pings delivered to your WhatsApp. No more buried crises.</p>
+                  <p className="text-gray-600">Say &quot;flag urgent client updates&quot;—get instant pings delivered to your WhatsApp. No more buried crises.</p>
                 </div>
               </div>
             </div>
@@ -193,7 +193,7 @@ export default function WhisoneLandingPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">Instant Search</h3>
-                  <p className="text-gray-600">Ask "find that Q3 budget thread"—results pop up fast in WhatsApp. Slash hunt time to zero.</p>
+                  <p className="text-gray-600">Ask &quot;find that Q3 budget thread&quot;—results pop up fast in WhatsApp. Slash hunt time to zero.</p>
                 </div>
               </div>
             </div>
@@ -205,7 +205,7 @@ export default function WhisoneLandingPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">AI Replies</h3>
-                  <p className="text-gray-600">Tell it "draft a polite follow-up to Lisa"—get your voice, ready to tweak and send from WhatsApp.</p>
+                  <p className="text-gray-600">Tell it &quot;draft a polite follow-up to Lisa&quot;—get your voice, ready to tweak and send from WhatsApp.</p>
                 </div>
               </div>
             </div>
@@ -217,7 +217,7 @@ export default function WhisoneLandingPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">Thread Summaries</h3>
-                  <p className="text-gray-600">Query "summarize vendor negotiations"—cut hours of reading to bullet-point clarity, straight to your WhatsApp.</p>
+                  <p className="text-gray-600">Query &quot;summarize vendor negotiations&quot;—cut hours of reading to bullet-point clarity, straight to your WhatsApp.</p>
                 </div>
               </div>
             </div>
@@ -229,7 +229,7 @@ export default function WhisoneLandingPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">Task & Meeting Extraction</h3>
-                  <p className="text-gray-600">Say "pull action items from team emails"—auto-tasks, reminders, and calendar slots via WhatsApp. Stay ahead, effortlessly.</p>
+                  <p className="text-gray-600">Say &quot;pull action items from team emails&quot;—auto-tasks, reminders, and calendar slots via WhatsApp. Stay ahead, effortlessly.</p>
                 </div>
               </div>
             </div>
@@ -255,7 +255,7 @@ export default function WhisoneLandingPage() {
       <section id="about" className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-center mb-4">
-            For Pros Who Can't Miss a Beat
+            For Pros Who Can&apos;t Miss a Beat
           </h2>
           <p className="text-lg text-gray-600 text-center mb-12 max-w-2xl mx-auto">
             Clients, teams, deadlines—Whisone keeps you sharp, no matter the chaos.
@@ -295,7 +295,7 @@ export default function WhisoneLandingPage() {
           <div className="bg-white rounded-2xl p-8 sm:p-12 shadow-sm border border-gray-200">
             <Quote className="w-10 h-10 text-gray-300 mb-6" />
             <blockquote className="text-xl sm:text-2xl text-gray-700 mb-6 leading-relaxed">
-              Whisone slashed my email stress in half—reclaimed a full day weekly. Haven't missed a key message since.
+              Whisone slashed my email stress in half—reclaimed a full day weekly. Haven&apos;t missed a key message since.
             </blockquote>
             <cite className="text-gray-600 font-semibold not-italic">— Alex Rivera, Serial Founder & Beta User</cite>
             
@@ -340,7 +340,7 @@ export default function WhisoneLandingPage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-400">© 2025 Whisone. Built for pros who can't afford to miss.</p>
+          <p className="text-gray-400">© 2025 Whisone. Built for pros who can&apos;t afford to miss.</p>
         </div>
       </footer>
     </div>

@@ -1,10 +1,7 @@
 "use client"
-import { useState } from "react";
-import { Mail, Search, Send, FileText, Calendar, CheckCircle, Users, Quote, Zap, Bell } from "lucide-react";
+import { Mail, Search, Send, FileText, Calendar, CheckCircle, Users, Quote, Zap, Bell, MessageCircle } from "lucide-react";
 
 export default function WhisoneLandingPage() {
-  const [submitted, setSubmitted] = useState(false);
-
   const handleGetEarlyAccess = () => {
     window.location.href = "https://docs.google.com/forms/d/e/1FAIpQLSe0yuPAgMhQaF9tEVrgfGq2hhZmmCazCbfR_5_uni52llufIQ/viewform?usp=publish-editor";
   };
@@ -42,11 +39,14 @@ export default function WhisoneLandingPage() {
               </div>
               
               <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 leading-tight">
-                The AI That Catches What You&apos;d Miss
+                Reclaim 5+ Hours Weekly—from Email Chaos
               </h1>
               
               <p className="text-xl text-gray-600 leading-relaxed">
-                Context-aware alerts, instant search, AI replies, and automatic task extraction—so important emails never slip by.
+                Whisone's natural AI chat spots urgent alerts, searches instantly, drafts smart replies, and pulls tasks automatically. Nothing slips through.
+              </p>
+              <p className="text-xl text-gray-600 leading-relaxed">
+                And the best part—you can access everything right from WhatsApp.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -96,26 +96,26 @@ export default function WhisoneLandingPage() {
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-            You&apos;re Drowning in Email—And Missing What Matters
+            You're Drowning in Email. Whisone Pulls You Out.
           </h2>
           <p className="text-xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto">
-            Critical messages get buried. Long threads eat hours. Follow-ups fall through cracks. Whisone fixes all three.
+            Buried alerts. Endless threads. Forgotten follow-ups. You lose hours—and opportunities. Whisone stops it cold.
           </p>
           <div className="grid md:grid-cols-3 gap-8 text-left">
             <div className="p-6 rounded-xl bg-gray-50">
               <Mail className="w-10 h-10 text-blue-600 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Buried Priorities</h3>
-              <p className="text-gray-600">Important emails lost in noise—you miss deadlines and opportunities.</p>
+              <p className="text-gray-600">Key emails vanish in the flood. You miss deadlines and deals.</p>
             </div>
             <div className="p-6 rounded-xl bg-gray-50">
               <Zap className="w-10 h-10 text-indigo-600 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Time Waste</h3>
-              <p className="text-gray-600">Hours reading threads, drafting replies, and switching contexts.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Wasted Hours</h3>
+              <p className="text-gray-600">You hunt threads, rewrite replies, switch tabs nonstop.</p>
             </div>
             <div className="p-6 rounded-xl bg-gray-50">
               <CheckCircle className="w-10 h-10 text-green-600 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Dropped Tasks</h3>
-              <p className="text-gray-600">Action items buried in messages—nothing gets tracked or done.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Dropped Balls</h3>
+              <p className="text-gray-600">Tasks hide in inboxes. Nothing tracks. Deals stall.</p>
             </div>
           </div>
         </div>
@@ -126,10 +126,10 @@ export default function WhisoneLandingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Chat Naturally—Whisone Does the Rest
+              Chat Like You Talk—Whisone Listens and Acts
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              No complicated setup. Just type what you need, and Whisone handles the heavy lifting.
+              Skip commands. Just describe what you need in plain English. Whisone delivers—in seconds.
             </p>
           </div>
 
@@ -141,7 +141,7 @@ export default function WhisoneLandingPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">Smart Alerts</h3>
-                  <p className="text-gray-600">Context-aware notifications surface urgent emails the moment they arrive—critical messages never get buried.</p>
+                  <p className="text-gray-600">Say "flag urgent client updates"—get instant pings delivered to your WhatsApp. No more buried crises.</p>
                 </div>
               </div>
             </div>
@@ -152,8 +152,8 @@ export default function WhisoneLandingPage() {
                   <Search className="w-6 h-6 text-indigo-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Find Emails</h3>
-                  <p className="text-gray-600">Lightning-fast search pinpoints any email or thread in seconds—no more inbox archaeology.</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Instant Search</h3>
+                  <p className="text-gray-600">Ask "find that Q3 budget thread"—results pop up fast in WhatsApp. Slash hunt time to zero.</p>
                 </div>
               </div>
             </div>
@@ -164,8 +164,8 @@ export default function WhisoneLandingPage() {
                   <Send className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Reply and Send</h3>
-                  <p className="text-gray-600">AI-drafted responses in your voice—review, refine, and send to keep conversations moving.</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">AI Replies</h3>
+                  <p className="text-gray-600">Tell it "draft a polite follow-up to Lisa"—get your voice, ready to tweak and send from WhatsApp.</p>
                 </div>
               </div>
             </div>
@@ -176,8 +176,8 @@ export default function WhisoneLandingPage() {
                   <FileText className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Summarize Threads</h3>
-                  <p className="text-gray-600">Instant digests of long threads—turn hours of back-and-forth into clear, actionable insights.</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Thread Summaries</h3>
+                  <p className="text-gray-600">Query "summarize vendor negotiations"—cut hours of reading to bullet-point clarity, straight to your WhatsApp.</p>
                 </div>
               </div>
             </div>
@@ -188,8 +188,8 @@ export default function WhisoneLandingPage() {
                   <Calendar className="w-6 h-6 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Extract Tasks and Meetings</h3>
-                  <p className="text-gray-600">One-tap action extraction—convert emails into tasks, reminders, or calendar events automatically.</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Task & Meeting Extraction</h3>
+                  <p className="text-gray-600">Say "pull action items from team emails"—auto-tasks, reminders, and calendar slots via WhatsApp. Stay ahead, effortlessly.</p>
                 </div>
               </div>
             </div>
@@ -197,14 +197,28 @@ export default function WhisoneLandingPage() {
         </div>
       </section>
 
+      {/* WhatsApp Mini Subsection */}
+      <section className="py-12 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 rounded-full mb-6">
+            <MessageCircle className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium text-green-700">WhatsApp-Powered</span>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">Seamless Control from WhatsApp</h3>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Chat with Whisone on the go—get alerts, summaries, and actions delivered instantly. No apps to switch, just your favorite messenger.
+          </p>
+        </div>
+      </section>
+
       {/* Target Audience */}
       <section id="about" className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-center mb-4">
-            Built for People Who Can&apos;t Afford to Miss Anything
+            For Pros Who Can't Miss a Beat
           </h2>
           <p className="text-lg text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-            Whether you&apos;re managing clients, leading teams, or juggling projects—Whisone keeps you in control.
+            Clients, teams, deadlines—Whisone keeps you sharp, no matter the chaos.
           </p>
           
           <div className="grid md:grid-cols-3 gap-8">
@@ -212,8 +226,8 @@ export default function WhisoneLandingPage() {
               <div className="inline-flex p-4 bg-blue-50 rounded-xl">
                 <Users className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">Busy Professionals</h3>
-              <p className="text-gray-600">Cut through inbox noise with surgical precision—see only what demands your attention, nothing more.</p>
+              <h3 className="text-xl font-semibold text-gray-900">Busy Pros</h3>
+              <p className="text-gray-600">Slice inbox noise. Focus only on what drives your day forward.</p>
             </div>
 
             <div className="text-center space-y-4">
@@ -221,7 +235,7 @@ export default function WhisoneLandingPage() {
                 <Zap className="w-8 h-8 text-indigo-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900">Founders & Freelancers</h3>
-              <p className="text-gray-600">Never drop a client ball again—get alerted to hot leads, send polished follow-ups, and turn emails into completed tasks.</p>
+              <p className="text-gray-600">Nail leads and follow-ups. Turn emails into revenue, fast.</p>
             </div>
 
             <div className="text-center space-y-4">
@@ -229,7 +243,7 @@ export default function WhisoneLandingPage() {
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900">Teams & Leaders</h3>
-              <p className="text-gray-600">Elevate team coordination with shared intelligence—catch urgent escalations, track commitments, and sync schedules effortlessly.</p>
+              <p className="text-gray-600">Sync escalations and commitments. Lead without the lag.</p>
             </div>
           </div>
         </div>
@@ -241,13 +255,13 @@ export default function WhisoneLandingPage() {
           <div className="bg-white rounded-2xl p-8 sm:p-12 shadow-sm border border-gray-200">
             <Quote className="w-10 h-10 text-gray-300 mb-6" />
             <blockquote className="text-xl sm:text-2xl text-gray-700 mb-6 leading-relaxed">
-              Whisone cut my email stress in half and gave me back a full day every week. I haven&apos;t missed a single important message since switching.
+              Whisone slashed my email stress in half—reclaimed a full day weekly. Haven't missed a key message since.
             </blockquote>
             <cite className="text-gray-600 font-semibold not-italic">— Alex Rivera, Serial Founder & Beta User</cite>
             
             <div className="mt-8 pt-8 border-t border-gray-200">
               <p className="text-gray-600 leading-relaxed">
-                Early users reclaim <strong className="text-gray-900">5–7 hours weekly</strong>, and <strong className="text-gray-900">95%</strong> report zero missed priorities—join those turning inbox chaos into calm control.
+                Beta users save <strong className="text-gray-900">5–7 hours weekly</strong>. <strong className="text-gray-900">95% zero missed priorities</strong>. Join the shift from chaos to control.
               </p>
             </div>
           </div>
@@ -259,10 +273,10 @@ export default function WhisoneLandingPage() {
         <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Get Whisone Before Spots Run Out
+              Grab Whisone Early—Before Slots Vanish
             </h2>
             <p className="text-lg text-gray-600">
-              Secure early access and let Whisone handle your inbox: alerting you to what matters, summarizing endless threads, and drafting replies—all automatically.
+              Lock in access. Let AI handle alerts, summaries, and drafts. Reclaim your inbox—today.
             </p>
           </div>
 
@@ -274,7 +288,10 @@ export default function WhisoneLandingPage() {
               Reserve Your Spot →
             </button>
             <p className="text-sm text-gray-500 text-center">
-              Only 500 MVP slots available. Sign up in 30 seconds.
+              Limited: 500 MVP spots. Join 200+ on the list—in 30 seconds.
+            </p>
+            <p className="text-xs text-gray-500 text-center">
+              🔒 Whisone never shares your WhatsApp or email data. Everything stays secure and private.
             </p>
           </div>
         </div>
@@ -283,7 +300,7 @@ export default function WhisoneLandingPage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-400">© 2025 Whisone. Built for people who can&apos;t afford to miss anything.</p>
+          <p className="text-gray-400">© 2025 Whisone. Built for pros who can't afford to miss.</p>
         </div>
       </footer>
     </div>

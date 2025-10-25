@@ -118,7 +118,7 @@ export default function WhisoneLandingPage() {
                 <MessageCircle className="w-8 h-8 text-indigo-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900">Chat on WhatsApp</h3>
-              <p className="text-gray-600">Text Whisone like a friend: "Summarize my unread emails" or "Draft reply to boss." Instant magic.</p>
+              <p className="text-gray-600">Text Whisone like a friend: &quot;Summarize my unread emails&quot; or &quot;Draft reply to boss.&quot; Instant magic.</p>
             </div>
 
             <div className="text-center space-y-4">

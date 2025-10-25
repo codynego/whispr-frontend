@@ -75,6 +75,7 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
   const [replyText, setReplyText] = useState("");
   const [tone, setTone] = useState<"formal" | "friendly" | "concise">("friendly");
   const [showActions, setShowActions] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const getChannelSource = (channel?: string) => {
     const channelMap: Record<string, { icon: string; label: string; color: string; gradient: string }> = {
@@ -144,6 +145,51 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
     ];
     const index = name.charCodeAt(0) % colors.length;
     return colors[index];
+  };
+
+  const handleSend = async () => {
+    if (!replyText.trim() || !accessToken || !message) return;
+
+    setSending(true);
+    setError(null);
+
+    try {
+      const subject = message.subject || (message.metadata?.subject as string) || "(No subject)";
+      const bodyHtml = replyText.replace(/\n/g, '<br>');
+
+      const payload = {
+        message_id: message.id,
+        to: message.sender,
+        subject: `Re: ${subject}`,
+        body: replyText,
+        body_html: bodyHtml,
+        attachments: [],
+      };
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/send/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      console.log("body", payload)
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Failed to send message: ${res.statusText}`);
+      }
+
+      setReplyText('');
+      // Optionally, you can add a success toast or update the message state here
+      console.log('Message sent successfully');
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    } finally {
+      setSending(false);
+    }
   };
 
   useEffect(() => {
@@ -444,6 +490,11 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
         {/* Reply Composer */}
         <div className="border-t border-slate-200/60 bg-white/80 backdrop-blur-xl flex-shrink-0">
           <div className="px-4 sm:px-6 lg:px-8 py-4">
+            {error && (
+              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {error}
+              </div>
+            )}
             <div className="space-y-3">
               <textarea
                 value={replyText}
@@ -451,31 +502,41 @@ export default function MessageDetailPanel({ onClose }: { onClose?: () => void }
                 placeholder="Type your reply..."
                 className="w-full min-h-[80px] max-h-40 resize-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 rows={3}
+                disabled={sending}
               />
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all">
+                  <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all" disabled={sending}>
                     <Paperclip className="w-4.5 h-4.5" />
                   </button>
-                  <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                  <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" disabled={sending}>
                     <Clock className="w-4.5 h-4.5" />
                   </button>
-                  <button className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all">
+                  <button className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all" disabled={sending}>
                     <Brain className="w-4.5 h-4.5" />
                   </button>
                   <select
                     value={tone}
                     onChange={(e) => setTone(e.target.value as any)}
                     className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-600 font-medium"
+                    disabled={sending}
                   >
                     <option value="formal">Formal</option>
                     <option value="friendly">Friendly</option>
                     <option value="concise">Concise</option>
                   </select>
                 </div>
-                <button className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all flex items-center gap-2 font-semibold text-sm shadow-lg hover:shadow-xl">
-                  <Send className="w-4 h-4" />
-                  Send
+                <button 
+                  onClick={handleSend}
+                  disabled={sending || !replyText.trim()}
+                  className={`px-5 py-2.5 rounded-lg transition-all flex items-center gap-2 font-semibold text-sm shadow-lg ${
+                    sending || !replyText.trim()
+                      ? 'bg-gray-400 cursor-not-allowed text-gray-500 shadow-none'
+                      : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white hover:shadow-xl'
+                  }`}
+                >
+                  <Loader2 className={`w-4 h-4 ${sending ? 'animate-spin' : ''}`} />
+                  {sending ? 'Sending...' : 'Send'}
                 </button>
               </div>
             </div>

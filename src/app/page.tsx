@@ -2,25 +2,11 @@
 import { useState } from "react";
 import { Mail, Search, Send, FileText, Calendar, CheckCircle, Users, Quote, Zap, Bell } from "lucide-react";
 
-interface FormData {
-  name: string;
-  email: string;
-}
-
 export default function WhisoneLandingPage() {
-  const [formData, setFormData] = useState<FormData>({ name: "", email: "" });
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    console.log("Early access signup:", formData);
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 5000);
-    setFormData({ name: "", email: "" });
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleGetEarlyAccess = () => {
+    window.location.href = "https://docs.google.com/forms/d/e/1FAIpQLSe0yuPAgMhQaF9tEVrgfGq2hhZmmCazCbfR_5_uni52llufIQ/viewform?usp=publish-editor";
   };
 
   return (
@@ -34,12 +20,12 @@ export default function WhisoneLandingPage() {
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
               <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</a>
             </nav>
-            <a
-              href="#signup"
+            <button
+              onClick={handleGetEarlyAccess}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
             >
               Get Early Access
-            </a>
+            </button>
           </div>
         </div>
       </header>
@@ -64,9 +50,12 @@ export default function WhisoneLandingPage() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <a href="#signup" className="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg transition-all text-center">
+                <button
+                  onClick={handleGetEarlyAccess}
+                  className="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg transition-all text-center"
+                >
                   Reserve Your Spot →
-                </a>
+                </button>
                 <button className="px-8 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all">
                   See How It Works
                 </button>
@@ -78,7 +67,7 @@ export default function WhisoneLandingPage() {
               <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
                 <div className="space-y-4">
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-700 font-mono">@summarize client emails this week</p>
+                    <p className="text-sm text-gray-700 font-mono">Summarize client emails this week</p>
                   </div>
                   <div className="bg-blue-50 rounded-lg p-4 space-y-3">
                     <p className="text-sm text-gray-800">
@@ -163,7 +152,7 @@ export default function WhisoneLandingPage() {
                   <Search className="w-6 h-6 text-indigo-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">@find</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Find Emails</h3>
                   <p className="text-gray-600">Lightning-fast search pinpoints any email or thread in seconds—no more inbox archaeology.</p>
                 </div>
               </div>
@@ -175,7 +164,7 @@ export default function WhisoneLandingPage() {
                   <Send className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">@reply / @send</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Reply and Send</h3>
                   <p className="text-gray-600">AI-drafted responses in your voice—review, refine, and send to keep conversations moving.</p>
                 </div>
               </div>
@@ -187,7 +176,7 @@ export default function WhisoneLandingPage() {
                   <FileText className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">@summarize</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Summarize Threads</h3>
                   <p className="text-gray-600">Instant digests of long threads—turn hours of back-and-forth into clear, actionable insights.</p>
                 </div>
               </div>
@@ -199,7 +188,7 @@ export default function WhisoneLandingPage() {
                   <Calendar className="w-6 h-6 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">@task / @meeting</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Extract Tasks and Meetings</h3>
                   <p className="text-gray-600">One-tap action extraction—convert emails into tasks, reminders, or calendar events automatically.</p>
                 </div>
               </div>
@@ -277,41 +266,17 @@ export default function WhisoneLandingPage() {
             </p>
           </div>
 
-          {!submitted ? (
-            <div className="space-y-4">
-              <input
-                type="text"
-                name="name"
-                placeholder="Your Name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <input
-                type="email"
-                name="email"
-                placeholder="Your Email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button
-                onClick={handleSubmit}
-                className="w-full px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg transition-all"
-              >
-                Reserve Your Spot →
-              </button>
-              <p className="text-sm text-gray-500 text-center">
-                Only 500 MVP slots available. Sign up in 30 seconds.
-              </p>
-            </div>
-          ) : (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
-              <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
-              <p className="text-xl font-semibold text-green-800 mb-2">You&apos;re on the list!</p>
-              <p className="text-gray-600">We&apos;ll email you when early access opens.</p>
-            </div>
-          )}
+          <div className="space-y-4">
+            <button
+              onClick={handleGetEarlyAccess}
+              className="w-full px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg transition-all"
+            >
+              Reserve Your Spot →
+            </button>
+            <p className="text-sm text-gray-500 text-center">
+              Only 500 MVP slots available. Sign up in 30 seconds.
+            </p>
+          </div>
         </div>
       </section>
 

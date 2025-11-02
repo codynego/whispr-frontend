@@ -1,7 +1,7 @@
 // pages/PrivacyPolicy.jsx (or wherever it's mounted)
 "use client"
-import Footer from "@/components/footer";
-import Header from "@/components/header";
+import Footer from "@/components/Footer";
+import Header from "@/components/Header";
 import { Shield, Mail, Lock, User, FileText, Calendar, Download } from "lucide-react";
 
 export default function PrivacyPolicy() {

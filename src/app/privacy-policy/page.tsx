@@ -98,7 +98,7 @@ export default function PrivacyPolicy() {
             {/* Sharing Your Information */}
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3">
-                <Users className="w-6 h-6 text-blue-600" />
+                <User className="w-6 h-6 text-blue-600" />
                 Sharing Your Information
               </h2>
               <p className="text-gray-700 leading-relaxed">

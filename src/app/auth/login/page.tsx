@@ -24,7 +24,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-md">
-        <h1 className="text-3xl font-bold text-gray-900 text-center mb-6">WhisprAI Login</h1>
+        <h1 className="text-3xl font-bold text-gray-900 text-center mb-6">WhisoneAI Login</h1>
         {error && <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg mb-4 text-sm">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input

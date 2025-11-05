@@ -58,7 +58,7 @@ export default function Sidebar({ isOpen, mobileOpen, isMobile, toggleSidebar }:
       {/* Logo and toggle */}
       <div className="relative flex items-center justify-between p-4 border-b border-slate-700/50 z-10">
         <h1 className={`text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent ${!showFull && "hidden"}`}>
-          Whispr
+          Whisone
         </h1>
         <button
           onClick={toggleSidebar}
@@ -100,7 +100,7 @@ export default function Sidebar({ isOpen, mobileOpen, isMobile, toggleSidebar }:
 
       {/* Footer */}
       <div className="relative p-4 border-t border-slate-700/50 text-xs text-slate-500 z-10">
-        {showFull && <p className="font-light">© {new Date().getFullYear()} Whispr. All rights reserved.</p>}
+        {showFull && <p className="font-light">© {new Date().getFullYear()} Whisone. All rights reserved.</p>}
       </div>
     </aside>
   );

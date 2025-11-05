@@ -73,7 +73,7 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-md">
-        <h1 className="text-3xl font-bold text-gray-900 text-center mb-6">WhisprAI Register</h1>
+        <h1 className="text-3xl font-bold text-gray-900 text-center mb-6">WhisoneAI Register</h1>
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg mb-4 text-sm">
             {error}

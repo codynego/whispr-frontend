@@ -115,7 +115,7 @@ export default function AutomationsPage() {
   const fetchAutomations = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/automations/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/automations/`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!res.ok) throw new Error('Failed to fetch automations');
@@ -133,8 +133,8 @@ export default function AutomationsPage() {
     try {
       const method = editingId ? 'PUT' : 'POST';
       const url = editingId 
-        ? `${process.env.NEXT_PUBLIC_API_URL}/automations/${editingId}/`
-        : `${process.env.NEXT_PUBLIC_API_URL}/automations/`;
+        ? `${process.env.NEXT_PUBLIC_API_URL}/assistant/automations/${editingId}/`
+        : `${process.env.NEXT_PUBLIC_API_URL}/assistant/utomations/`;
       
       const body = {
         ...formData,
@@ -178,7 +178,7 @@ export default function AutomationsPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this automation?')) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/automations/${id}/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/automations/${id}/`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -191,7 +191,7 @@ export default function AutomationsPage() {
 
   const handleToggle = async (id: number, isActive: boolean) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/automations/${id}/toggle/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/automations/${id}/toggle/`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -208,7 +208,7 @@ export default function AutomationsPage() {
 
   const handleTrigger = async (id: number) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/automations/${id}/trigger/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/automations/${id}/trigger/`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}` },
       });

@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { 
   Zap, Settings, Play, Pause, Edit3, Trash2, Plus, 
   Clock, Mail, MessageCircle, Calendar, AlertCircle,
-  ChevronDown, ChevronUp, Check, X
+  ChevronDown, ChevronUp, Check, X, Loader2
 } from "lucide-react";
 
 interface Automation {

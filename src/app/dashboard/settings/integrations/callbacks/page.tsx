@@ -27,7 +27,7 @@ export default function OAuthCallback() {
     async function connectAccount() {
       try {
         const res = await fetch(
-        `${BACKEND_BASE_URL}/unified/emails/oauth/callback/?code=${encodeURIComponent(code!)}&provider=${encodeURIComponent(provider!)}`,
+        `${BACKEND_BASE_URL}/whisone/integrations/gmail/callback/?code=${encodeURIComponent(code!)}&provider=${encodeURIComponent(provider!)}`,
         {
             method: "GET",
             headers: {

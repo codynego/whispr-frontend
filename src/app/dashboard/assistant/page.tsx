@@ -48,6 +48,7 @@ export default function AssistantPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
+  const [pollStartTime, setPollStartTime] = useState<Date | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -63,23 +64,55 @@ export default function AssistantPage() {
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
-    if (currentTaskId && loading && accessToken) {
+    if (currentTaskId && accessToken) {
+      // Start polling regardless of loading, but use loading for UI
+      // Set poll start time if not set
+      if (!pollStartTime) {
+        setPollStartTime(new Date());
+      }
+
+      console.log('Starting polling for task:', currentTaskId);
       interval = setInterval(async () => {
         try {
+          console.log('Polling task:', currentTaskId);
           const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/chat/response/${currentTaskId}/`, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
           });
 
+          console.log('Poll response status:', res.status);
+
           if (!res.ok) {
             console.error("Polling failed:", res.status);
+            // Don't stop on non-200, continue polling unless timeout
             return;
           }
 
           const data = await res.json();
+          console.log('Poll data:', data);
+
+          // Check timeout
+          if (pollStartTime) {
+            const now = new Date();
+            if (now.getTime() - pollStartTime.getTime() > 60000) { // 60 seconds timeout
+              console.log('Polling timeout reached');
+              setLoading(false);
+              setCurrentTaskId(null);
+              setPollStartTime(null);
+              setMessages((prev) => [...prev, {
+                id: Date.now() + 1,
+                role: 'assistant',
+                content: "Sorry, the response is taking too long. Please try again.",
+                created_at: new Date().toISOString(),
+              }]);
+              if (interval) clearInterval(interval);
+              return;
+            }
+          }
 
           if (data.status === "done") {
+            console.log('Task completed successfully');
             const assistantMessage: AssistantMessage = {
               id: Date.now() + 1,
               role: 'assistant',
@@ -89,22 +122,34 @@ export default function AssistantPage() {
             setMessages((prev) => [...prev, assistantMessage]);
             setLoading(false);
             setCurrentTaskId(null);
+            setPollStartTime(null);
             if (interval) clearInterval(interval);
           }
+          // Else continue polling (status: "pending")
         } catch (err) {
-          console.error("Polling error", err);
-          // Optionally, stop polling or show error message
+          console.error("Polling error:", err);
+          // On error, stop polling and show error
+          setMessages((prev) => [...prev, {
+            id: Date.now() + 1,
+            role: 'assistant',
+            content: "Error checking response. Please try again.",
+            created_at: new Date().toISOString(),
+          }]);
           setLoading(false);
           setCurrentTaskId(null);
+          setPollStartTime(null);
           if (interval) clearInterval(interval);
         }
-      }, 2000); // Poll every 2 seconds
+      }, 1000); // Reduced to 1 second for faster response
     }
 
     return () => {
-      if (interval) clearInterval(interval);
+      if (interval) {
+        console.log('Clearing polling interval');
+        clearInterval(interval);
+      }
     };
-  }, [currentTaskId, loading, accessToken]);
+  }, [currentTaskId, accessToken, pollStartTime]); // Removed loading from deps, added pollStartTime if needed, but mainly currentTaskId triggers start/stop
 
   useEffect(() => {
     if (!accessToken) return;
@@ -159,6 +204,7 @@ export default function AssistantPage() {
     const tempInput = input;
     setInput("");
     setLoading(true);
+    setPollStartTime(null); // Reset timeout
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/chat/`, {
@@ -174,9 +220,23 @@ export default function AssistantPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setCurrentTaskId(data.task_id);
+        console.log('POST response:', data);
+        if (data.task_id) {
+          setCurrentTaskId(data.task_id);
+        } else {
+          console.error('No task_id in response');
+          setLoading(false);
+          setMessages((prev) => [...prev, {
+            id: Date.now() + 1,
+            role: 'assistant',
+            content: "Sorry, something went wrong. Please try again.",
+            created_at: new Date().toISOString(),
+          }]);
+        }
       } else {
-        console.error("Failed to send message");
+        console.error("Failed to send message:", res.status);
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Error details:', errorData);
         setMessages((prev) => [...prev, {
           id: Date.now() + 1,
           role: 'assistant',

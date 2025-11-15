@@ -13,7 +13,7 @@ interface AssistantMessage {
 
 const formatMessage = (content: string): React.JSX.Element => {
   // First, replace **bold** with <strong>
-  let processed = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  const processed = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
   // Split into trimmed lines, filtering empty
   const lines = processed.split('\n').map(line => line.trim()).filter(line => line.length > 0);
@@ -27,7 +27,7 @@ const formatMessage = (content: string): React.JSX.Element => {
   const hasNumbered = lines.some(line => /^\d+\.\s+/.test(line));
   if (hasNumbered) {
     // Find start and end of consecutive numbered list
-    let start = lines.findIndex(line => /^\d+\.\s+/.test(line));
+    const start = lines.findIndex(line => /^\d+\.\s+/.test(line));
     let end = start;
     for (let i = start + 1; i < lines.length; i++) {
       if (!/^\d+\.\s+/.test(lines[i])) {
@@ -63,7 +63,7 @@ const formatMessage = (content: string): React.JSX.Element => {
   const hasBullets = lines.some(line => /^\*\s+/.test(line));
   if (hasBullets) {
     // Similar logic for unordered list
-    let start = lines.findIndex(line => /^\*\s+/.test(line));
+    const start = lines.findIndex(line => /^\*\s+/.test(line));
     let end = start;
     for (let i = start + 1; i < lines.length; i++) {
       if (!/^\*\s+/.test(lines[i])) {

@@ -13,31 +13,94 @@ interface AssistantMessage {
 
 const formatMessage = (content: string): React.JSX.Element => {
   // First, replace **bold** with <strong>
-  const processed = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  let processed = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-  // Split into intro and bullet parts based on * patterns
-  const parts = processed.split(/\s*\*\s+/);
+  // Split into trimmed lines, filtering empty
+  const lines = processed.split('\n').map(line => line.trim()).filter(line => line.length > 0);
 
-  if (parts.length === 1) {
-    // No bullets detected
+  if (lines.length === 1) {
+    // No line breaks, render as single paragraph
     return <p className="text-sm sm:text-base break-words mb-0" dangerouslySetInnerHTML={{ __html: processed }} />;
   }
 
-  const intro = parts[0].trim();
-  const bulletTexts = parts.slice(1).map(text => text.trim());
+  // Check if it's a numbered list
+  const hasNumbered = lines.some(line => /^\d+\.\s+/.test(line));
+  if (hasNumbered) {
+    // Find start and end of consecutive numbered list
+    let start = lines.findIndex(line => /^\d+\.\s+/.test(line));
+    let end = start;
+    for (let i = start + 1; i < lines.length; i++) {
+      if (!/^\d+\.\s+/.test(lines[i])) {
+        end = i;
+        break;
+      }
+      end = i + 1;
+    }
+    if (end === start) end = lines.length; // If no break, whole after start is list
 
-  const bullets = bulletTexts.map((text, i) => (
-    <li key={i} className="text-sm sm:text-base" dangerouslySetInnerHTML={{ __html: text }} />
-  ));
+    const intro = lines.slice(0, start).join('\n').replace(/\n/g, '<br />');
+    const listTexts = lines.slice(start, end).map(line => line.replace(/^\d+\.\s+/, '').trim());
+    const closing = lines.slice(end).join('\n').replace(/\n/g, '<br />');
 
+    return (
+      <div className="space-y-2">
+        {intro && (
+          <p className="text-sm sm:text-base break-words mb-2" dangerouslySetInnerHTML={{ __html: intro }} />
+        )}
+        <ol className="list-decimal pl-5 space-y-1">
+          {listTexts.map((text, i) => (
+            <li key={i} className="text-sm sm:text-base" dangerouslySetInnerHTML={{ __html: text }} />
+          ))}
+        </ol>
+        {closing && (
+          <p className="text-sm sm:text-base break-words mt-2" dangerouslySetInnerHTML={{ __html: closing }} />
+        )}
+      </div>
+    );
+  }
+
+  // Check for * bullets
+  const hasBullets = lines.some(line => /^\*\s+/.test(line));
+  if (hasBullets) {
+    // Similar logic for unordered list
+    let start = lines.findIndex(line => /^\*\s+/.test(line));
+    let end = start;
+    for (let i = start + 1; i < lines.length; i++) {
+      if (!/^\*\s+/.test(lines[i])) {
+        end = i;
+        break;
+      }
+      end = i + 1;
+    }
+    if (end === start) end = lines.length;
+
+    const intro = lines.slice(0, start).join('\n').replace(/\n/g, '<br />');
+    const bulletTexts = lines.slice(start, end).map(line => line.replace(/^\*\s+/, '').trim());
+    const closing = lines.slice(end).join('\n').replace(/\n/g, '<br />');
+
+    return (
+      <div className="space-y-2">
+        {intro && (
+          <p className="text-sm sm:text-base break-words mb-2" dangerouslySetInnerHTML={{ __html: intro }} />
+        )}
+        <ul className="list-disc pl-5 space-y-1">
+          {bulletTexts.map((text, i) => (
+            <li key={i} className="text-sm sm:text-base" dangerouslySetInnerHTML={{ __html: text }} />
+          ))}
+        </ul>
+        {closing && (
+          <p className="text-sm sm:text-base break-words mt-2" dangerouslySetInnerHTML={{ __html: closing }} />
+        )}
+      </div>
+    );
+  }
+
+  // Fallback: render as separate paragraphs per line
   return (
     <div className="space-y-2">
-      {intro && (
-        <p className="text-sm sm:text-base break-words mb-2" dangerouslySetInnerHTML={{ __html: intro }} />
-      )}
-      <ul className="list-disc pl-5 space-y-1">
-        {bullets}
-      </ul>
+      {lines.map((line, i) => (
+        <p key={i} className="text-sm sm:text-base break-words" dangerouslySetInnerHTML={{ __html: line }} />
+      ))}
     </div>
   );
 };

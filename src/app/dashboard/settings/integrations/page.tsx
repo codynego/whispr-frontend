@@ -19,7 +19,7 @@ export default function IntegrationsTab() {
     const fetchAccounts = async () => {
       setFetchLoading(true);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/accounts/`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/integrations/`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -54,7 +54,7 @@ export default function IntegrationsTab() {
     setLoading(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/unified/emails/oauth/init/`,
+        `${process.env.NEXT_PUBLIC_API_URL}/whisone/integrations/gmail/init/`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -94,7 +94,7 @@ export default function IntegrationsTab() {
     setLoading(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/unified/accounts/${accountId}/deactivate/`,
+        `${process.env.NEXT_PUBLIC_API_URL}/whisone/integrations/${accountId}/deactivate/`,
         {
           method: "PATCH",
           headers: {

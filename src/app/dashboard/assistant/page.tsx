@@ -47,6 +47,7 @@ export default function AssistantPage() {
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +58,53 @@ export default function AssistantPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Polling effect for task status
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (currentTaskId && loading && accessToken) {
+      interval = setInterval(async () => {
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/chat/response/${currentTaskId}/`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+
+          if (!res.ok) {
+            console.error("Polling failed:", res.status);
+            return;
+          }
+
+          const data = await res.json();
+
+          if (data.status === "done") {
+            const assistantMessage: AssistantMessage = {
+              id: Date.now() + 1,
+              role: 'assistant',
+              content: data.assistant_reply || "Thanks for your message! I'll process that.",
+              created_at: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, assistantMessage]);
+            setLoading(false);
+            setCurrentTaskId(null);
+            if (interval) clearInterval(interval);
+          }
+        } catch (err) {
+          console.error("Polling error", err);
+          // Optionally, stop polling or show error message
+          setLoading(false);
+          setCurrentTaskId(null);
+          if (interval) clearInterval(interval);
+        }
+      }, 2000); // Poll every 2 seconds
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [currentTaskId, loading, accessToken]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -126,13 +174,7 @@ export default function AssistantPage() {
 
       if (res.ok) {
         const data = await res.json();
-        const assistantMessage: AssistantMessage = {
-          id: Date.now() + 1,
-          role: 'assistant',
-          content: data.assistant_reply || "Thanks for your message! I'll process that.",
-          created_at: new Date().toISOString(),
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
+        setCurrentTaskId(data.task_id);
       } else {
         console.error("Failed to send message");
         setMessages((prev) => [...prev, {
@@ -141,6 +183,7 @@ export default function AssistantPage() {
           content: "Sorry, something went wrong. Please try again.",
           created_at: new Date().toISOString(),
         }]);
+        setLoading(false);
       }
     } catch (err) {
       console.error("Send error", err);
@@ -150,7 +193,6 @@ export default function AssistantPage() {
         content: "Network error. Please check your connection.",
         created_at: new Date().toISOString(),
       }]);
-    } finally {
       setLoading(false);
     }
   };

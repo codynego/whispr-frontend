@@ -1,92 +1,178 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Menu } from "lucide-react";
-import Sidebar from "@/components/sidebar";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Menu,
+  X,
+  MessageCircle,
+  Inbox,
+  CheckSquare,
+  Settings,
+  FileText,
+  Bell,
+  User,
+  BarChart2,
+  ChevronRight,
+  Sparkles,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [isOpen, setIsOpen] = useState(true);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+interface SidebarProps {
+  mobileOpen: boolean;
+  isMobile: boolean;
+  toggleSidebar: () => void;
+}
 
+export default function Sidebar({ mobileOpen, isMobile, toggleSidebar }: SidebarProps) {
+  const pathname = usePathname();
+
+  // Persist sidebar open/close state in localStorage (only for desktop)
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const saved = localStorage.getItem("sidebar-open");
+    return saved ? JSON.parse(saved) : true;
+  });
+
+  // Save to localStorage whenever it changes
   useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (mobile) {
-        setIsOpen(false); // Collapsed by default on mobile
-      }
-    };
+    localStorage.setItem("sidebar-open", JSON.stringify(isOpen));
+  }, [isOpen]);
 
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  const toggleSidebar = () => {
-    if (isMobile) {
-      setMobileOpen(!mobileOpen);
-    } else {
-      setIsOpen(!isOpen);
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    if (isMobile && mobileOpen) {
+      toggleSidebar();
     }
+  }, [pathname, isMobile, mobileOpen, toggleSidebar]);
+
+  if (isMobile && !mobileOpen) return null;
+
+  const showFull = isMobile || isOpen;
+
+  const navItems = [
+    { name: "Overview", icon: <BarChart2 size={20} />, href: "/dashboard/overview" },
+    { name: "Assistant", icon: <Sparkles size={20} />, href: "/dashboard/assistant" },
+    { name: "Inbox", icon: <Inbox size={20} />, href: "/dashboard/inbox" },
+    { name: "Reminders", icon: <Bell size={20} />, href: "/dashboard/reminders" },
+    { name: "Todos", icon: <CheckSquare size={20} />, href: "/dashboard/todos" },
+    { name: "Notes", icon: <FileText size={20} />, href: "/dashboard/notes" },
+    { name: "Integrations", icon: <MessageCircle size={20} />, href: "/dashboard/settings/integrations" },
+    { name: "Profile", icon: <User size={20} />, href: "/dashboard/profile" },
+    { name: "Settings", icon: <Settings size={20} />, href: "/dashboard/settings" },
+  ];
+
+  const toggleIcon = isMobile ? (
+    <X size={24} />
+  ) : isOpen ? (
+    <ChevronRight className="rotate-180" size={24} />
+  ) : (
+    <Menu size={24} />
+  );
+
+  const sidebarClass = `
+    fixed inset-y-0 left-0 z-50 flex flex-col
+    bg-gradient-to-b from-slate-950 via-slate-900 to-black
+    text-gray-100 shadow-2xl border-r border-slate-800
+    transition-all duration-500 ease-out
+    ${isMobile
+      ? `w-full ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`
+      : isOpen ? "w-64" : "w-20"
+    }
+  `;
+
+  const handleNavClick = () => {
+    if (isMobile) toggleSidebar();
   };
 
-  const closeMobileSidebar = () => setMobileOpen(false);
-
-  const mainMargin = isMobile ? "ml-0" : isOpen ? "ml-64" : "ml-20";
-  const mainPadding = isMobile ? "pt-16" : "pt-4";
+  const toggleDesktopSidebar = () => {
+    if (!isMobile) setIsOpen((prev: boolean) => !prev);
+  };
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 overflow-x-hidden">
-        {/* Sidebar */}
-        <Sidebar
-          isOpen={isOpen}
-          mobileOpen={mobileOpen}
-          isMobile={isMobile}
-          toggleSidebar={toggleSidebar}
-        />
+    <aside className={sidebarClass}>
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-xl pointer-events-none" />
 
-        {/* Mobile Overlay */}
-        {mobileOpen && isMobile && (
-          <div
-            className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
-            onClick={closeMobileSidebar}
-            aria-hidden="true"
-          />
-        )}
-
-        {/* Main Content */}
-        <main
-          className={`
-            transition-all duration-300 ease-in-out
-            ${mainMargin} ${mainPadding}
-            px-4 sm:px-6 lg:px-8 pb-8
-            min-h-screen
-          `}
-        >
-          {/* Mobile Hamburger (only when sidebar is closed) */}
-          {isMobile && !mobileOpen && (
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="fixed top-4 left-4 z-30 p-3 bg-white rounded-xl shadow-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all hover:shadow-xl active:scale-95"
-              aria-label="Open menu"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-          )}
-
-          {/* Page Content */}
-          <div className="max-w-7xl mx-auto">
-            {children}
+      {/* Header */}
+      <div className="relative z-10 flex items-center justify-between p-5 border-b border-slate-800/50">
+        <div className={`flex items-center gap-3 transition-all duration-300 ${!showFull && "opacity-0 scale-0 w-0"}`}>
+          <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg">
+            <Sparkles size={24} className="text-white" />
           </div>
-        </main>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Whisone
+          </h1>
+        </div>
+
+        <button
+          onClick={isMobile ? toggleSidebar : toggleDesktopSidebar}
+          className="p-2.5 rounded-xl hover:bg-white/10 transition-all duration-300 group relative z-20"
+          aria-label="Toggle sidebar"
+        >
+          {toggleIcon}
+          {!showFull && (
+            <span className="absolute left-full ml-3 px-3 py-1.5 bg-slate-800 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl border border-slate-700">
+              {isOpen ? "Collapse" : "Expand"} sidebar
+            </span>
+          )}
+        </button>
       </div>
-    </ProtectedRoute>
+
+      {/* Navigation */}
+      <nav className="relative z-10 flex-1 px-4 py-6 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
+        {navItems.map((item) => (
+          <Link
+            key={item.name}
+            href={item.href}
+            onClick={handleNavClick}
+            className={`
+              group relative flex items-center gap-4
+              px-4 py-3.5 rounded-2xl
+              transition-all duration-300
+              hover:bg-white/10 hover:translate-x-1
+              text-gray-300 hover:text-white font-medium text-sm
+              ${pathname === item.href ? "bg-white/10 text-white shadow-lg" : ""}
+            `}
+          >
+            <div className="
+              relative p-2.5 rounded-xl
+              bg-slate-800/50 backdrop-blur
+              group-hover:bg-gradient-to-br group-hover:from-indigo-500/20 group-hover:to-purple-500/20
+              transition-all duration-300 border border-slate-700/50
+            ">
+              {item.icon}
+            </div>
+
+            {showFull && <span className="tracking-wide">{item.name}</span>}
+
+            {!showFull && (
+              <span className="
+                absolute left-full ml-4 px-3 py-2
+                bg-slate-800/95 backdrop-blur-xl text-xs rounded-lg
+                opacity-0 group-hover:opacity-100 transition-all duration-300
+                whitespace-nowrap pointer-events-none shadow-2xl border border-slate-700
+              ">
+                {item.name}
+              </span>
+            )}
+
+            {showFull && (
+              <ChevronRight className="ml-auto w-4 h-4 text-slate-500 group-hover:text-indigo-400 transition-all opacity-0 group-hover:opacity-100" />
+            )}
+          </Link>
+        ))}
+      </nav>
+
+      {/* Footer */}
+      <div className="relative z-10 p-5 border-t border-slate-800/50 text-center">
+        {showFull ? (
+          <p className="text-xs text-slate-500 tracking-wider">
+            © {new Date().getFullYear()} Whisone • Built with <span className="text-pink-400">♥</span> for you
+          </p>
+        ) : (
+          <div className="w-10 h-10 mx-auto bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full opacity-20" />
+        )}
+      </div>
+    </aside>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { CheckSquare, Square, Calendar, Trash2 } from "lucide-react";
+import { CheckSquare, Square, Calendar, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 
 interface Todo {
@@ -25,6 +25,12 @@ export default function TodosPage() {
   const [pageSize] = useState(20);
   const [filter, setFilter] = useState<"all" | "pending" | "done">("all");
 
+  // Modal state
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newTask, setNewTask] = useState("");
+  const [creating, setCreating] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (!accessToken) {
       setError("Please log in to view your todos.");
@@ -33,6 +39,13 @@ export default function TodosPage() {
     }
     fetchTodos(1);
   }, [accessToken, filter]);
+
+  // Auto-focus input when modal opens
+  useEffect(() => {
+    if (isCreateModalOpen && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [isCreateModalOpen]);
 
   const fetchTodos = async (page: number) => {
     if (!accessToken) return;
@@ -63,7 +76,6 @@ export default function TodosPage() {
       const data = await response.json();
       const apiTodos: Todo[] = data.results || data;
 
-      // Sort: incomplete first, then by updated_at descending
       const sorted = apiTodos.sort((a, b) => {
         if (a.done !== b.done) return a.done ? 1 : -1;
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
@@ -79,6 +91,38 @@ export default function TodosPage() {
     }
   };
 
+  const createTodo = async () => {
+    if (!newTask.trim() || !accessToken) return;
+
+    setCreating(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ task: newTask.trim() }),
+      });
+
+      if (!response.ok) throw new Error("Failed to create todo");
+
+      const createdTodo: Todo = await response.json();
+
+      // Add to top of list (optimistic)
+      setTodos((prev) => [createdTodo, ...prev]);
+      setTotalCount((c) => c + 1);
+
+      // Reset & close
+      setNewTask("");
+      setIsCreateModalOpen(false);
+    } catch (err) {
+      alert("Could not create todo. Please try again.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const toggleTodo = async (id: number) => {
     const todo = todos.find((t) => t.id === id);
     if (!todo || !accessToken) return;
@@ -86,7 +130,7 @@ export default function TodosPage() {
     setToggling((prev) => ({ ...prev, [id]: true }));
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/todos/${id}/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/${id}/`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -97,7 +141,6 @@ export default function TodosPage() {
 
       if (!response.ok && response.status !== 401) throw new Error("Update failed");
 
-      // Optimistic UI update
       setTodos((prev) =>
         prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
       );
@@ -115,7 +158,7 @@ export default function TodosPage() {
     setDeleting((prev) => ({ ...prev, [id]: true }));
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/todos/${id}/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/${id}/`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -123,8 +166,6 @@ export default function TodosPage() {
       if (response.ok || response.status === 204) {
         setTodos((prev) => prev.filter((t) => t.id !== id));
         setTotalCount((c) => c - 1);
-      } else {
-        throw new Error("Delete failed");
       }
     } catch (err) {
       alert("Could not delete todo");
@@ -144,82 +185,81 @@ export default function TodosPage() {
   };
 
   const totalPages = Math.ceil(totalCount / pageSize);
-
-  if (loading) {
-    return (
-      <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
-        <div className="text-lg text-gray-600">Loading todos...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center text-center">
-        <div>
-          <p className="text-lg text-red-600 mb-4">Error: {error}</p>
-          <button
-            onClick={() => fetchTodos(1)}
-            className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const completedCount = todos.filter((t) => t.done).length;
   const pendingCount = todos.length - completedCount;
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2 text-gray-800 flex items-center gap-3">
-          <CheckSquare className="w-9 h-9 text-green-600" />
-          My Todos
-        </h1>
-        <p className="text-gray-500 mb-8">
-          Simple, powerful task list. Created from your voice commands, emails, and Whisone AI.
-        </p>
+    <>
+      <div className="p-6 bg-gray-50 min-h-screen relative">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <h1 className="text-3xl font-bold mb-2 text-gray-800 flex items-center gap-3">
+            <CheckSquare className="w-9 h-9 text-green-600" />
+            My Todos
+          </h1>
+          <p className="text-gray-500 mb-8">
+            Simple, powerful task list. Created from your voice commands, emails, and Whisone AI.
+          </p>
 
-        {/* Stats + Filter */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div className="flex gap-6 text-sm">
-            <span className="text-gray-600">
-              <strong className="text-indigo-600">{pendingCount}</strong> pending
-            </span>
-            <span className="text-gray-600">
-              <strong className="text-green-600">{completedCount}</strong> done
-            </span>
+          {/* Stats + Filter */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <div className="flex gap-6 text-sm">
+              <span className="text-gray-600">
+                <strong className="text-indigo-600">{pendingCount}</strong> pending
+              </span>
+              <span className="text-gray-600">
+                <strong className="text-green-600">{completedCount}</strong> done
+              </span>
+            </div>
+
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as any)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="all">All Todos</option>
+              <option value="pending">Pending Only</option>
+              <option value="done">Completed Only</option>
+            </select>
           </div>
 
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as any)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="all">All Todos</option>
-            <option value="pending">Pending Only</option>
-            <option value="done">Completed Only</option>
-          </select>
-        </div>
+          {/* Loading / Error */}
+          {loading && (
+            <div className="text-center py-12">
+              <div className="text-lg text-gray-600">Loading todos...</div>
+            </div>
+          )}
 
-        {todos.length === 0 ? (
-          <div className="text-center py-16">
-            <CheckSquare className="w-20 h-20 mx-auto mb-6 text-gray-300" />
-            <p className="text-xl text-gray-500">No todos yet!</p>
-            <p className="text-gray-400 mt-2">
-              Try saying: “Hey Whisone, add buy milk to my todos”
-            </p>
-          </div>
-        ) : (
-          <>
+          {error && (
+            <div className="text-center py-12">
+              <p className="text-lg text-red-600 mb-4">Error: {error}</p>
+              <button
+                onClick={() => fetchTodos(1)}
+                className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && !error && todos.length === 0 && (
+            <div className="text-center py-16">
+              <CheckSquare className="w-20 h-20 mx-auto mb-6 text-gray-300" />
+              <p className="text-xl text-gray-500">No todos yet!</p>
+              <p className="text-gray-400 mt-2">
+                Try saying: “Hey Whisone, add buy milk to my todos”
+              </p>
+            </div>
+          )}
+
+          {/* Todo List */}
+          {!loading && !error && todos.length > 0 && (
             <div className="space-y-3">
               {todos.map((todo) => (
                 <div
                   key={todo.id}
-                  className={`bg-white rounded-xl p-5 shadow-sm border transition-all hover:shadow-md flex items-start gap-4 ${
+                  className={`bg-white rounded-xl p-5 shadow-sm border transition-all hover:shadow-md flex items-start gap-4 group ${
                     todo.done ? "opacity-70" : ""
                   }`}
                 >
@@ -238,9 +278,7 @@ export default function TodosPage() {
                   <div className="flex-1">
                     <p
                       className={`text-lg font-medium ${
-                        todo.done
-                          ? "line-through text-gray-500"
-                          : "text-gray-800"
+                        todo.done ? "line-through text-gray-500" : "text-gray-800"
                       }`}
                     >
                       {todo.task}
@@ -259,7 +297,6 @@ export default function TodosPage() {
                     onClick={() => deleteTodo(todo.id)}
                     disabled={deleting[todo.id]}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition opacity-0 group-hover:opacity-100"
-                    title="Delete todo"
                   >
                     {deleting[todo.id] ? (
                       <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
@@ -270,34 +307,79 @@ export default function TodosPage() {
                 </div>
               ))}
             </div>
+          )}
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center mt-12 gap-6">
-                <button
-                  onClick={() => fetchTodos(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg disabled:opacity-50 hover:bg-indigo-700 transition"
-                >
-                  Previous
-                </button>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center mt-12 gap-6">
+              <button
+                onClick={() => fetchTodos(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg disabled:opacity-50 hover:bg-indigo-700 transition"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages} ({totalCount} total)
+              </span>
+              <button
+                onClick={() => fetchTodos(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg disabled:opacity-50 hover:bg-indigo-700 transition"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
 
-                <span className="text-sm text-gray-600">
-                  Page {currentPage} of {totalPages} ({totalCount} total)
-                </span>
-
-                <button
-                  onClick={() => fetchTodos(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg disabled:opacity-50 hover:bg-indigo-700 transition"
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </>
-        )}
+        {/* Floating Action Button */}
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 hover:shadow-indigo-500/50 z-10"
+          aria-label="Add new todo"
+        >
+          <Plus className="w-8 h-8" />
+        </button>
       </div>
-    </div>
+
+      {/* Create Todo Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-in fade-in zoom-in duration-200">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Create New Todo</h2>
+            <input
+              ref={inputRef}
+              type="text"
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !creating && createTodo()}
+              placeholder="What needs to be done?"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-lg"
+              disabled={creating}
+            />
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setIsCreateModalOpen(false);
+                  setNewTask("");
+                }}
+                className="px-5 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                disabled={creating}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createTodo}
+                disabled={!newTask.trim() || creating}
+                className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition flex items-center gap-2"
+              >
+                {creating ? "Creating..." : "Create Todo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

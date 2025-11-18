@@ -8,10 +8,12 @@ import {
   Inbox,
   CheckSquare,
   Settings,
-  MessageSquareText,
+  FileText,
+  Bell,
   User,
   BarChart2,
-  ChevronRight
+  ChevronRight,
+  Sparkles,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -27,80 +29,125 @@ export default function Sidebar({ isOpen, mobileOpen, isMobile, toggleSidebar }:
   const showFull = isMobile || isOpen;
 
   const navItems = [
-    { name: "Overview", icon: <BarChart2 size={18} />, href: "/dashboard/overview" },
-    { name: "Assistance", icon: <MessageCircle size={18} />, href: "/dashboard/assistant" },
-    { name: "Inbox", icon: <Inbox size={18} />, href: "/dashboard/inbox" },
-    { name: "Tasks", icon: <CheckSquare size={18} />, href: "/dashboard/tasks" },
-    { name: "WhatsApp", icon: <MessageSquareText size={18} />, href: "/dashboard/whatsapp" },
-    { name: "Profile", icon: <User size={18} />, href: "/dashboard/profile" },
-    { name: "Settings", icon: <Settings size={18} />, href: "/dashboard/settings" },
+    { name: "Overview", icon: <BarChart2 size={20} />, href: "/dashboard/overview" },
+    { name: "Assistant", icon: <Sparkles size={20} />, href: "/dashboard/assistant" },
+    { name: "Inbox", icon: <Inbox size={20} />, href: "/dashboard/inbox" },
+    { name: "Reminders", icon: <Bell size={20} />, href: "/dashboard/reminders", badge: false },
+    { name: "Todos", icon: <CheckSquare size={20} />, href: "/dashboard/todos" },
+    { name: "Notes", icon: <FileText size={20} />, href: "/dashboard/notes" },
+    { name: "Integrations", icon: <MessageCircle size={20} />, href: "/dashboard/settings/integrations" },
+    { name: "Profile", icon: <User size={20} />, href: "/dashboard/profile" },
+    { name: "Settings", icon: <Settings size={20} />, href: "/dashboard/settings" },
   ];
 
-  const toggleIcon = isMobile ? <X size={20} /> : (isOpen ? <X size={20} /> : <Menu size={20} />);
+  const toggleIcon = isMobile ? <X size={22} /> : isOpen ? <ChevronRight className="rotate-180" size={22} /> : <Menu size={22} />;
 
-  const sidebarClass = `fixed inset-y-0 left-0 z-50 transition-all duration-500 ease-in-out shadow-2xl overflow-hidden bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-gray-200 flex flex-col ${
-    isMobile
-      ? `w-full ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`
-      : `w-${isOpen ? '64' : '20'} translate-x-0`
-  }`;
+  const sidebarClass = `
+    fixed inset-y-0 left-0 z-50 flex flex-col
+    bg-gradient-to-b from-slate-950 via-slate-900 to-black
+    text-gray-100 shadow-2xl border-r border-slate-800
+    transition-all duration-500 ease-out
+    ${isMobile
+      ? `w-full ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`
+      : `${isOpen ? "w-64" : "w-20"}`
+    }
+  `;
 
   const handleNavClick = () => {
-    if (isMobile) {
-      toggleSidebar();
-    }
+    if (isMobile) toggleSidebar();
   };
 
   return (
     <aside className={sidebarClass}>
-      {/* Backdrop blur overlay for modern glass effect */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm"></div>
+      {/* Glassmorphism overlay */}
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-xl pointer-events-none" />
 
-      {/* Logo and toggle */}
-      <div className="relative flex items-center justify-between p-4 border-b border-slate-700/50 z-10">
-        <h1 className={`text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent ${!showFull && "hidden"}`}>
-          Whisone
-        </h1>
+      {/* Header: Logo + Toggle */}
+      <div className="relative z-10 flex items-center justify-between p-5 border-b border-slate-800/50">
+        <div className={`flex items-center gap-3 transition-all ${!showFull && "opacity-0 scale-0"}`}>
+          <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg">
+            <Sparkles size={24} className="text-white" />
+          </div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Whisone
+          </h1>
+        </div>
+
         <button
           onClick={toggleSidebar}
-          className="relative p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all duration-200 group"
+          className="p-2.5 rounded-xl hover:bg-white/10 transition-all duration-300 group relative"
+          aria-label="Toggle sidebar"
         >
           {toggleIcon}
           {!showFull && (
-            <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-slate-200 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-              Menu
-            </div>
+            <span className="absolute left-full ml-3 px-3 py-1.5 bg-slate-800 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl border border-slate-700">
+              {isOpen ? "Collapse" : "Expand"} Menu
+            </span>
           )}
         </button>
       </div>
 
-      {/* Nav links */}
-      <nav className="relative flex-1 p-3 space-y-2 z-10 mt-2">
-        {navItems.map((item, index) => (
+      {/* Navigation */}
+      <nav className="relative z-10 flex-1 px-4 py-6 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
+        {navItems.map((item) => (
           <Link
             key={item.name}
             href={item.href}
             onClick={handleNavClick}
-            className="group relative flex items-center gap-3 p-3 rounded-xl hover:bg-slate-700/50 transition-all duration-200 hover:pl-3 text-gray-300 hover:text-white"
+            className="
+              group relative flex items-center gap-4
+              px-4 py-3.5 rounded-2xl
+              transition-all duration-300
+              hover:bg-white/10 hover:translate-x-1
+              text-gray-300 hover:text-white
+              font-medium text-sm
+            "
           >
-            <div className="relative flex-shrink-0 p-2 bg-slate-800/30 rounded-lg group-hover:bg-indigo-500/20 transition-colors">
+            {/* Icon with subtle glow on hover */}
+            <div className="
+              relative p-2.5 rounded-xl
+              bg-slate-800/50 backdrop-blur
+              group-hover:bg-gradient-to-br group-hover:from-indigo-500/20 group-hover:to-purple-500/20
+              transition-all duration-300
+              border border-slate-700/50
+            ">
               {item.icon}
             </div>
-            {showFull && <span className="font-medium text-sm">{item.name}</span>}
+
+            {/* Label */}
+            {showFull && <span className="tracking-wide">{item.name}</span>}
+
+            {/* Tooltip when collapsed */}
             {!showFull && (
-              <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-slate-200 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              <span className="
+                absolute left-full ml-4 px-3 py-2
+                bg-slate-800/95 backdrop-blur-xl text-xs rounded-lg
+                opacity-0 group-hover:opacity-100
+                transition-all duration-300
+                whitespace-nowrap pointer-events-none
+                shadow-2xl border border-slate-700
+              ">
                 {item.name}
-              </div>
+              </span>
             )}
-            {showFull ? (
-              <ChevronRight className="ml-auto w-4 h-4 text-slate-500 group-hover:text-indigo-400 transition-colors opacity-0 group-hover:opacity-100" />
-            ) : null}
+
+            {/* Right chevron when expanded */}
+            {showFull && (
+              <ChevronRight className="ml-auto w-4 h-4 text-slate-500 group-hover:text-indigo-400 transition-all opacity-0 group-hover:opacity-100" />
+            )}
           </Link>
         ))}
       </nav>
 
       {/* Footer */}
-      <div className="relative p-4 border-t border-slate-700/50 text-xs text-slate-500 z-10">
-        {showFull && <p className="font-light">© {new Date().getFullYear()} Whisone. All rights reserved.</p>}
+      <div className="relative z-10 p-5 border-t border-slate-800/50 text-center">
+        {showFull ? (
+          <p className="text-xs text-slate-500 tracking-wider">
+            © {new Date().getFullYear()} Whisone • Built with <span className="text-pink-400">♥</span> for you
+          </p>
+        ) : (
+          <div className="w-10 h-10 mx-auto bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full opacity-20" />
+        )}
       </div>
     </aside>
   );

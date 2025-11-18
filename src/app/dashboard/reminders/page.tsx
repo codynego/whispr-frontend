@@ -24,7 +24,7 @@ export default function RemindersPage() {
   const [pageSize] = useState(20);
   const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "completed">("all");
 
-  // Create Modal State
+  // Create Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newText, setNewText] = useState("");
   const [newDateTime, setNewDateTime] = useState("");
@@ -40,7 +40,6 @@ export default function RemindersPage() {
     fetchReminders(1);
   }, [accessToken, filterStatus]);
 
-  // Auto-focus text input when modal opens
   useEffect(() => {
     if (isCreateOpen && textInputRef.current) {
       setTimeout(() => textInputRef.current?.focus(), 100);
@@ -75,11 +74,19 @@ export default function RemindersPage() {
       const data = await response.json();
       const apiReminders: Reminder[] = data.results || data;
 
+      // Sort: Pending first (by remind_at), then completed (by updated_at)
       const sorted = apiReminders.sort((a, b) => {
-        if (!a.remind_at && !b.remind_at) return 0;
-        if (!a.remind_at) return 1;
-        if (!b.remind_at) return -1;
-        return new Date(a.remind_at).getTime() - new Date(b.remind_at).getTime();
+        // If both completed or both pending, sort by time
+        if (a.completed === b.completed) {
+          const dateA = a.completed ? a.updated_at : a.remind_at;
+          const dateB = b.completed ? b.updated_at : b.remind_at;
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
+          return Date.parse(dateA) - Date.parse(dateB);
+        }
+        // Pending comes before completed
+        return a.completed ? 1 : -1;
       });
 
       setReminders(sorted);
@@ -97,7 +104,7 @@ export default function RemindersPage() {
 
     setCreating(true);
     try {
-      const payload: any = { text: newText.trim() };
+      const payload: Partial<Reminder> = { text: newText.trim() };
       if (newDateTime) payload.remind_at = newDateTime;
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/`, {
@@ -113,33 +120,34 @@ export default function RemindersPage() {
 
       const created: Reminder = await response.json();
 
-      // Insert at correct position (by remind_at)
       setReminders((prev) => {
-        const updated = [...prev, created];
+        const updated = [created, ...prev];
         return updated.sort((a, b) => {
-          if (!a.remind_at) return 1;
-          if (!b.remind_at) return -1;
-          return new Date(a.remind_at).getTime() - new Date(b.remind_at).getTime();
+          if (a.completed === b.completed) {
+            const dateA = a.completed ? a.updated_at : a.remind_at;
+            const dateB = b.completed ? b.updated_at : b.remind_at;
+            return (dateA ? Date.parse(dateA) : Infinity) - (dateB ? Date.parse(dateB) : Infinity);
+          }
+          return a.completed ? 1 : -1;
         });
       });
-      setTotalCount((c) => c + 1);
+      setTotalCount(c => c + 1);
 
-      // Reset & close
       setNewText("");
       setNewDateTime("");
       setIsCreateOpen(false);
     } catch (err) {
-      alert("Failed to create reminder. Please try again.");
+      alert("Failed to create reminder.");
     } finally {
       setCreating(false);
     }
   };
 
   const toggleReminder = async (id: number) => {
-    const reminder = reminders.find((r) => r.id === id);
+    const reminder = reminders.find(r => r.id === id);
     if (!reminder || !accessToken) return;
 
-    setToggling((prev) => ({ ...prev, [id]: true }));
+    setToggling(prev => ({ ...prev, [id]: true }));
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/${id}/`, {
@@ -153,13 +161,21 @@ export default function RemindersPage() {
 
       if (!response.ok) throw new Error("Update failed");
 
-      setReminders((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, completed: !r.completed } : r))
+      setReminders(prev =>
+        prev.map(r => r.id === id ? { ...r, completed: !r.completed } : r)
+          .sort((a, b) => {
+            if (a.completed === b.completed) {
+              const dateA = a.completed ? a.updated_at : a.remind_at;
+              const dateB = b.completed ? b.updated_at : b.remind_at;
+              return (dateA ? Date.parse(dateA) : Infinity) - (dateB ? Date.parse(dateB) : Infinity);
+            }
+            return a.completed ? 1 : -1;
+          })
       );
     } catch (err) {
       setError("Failed to update reminder");
     } finally {
-      setToggling((prev) => ({ ...prev, [id]: false }));
+      setToggling(prev => ({ ...prev, [id]: false }));
     }
   };
 
@@ -171,15 +187,15 @@ export default function RemindersPage() {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const isToday = due >= today && due < tomorrow;
-    const isTomorrow = due >= tomorrow && due < new Date(tomorrow.getTime() + 86400000);
-
-    if (isToday) return `Today at ${due.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-    if (isTomorrow) return `Tomorrow at ${due.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    if (due >= today && due < tomorrow)
+      return `Today at ${due.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    if (due >= tomorrow && due < new Date(tomorrow.getTime() + 86400000))
+      return `Tomorrow at ${due.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
     return due.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   };
 
   const totalPages = Math.ceil(totalCount / pageSize);
+  const hasBothTypes = reminders.some(r => !r.completed) && reminders.some(r => r.completed);
 
   if (loading) return <div className="p-6 text-center text-gray-600">Loading reminders...</div>;
   if (error) return <div className="p-6 text-center text-red-600">Error: {error} <button onClick={() => fetchReminders(1)} className="underline">Retry</button></div>;
@@ -198,8 +214,12 @@ export default function RemindersPage() {
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div className="text-sm text-gray-600">
-              <strong className="text-indigo-600">{reminders.filter(r => !r.completed).length}</strong> pending •{" "}
-              <strong className="text-green-600">{reminders.filter(r => r.completed).length}</strong> completed
+              <strong className="text-indigo-600">
+                {reminders.filter(r => !r.completed).length}
+              </strong> pending •{" "}
+              <strong className="text-green-600">
+                {reminders.filter(r => r.completed).length}
+              </strong> completed
             </div>
 
             <select
@@ -220,12 +240,22 @@ export default function RemindersPage() {
               <p className="text-gray-400 mt-2">Say “Hey Whisone, remind me to call Mom tomorrow at 6pm”</p>
             </div>
           ) : (
-            <>
-              <div className="space-y-4">
-                {reminders.map((reminder) => (
+            <div className="space-y-4">
+              {reminders.map((reminder, index) => (
+                <div key={reminder.id}>
+                  {/* Visual divider between pending and completed */}
+                  {hasBothTypes && index === reminders.findIndex(r => r.completed) && reminders.some(r => !r.completed) && (
+                    <div className="my-8 flex items-center">
+                      <div className="flex-1 border-t border-gray-300"></div>
+                      <span className="px-4 text-sm text-gray-500 font-medium">Completed</span>
+                      <div className="flex-1 border-t border-gray-300"></div>
+                    </div>
+                  )}
+
                   <div
-                    key={reminder.id}
-                    className={`bg-white rounded-xl p-6 shadow-sm border transition-all hover:shadow-md ${reminder.completed ? "opacity-70" : ""}`}
+                    className={`bg-white rounded-xl p-6 shadow-sm border transition-all hover:shadow-md ${
+                      reminder.completed ? "opacity-60 border-gray-200" : "border-gray-300"
+                    }`}
                   >
                     <div className="flex justify-between items-start gap-6">
                       <div className="flex-1">
@@ -254,43 +284,44 @@ export default function RemindersPage() {
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center mt-12 gap-6">
-                  <button onClick={() => fetchReminders(currentPage - 1)} disabled={currentPage === 1} className="px-6 py-3 bg-indigo-600 text-white rounded-lg disabled:opacity-50 hover:bg-indigo-700 transition">
-                    Previous
-                  </button>
-                  <span className="text-sm text-gray-600">Page {currentPage} of {totalPages}</span>
-                  <button onClick={() => fetchReminders(currentPage + 1)} disabled={currentPage === totalPages} className="px-6 py-3 bg-indigo-600 text-white rounded-lg disabled:opacity-50 hover:bg-indigo-700 transition">
-                    Next
-                  </button>
                 </div>
-              )}
-            </>
+              ))}
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center mt-12 gap-6">
+              <button onClick={() => fetchReminders(currentPage - 1)} disabled={currentPage === 1}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg disabled:opacity-50 hover:bg-indigo-700 transition">
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">Page {currentPage} of {totalPages}</span>
+              <button onClick={() => fetchReminders(currentPage + 1)} disabled={currentPage === totalPages}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg disabled:opacity-50 hover:bg-indigo-700 transition">
+                Next
+              </button>
+            </div>
           )}
         </div>
 
-        {/* Floating Action Button */}
+        {/* Floating + Button */}
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 z-10"
-          aria-label="Create reminder"
+          className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 z-10 shadow-2xl rounded-full"
+          aria-label="New reminder"
         >
           <Plus className="w-9 h-9" />
         </button>
       </div>
 
-      {/* Create Reminder Modal */}
+      {/* Create Modal - unchanged */}
       {isCreateOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-5 flex items-center gap-2">
               <Bell className="w-7 h-7 text-indigo-600" />
               New Reminder
             </h2>
-
             <input
               ref={textInputRef}
               type="text"
@@ -299,9 +330,7 @@ export default function RemindersPage() {
               onKeyDown={(e) => e.key === "Enter" && !creating && newText.trim() && createReminder()}
               placeholder="What do you need to remember?"
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-lg mb-4"
-              disabled={creating}
             />
-
             <div className="flex items-center gap-3 mb-6">
               <Calendar className="w-5 h-5 text-gray-500" />
               <input
@@ -311,7 +340,6 @@ export default function RemindersPage() {
                 className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
-
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => {
@@ -319,7 +347,7 @@ export default function RemindersPage() {
                   setNewText("");
                   setNewDateTime("");
                 }}
-                className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-lg"
                 disabled={creating}
               >
                 Cancel
@@ -327,7 +355,7 @@ export default function RemindersPage() {
               <button
                 onClick={createReminder}
                 disabled={!newText.trim() || creating}
-                className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition font-medium"
+                className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 font-medium"
               >
                 {creating ? "Creating..." : "Set Reminder"}
               </button>

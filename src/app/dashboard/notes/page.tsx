@@ -195,9 +195,15 @@ export default function NotesPage() {
 
           {notes.length === 0 ? (
             <div className="text-center py-20">
-              <FileText className="w-20 h-20 mx-auto mb-6 text-gray-300" />
-              <p className="text-xl text-gray-500">No notes yet</p>
-              <p className="text-gray-400 mt-2">Say "Hey Whisone, take a note about the meeting"</p>
+            <FileText className="w-20 h-20 mx-auto mb-6 text-gray-300" />
+            <p className="text-xl text-gray-500">No notes yet</p>
+            <p className="text-gray-400 mt-2">
+                Say{' '}
+                <span className="font-medium text-blue-600">
+                &quot;Hey Whisone, take a note about the meeting&quot;
+                </span>{' '}
+                to get started
+            </p>
             </div>
           ) : (
             <>

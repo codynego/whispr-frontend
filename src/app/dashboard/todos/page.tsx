@@ -41,7 +41,7 @@ export default function TodosPage() {
       setLoading(true);
       setError(null);
 
-      let url = `${process.env.NEXT_PUBLIC_API_URL}/todos/?page=${page}&page_size=${pageSize}`;
+      let url = `${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/?page=${page}&page_size=${pageSize}`;
       if (filter === "pending") url += "&done=false";
       if (filter === "done") url += "&done=true";
 

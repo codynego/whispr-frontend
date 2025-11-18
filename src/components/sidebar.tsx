@@ -17,11 +17,11 @@ import {
 } from "lucide-react";
 
 interface SidebarProps {
-  isOpen?: boolean;        // For desktop collapsed state
-  mobileOpen: boolean;     // For mobile overlay
+  isOpen?: boolean;
+  mobileOpen: boolean;
   isMobile: boolean;
   toggleSidebar: () => void;
-  closeMobile?: () => void; // Optional: more explicit close
+  closeMobile?: () => void;
 }
 
 export default function Sidebar({
@@ -33,7 +33,6 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
 
-  // Auto-close mobile sidebar on route change
   useEffect(() => {
     if (isMobile && mobileOpen) {
       closeMobile?.() || toggleSidebar();
@@ -53,45 +52,38 @@ export default function Sidebar({
   ];
 
   const handleNavClick = () => {
-    if (isMobile) {
-      closeMobile?.() || toggleSidebar();
-    }
+    if (isMobile) closeMobile?.() || toggleSidebar();
   };
 
-  // Dynamic classes based on state
-  const sidebarWidth = !isMobile && !isOpen ? "w-20" : "w-64";
-  const showLabels = !isMobile && !isOpen ? "max-md:hidden" : "";
+  const width = !isMobile && !isOpen ? "w-20" : "w-72";
+  const hideLabels = !isMobile && !isOpen ? "opacity-0 w-0" : "opacity-100";
 
   const sidebarClasses = `
     fixed inset-y-0 left-0 z-50 flex flex-col
-    bg-gradient-to-b from-slate-900 via-slate-900 to-black
-    text-gray-100 shadow-2xl border-r border-slate-800
+    bg-slate-900 text-gray-100
+    border-r border-slate-800
     transition-all duration-300 ease-out
-    ${isMobile
-      ? mobileOpen ? "translate-x-0" : "-translate-x-full"
-      : "translate-x-0"
-    }
-    ${sidebarWidth}
+    ${isMobile ? (mobileOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}
+    ${width}
   `;
 
   return (
     <aside className={sidebarClasses}>
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-slate-800">
-        <div className={`flex items-center gap-3 transition-all duration-300 ${!isOpen && !isMobile ? "justify-center" : ""}`}>
-          <div className="p-2.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg ring-2 ring-blue-500/30">
+        <div className={`flex items-center gap-4 transition-all duration-300 ${!isOpen && !isMobile ? "justify-center" : ""}`}>
+          <div className="p-3 bg-blue-600 rounded-2xl shadow-lg ring-4 ring-blue-600/20">
             <Sparkles className="w-7 h-7 text-white" />
           </div>
-          <h1 className={`text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent transition-opacity duration-300 ${showLabels}`}>
+          <h1 className={`text-2xl font-bold text-white transition-all duration-300 ${hideLabels}`}>
             Whisone
           </h1>
         </div>
 
-        {/* Close button - only on mobile */}
         {isMobile && mobileOpen && (
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-lg hover:bg-white/10 transition-all backdrop-blur-sm"
+            className="p-2.5 rounded-xl hover:bg-white/10 transition"
             aria-label="Close menu"
           >
             <X className="w-6 h-6" />
@@ -100,7 +92,7 @@ export default function Sidebar({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 hover:scrollbar-thumb-slate-600">
+      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -112,33 +104,33 @@ export default function Sidebar({
               onClick={handleNavClick}
               className={`
                 group relative flex items-center gap-4
-                px-4 py-3.5 rounded-xl text-sm font-medium
+                px-4 py-3.5 rounded-2xl text-sm font-medium
                 transition-all duration-200
                 ${isActive
-                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-xl ring-2 ring-blue-500/30"
-                  : "text-gray-400 hover:bg-slate-800/70 hover:text-white"
+                  ? "bg-blue-600 text-white shadow-xl shadow-blue-600/30"
+                  : "text-gray-400 hover:bg-slate-800 hover:text-white"
                 }
-                ${!isOpen && !isMobile ? "justify-center" : ""}
+                ${!isOpen && !isMobile ? "justify-center px-3" : ""}
               `}
             >
-              {/* Active indicator bar */}
+              {/* Active indicator */}
               {isActive && (
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-400 to-purple-500 rounded-r-full" />
+                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500 rounded-r-full" />
               )}
 
-              <div className={`relative transition-all duration-200 ${isActive ? "scale-110" : "group-hover:scale-110"}`}>
-                <Icon className="w-5 h-5" />
+              <div className={`transition-transform duration-200 ${isActive ? "scale-110" : "group-hover:scale-110"}`}>
+                <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-gray-400 group-hover:text-white"}`} />
               </div>
 
-              <span className={`tracking-wide transition-all duration-300 ${showLabels}`}>
+              <span className={`tracking-wide transition-all duration-300 ${hideLabels}`}>
                 {item.name}
               </span>
 
-              {/* Tooltip when collapsed (desktop only) */}
+              {/* Tooltip when collapsed */}
               {!isOpen && !isMobile && (
-                <span className="absolute left-full ml-3 px-3 py-2 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-10 transition-opacity">
+                <div className="absolute left-full ml-4 px-4 py-2 bg-slate-800 text-white text-sm rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 shadow-2xl border border-slate-700">
                   {item.name}
-                </span>
+                </div>
               )}
             </Link>
           );
@@ -146,10 +138,10 @@ export default function Sidebar({
       </nav>
 
       {/* Footer */}
-      <div className="p-5 border-t border-slate-800">
-        <p className={`text-xs text-center text-slate-500 tracking-wider transition-all duration-300 ${showLabels}`}>
+      <div className="p-6 border-t border-slate-800">
+        <p className={`text-xs text-center text-slate-500 transition-all duration-300 ${hideLabels}`}>
           © 2025 Whisone
-          <span className="text-purple-400 mx-1">♥</span>
+          <span className="text-blue-500 mx-1">♥</span>
           Made for you
         </p>
       </div>

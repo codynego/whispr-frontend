@@ -186,7 +186,7 @@ export default function NotesPage() {
       <div className="p-6 bg-gray-50 min-h-screen relative">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-2 text-gray-800 flex items-center gap-3">
-            <FileText className="w-9 h-9 text-amber-600" />
+            <FileText className="w-9 h-9 text-blue-600" />
             My Notes
           </h1>
           <p className="text-gray-500 mb-8">
@@ -197,7 +197,7 @@ export default function NotesPage() {
             <div className="text-center py-20">
               <FileText className="w-20 h-20 mx-auto mb-6 text-gray-300" />
               <p className="text-xl text-gray-500">No notes yet</p>
-              <p className="text-gray-400 mt-2">Say “Hey Whisone, take a note about the meeting”</p>
+              <p className="text-gray-400 mt-2">Say "Hey Whisone, take a note about the meeting"</p>
             </div>
           ) : (
             <>
@@ -253,12 +253,12 @@ export default function NotesPage() {
               {totalPages > 1 && (
                 <div className="flex justify-center items-center mt-12 gap-6">
                   <button onClick={() => fetchNotes(currentPage - 1)} disabled={currentPage === 1}
-                    className="px-6 py-3 bg-amber-600 text-white rounded-lg disabled:opacity-50 hover:bg-amber-700 transition">
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50 hover:bg-blue-700 transition">
                     Previous
                   </button>
                   <span className="text-sm text-gray-600">Page {currentPage} of {totalPages} ({totalCount} notes)</span>
                   <button onClick={() => fetchNotes(currentPage + 1)} disabled={currentPage === totalPages}
-                    className="px-6 py-3 bg-amber-600 text-white rounded-lg disabled:opacity-50 hover:bg-amber-700 transition">
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50 hover:bg-blue-700 transition">
                     Next
                   </button>
                 </div>
@@ -270,7 +270,7 @@ export default function NotesPage() {
         {/* Floating Create Button */}
         <button
           onClick={openCreateModal}
-          className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 z-10"
+          className="fixed bottom-8 right-8 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 hover:bg-blue-700 transition-all duration-300 z-10"
           aria-label="New note"
         >
           <Plus className="w-9 h-9" />
@@ -283,7 +283,7 @@ export default function NotesPage() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                <FileText className="w-7 h-7 text-amber-600" />
+                <FileText className="w-7 h-7 text-blue-600" />
                 {editingNote ? "Edit Note" : "New Note"}
               </h2>
             </div>
@@ -314,7 +314,7 @@ export default function NotesPage() {
               <button
                 onClick={saveNote}
                 disabled={!noteContent.trim() || saving}
-                className="px-8 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg hover:from-amber-600 hover:to-orange-700 disabled:opacity-50 transition font-medium flex items-center gap-2"
+                className="px-8 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition font-medium flex items-center gap-2"
               >
                 {saving ? "Saving..." : editingNote ? "Update Note" : "Save Note"}
               </button>

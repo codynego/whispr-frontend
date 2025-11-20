@@ -1,5 +1,5 @@
 "use client"
-import { MessageCircle, Brain, Zap, Search, BellRing, Calendar, CheckSquare, Sparkles, ArrowRight, Quote, Shield, Globe } from "lucide-react";
+import { MessageCircle, Brain, Zap, CheckSquare, Sparkles, ArrowRight, Quote, Shield } from "lucide-react";
 
 export default function WhisoneLandingPage() {
   const handleGetEarlyAccess = () => {

@@ -459,7 +459,7 @@ export default function WhisoneLandingPage() {
                       <span className="font-mono">&quot;Remind me every Monday at 9am to review tasks&quot;</span>
                     </div>
                     <div className="bg-white/60 rounded-lg p-3 border border-orange-200">
-                      <strong>Whisone:</strong> ✅ Set. I'll ping you every Monday 9am. (Next: Nov 25)
+                      <strong>Whisone:</strong> ✅ Set. I&apos;ll ping you every Monday 9am. (Next: Nov 25)
                     </div>
                   </div>
                 </div>

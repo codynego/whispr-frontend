@@ -1,235 +1,81 @@
 "use client"
-import { Mail, Search, Send, FileText, Calendar, CheckCircle, Users, Quote, Zap, Bell, MessageCircle, ArrowRight, Check } from "lucide-react";
+import { MessageCircle, Brain, Zap, Search, BellRing, Calendar, CheckSquare, Sparkles, ArrowRight, Quote, Shield, Globe } from "lucide-react";
 
 export default function WhisoneLandingPage() {
   const handleGetEarlyAccess = () => {
-    window.location.href = "https://docs.google.com/forms/d/e/1FAIpQLSe0yuPAgMhQaF9tEVrgfGq2hhZmmCazCbfR_5_uni52llufIQ/viewform?usp=publish-editor";
+    window.open("https://docs.google.com/forms/d/e/1FAIpQLSe0yuPAgMhQaF9tEVrgfGq2hhZmmCazCbfR_5_uni52llufIQ/viewform", "_blank");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="text-2xl font-bold text-gray-900">Whisone</div>
-            <nav className="hidden md:flex space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
-              <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</a>
-            </nav>
-            <button
-              onClick={handleGetEarlyAccess}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Get Early Access
-            </button>
+      <header className="bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-100 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <div className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Whisone
           </div>
+          <button
+            onClick={handleGetEarlyAccess}
+            className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full font-semibold hover:shadow-xl transition-all"
+          >
+            Get Early Access →
+          </button>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-indigo-600/5" />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full">
-                <Bell className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-700">Smart Email Assistant</span>
-              </div>
-              
-              <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 leading-tight">
-                Reclaim 5+ Hours Weekly—from Email Chaos
-              </h1>
-              
-              <p className="text-xl text-gray-600 leading-relaxed">
-                Whisone&apos;s natural AI chat spots urgent alerts, searches instantly, drafts smart replies, and pulls tasks automatically. Nothing slips through.
-              </p>
-              <p className="text-xl text-gray-600 leading-relaxed">
-                And the best part—you can access everything right from WhatsApp.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={handleGetEarlyAccess}
-                  className="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg transition-all text-center"
-                >
-                  Reserve Your Spot →
-                </button>
-                <button className="px-8 py-4 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all">
-                  See How It Works
-                </button>
-              </div>
+      {/* Hero */}
+      <section className="relative overflow-hidden py-24 lg:py-32">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center space-y-8">
+            <div className="inline-flex items-center gap-3 px-4 py-2 bg-indigo-100 rounded-full text-indigo-700 font-medium text-sm">
+              <Sparkles className="w-5 h-5" />
+              The only AI agent that lives completely inside WhatsApp
             </div>
 
-            {/* Demo Mockup */}
-            <div className="relative">
-              <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+            <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 leading-tight">
+              Your Second Brain<br />
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Inside WhatsApp
+              </span>
+            </h1>
+
+            <p className="text-xl lg:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+              Store anything. Recall anything. Automate everything — emails, tasks, reminders, notes, calendar — 
+              all with simple messages. No new apps. No dashboards. Just chat.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-8">
+              <button
+                onClick={handleGetEarlyAccess}
+                className="px-10 py-5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-lg font-semibold rounded-full shadow-2xl hover:shadow-purple-500/50 transition-all flex items-center gap-3"
+              >
+                Start Free on WhatsApp <ArrowRight className="w-5 h-5" />
+              </button>
+              <div className="text-sm text-gray-500">
+                30-second setup • 500 spots left
+              </div>
+            </div>
+          </div>
+
+          {/* Hero Chat Mockup */}
+          <div className="mt-16 max-w-2xl mx-auto">
+            <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100">
+              <div className="space-y-5 font-sans">
+                <div className="bg-gray-100 rounded-2xl p-4 max-w-xs ml-auto">
+                  <p className="text-sm">Summarize my inbox + pull tasks from today</p>
+                </div>
                 <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-700 font-mono">Summarize client emails this week</p>
-                  </div>
-                  <div className="bg-blue-50 rounded-lg p-4 space-y-3">
-                    <p className="text-sm text-gray-800">
-                      <strong className="text-blue-700">Whisone:</strong> 3 clients replied—Sarah confirmed the project scope, Mark requested timeline changes (needs response by Friday), and Lisa sent contract revisions.
-                    </p>
-                    <div className="p-3 bg-white rounded-lg border-l-4 border-blue-500">
-                      <p className="text-xs text-gray-500 mb-2">Suggested reply to Mark:</p>
-                      <p className="text-sm text-gray-700">Got it—reviewing the timeline now. I&apos;ll send updated dates by Thursday EOD.</p>
+                  <div className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-2xl p-5 rounded-tl-none">
+                    <p className="font-semibold mb-3">🔥 Today’s Summary (Nov 20)</p>
+                    <ul className="text-sm space-y-2">
+                      <li>• Client X confirmed $12k deal (reply needed)</li>
+                      <li>• Meeting with Sarah moved to 4pm tomorrow</li>
+                      <li>• Invoice #442 overdue — reminder sent</li>
+                    </ul>
+                    <div className="mt-4 p-4 bg-white/20 rounded-xl">
+                      <p className="text-xs opacity-90">Action items created → 3 new tasks + 2 reminders set</p>
                     </div>
                   </div>
-                  <div className="flex justify-end">
-                    <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
-                      Send Reply
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl" />
-              <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section id="how-it-works" className="py-20 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              How Whisone Works—In 3 Simple Steps
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Connect once, chat forever. No apps, no hassle—just your inbox tamed via WhatsApp.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center space-y-4">
-              <div className="inline-flex w-16 h-16 mx-auto bg-blue-50 rounded-full items-center justify-center">
-                <Check className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">Connect Your Inbox</h3>
-              <p className="text-gray-600">Link Gmail or Outlook in seconds. Whisone scans securely—no data leaves your control.</p>
-            </div>
-
-            <div className="text-center space-y-4">
-              <div className="inline-flex w-16 h-16 mx-auto bg-indigo-50 rounded-full items-center justify-center">
-                <MessageCircle className="w-8 h-8 text-indigo-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">Chat on WhatsApp</h3>
-              <p className="text-gray-600">Text Whisone like a friend: &quot;Summarize my unread emails&quot; or &quot;Draft reply to boss.&quot; Instant magic.</p>
-            </div>
-
-            <div className="text-center space-y-4">
-              <div className="inline-flex w-16 h-16 mx-auto bg-green-50 rounded-full items-center justify-center">
-                <ArrowRight className="w-8 h-8 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">Act and Move On</h3>
-              <p className="text-gray-600">Get alerts, summaries, drafts, and tasks right in chat. Reply, archive, or schedule—with one tap.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Problem Statement */}
-      <section className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-            You&apos;re Drowning in Email. Whisone Pulls You Out.
-          </h2>
-          <p className="text-xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto">
-            Buried alerts. Endless threads. Forgotten follow-ups. You lose hours—and opportunities. Whisone stops it cold.
-          </p>
-          <div className="grid md:grid-cols-3 gap-8 text-left">
-            <div className="p-6 rounded-xl bg-white">
-              <Mail className="w-10 h-10 text-blue-600 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Buried Priorities</h3>
-              <p className="text-gray-600">Key emails vanish in the flood. You miss deadlines, deals, and game-changing opportunities—like that partnership pitch buried in 500 unread messages.</p>
-            </div>
-            <div className="p-6 rounded-xl bg-white">
-              <Zap className="w-10 h-10 text-indigo-600 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Wasted Hours</h3>
-              <p className="text-gray-600">You hunt threads, rewrite replies, switch tabs nonstop.</p>
-            </div>
-            <div className="p-6 rounded-xl bg-white">
-              <CheckCircle className="w-10 h-10 text-green-600 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Dropped Balls</h3>
-              <p className="text-gray-600">Tasks hide in inboxes. Nothing tracks. Deals stall.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="py-20 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Chat Like You Talk—Whisone Listens and Acts
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Skip commands. Just describe what you need in plain English. Whisone delivers—in seconds.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <Bell className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Smart Alerts</h3>
-                  <p className="text-gray-600">Say &quot;flag urgent client updates&quot;—get instant pings delivered to your WhatsApp. No more buried crises.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-indigo-50 rounded-lg">
-                  <Search className="w-6 h-6 text-indigo-600" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Instant Search</h3>
-                  <p className="text-gray-600">Ask &quot;find that Q3 budget thread&quot;—results pop up fast in WhatsApp. Slash hunt time to zero.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-purple-50 rounded-lg">
-                  <Send className="w-6 h-6 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">AI Replies</h3>
-                  <p className="text-gray-600">Tell it &quot;draft a polite follow-up to Lisa&quot;—get your voice, ready to tweak and send from WhatsApp.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <FileText className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Thread Summaries</h3>
-                  <p className="text-gray-600">Query &quot;summarize vendor negotiations&quot;—cut hours of reading to bullet-point clarity, straight to your WhatsApp.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="md:col-span-2 p-6 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-amber-50 rounded-lg">
-                  <Calendar className="w-6 h-6 text-amber-600" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Task & Meeting Extraction</h3>
-                  <p className="text-gray-600">Say &quot;pull action items from team emails&quot;—auto-tasks, reminders, and calendar slots via WhatsApp. Stay ahead, effortlessly.</p>
                 </div>
               </div>
             </div>
@@ -237,166 +83,154 @@ export default function WhisoneLandingPage() {
         </div>
       </section>
 
-      {/* WhatsApp Mini Subsection */}
-      <section className="py-12 bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 rounded-full mb-6">
-            <MessageCircle className="w-4 h-4 text-green-600" />
-            <span className="text-sm font-medium text-green-700">WhatsApp-Powered</span>
-          </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">Seamless Control from WhatsApp</h3>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Chat with Whisone on the go—get alerts, summaries, and actions delivered instantly. No apps to switch, just your favorite messenger.
-          </p>
-        </div>
-      </section>
-
-      {/* Target Audience */}
-      <section id="about" className="py-20 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-center mb-4">
-            For Pros Who Can&apos;t Miss a Beat
-          </h2>
-          <p className="text-lg text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-            Clients, teams, deadlines—Whisone keeps you sharp, no matter the chaos.
-          </p>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center space-y-4">
-              <div className="inline-flex p-4 bg-blue-50 rounded-xl">
-                <Users className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">Busy Pros</h3>
-              <p className="text-gray-600">Slice inbox noise. Focus only on what drives your day forward.</p>
-            </div>
-
-            <div className="text-center space-y-4">
-              <div className="inline-flex p-4 bg-indigo-50 rounded-xl">
-                <Zap className="w-8 h-8 text-indigo-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">Founders & Freelancers</h3>
-              <p className="text-gray-600">Nail leads and follow-ups. Turn emails into revenue, fast.</p>
-            </div>
-
-            <div className="text-center space-y-4">
-              <div className="inline-flex p-4 bg-green-50 rounded-xl">
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">Teams & Leaders</h3>
-              <p className="text-gray-600">Sync escalations and commitments. Lead without the lag.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Case Study */}
+      {/* Core Pillars – 3 Big Boxes */}
       <section className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Case Study: How Whisone Can Save a $50K Deal
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Meet Jordan, a freelance consultant buried under 200+ emails weekly. Here&apos;s how Whisone turned near-miss into major win.
-            </p>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900">One Agent. Three Superpowers.</h2>
           </div>
-          <div className="grid lg:grid-cols-2 gap-8 items-center">
-            <div className="space-y-6">
-              <div className="bg-gray-50 rounded-xl p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">The Crisis</h3>
-                <p className="text-gray-600">Jordan&apos;s inbox exploded with client threads. A key prospect email from TechCorp—proposing a $50K project—got lost in the shuffle. By the time Jordan spotted it three days later, the window had closed. &quot;I nearly lost everything,&quot; Jordan recalls.</p>
+
+          <div className="grid lg:grid-cols-3 gap-10">
+            <div className="group relative bg-gradient-to-br from-indigo-50 to-white rounded-3xl p-10 border border-indigo-100 hover:shadow-2xl transition-all">
+              <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mb-6">
+                <Brain className="w-9 h-9 text-white" />
               </div>
-              <div className="bg-blue-50 rounded-xl p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Whisone to the Rescue</h3>
-                <p className="text-gray-600">After connecting her inbox, Jordan asked via WhatsApp: &quot;Flag any high-value leads in unread emails.&quot; Whisone pinged instantly: &quot;TechCorp proposal detected—$50K opportunity, expires Friday. Draft reply?&quot; Jordan reviewed the AI-suggested response, hit send, and sealed the deal that afternoon.</p>
-              </div>
-              <div className="bg-green-50 rounded-xl p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">The Win</h3>
-                <p className="text-gray-600">&quot;Whisone didn&apos;t just save the deal—it gave me back control. Now, I close opportunities faster than ever, without the dread of &apos;did I miss something?&apos;&quot; Jordan now handles 30% more clients, stress-free.</p>
-              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Remember Everything</h3>
+              <p className="text-gray-600 mb-6">Notes, emails, ideas, meetings, files — Whisone stores it all with perfect memory.</p>
+              <ul className="space-y-3 text-gray-600">
+                <li className="flex items-center gap-3"><CheckSquare className="w-5 h-5 text-indigo-600" /> Semantic search across your life</li>
+                <li className="flex items-center gap-3"><CheckSquare className="w-5 h-5 text-indigo-600" /> “What did I promise Sarah last month?”</li>
+                <li className="flex items-center gap-3"><CheckSquare className="w-5 h-5 text-indigo-600" /> Daily auto-summaries</li>
+              </ul>
             </div>
-            <div className="relative">
-              <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-                <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-700 font-mono">Flag any high-value leads in unread emails</p>
-                  </div>
-                  <div className="bg-blue-50 rounded-lg p-4 space-y-3">
-                    <p className="text-sm text-gray-800">
-                      <strong className="text-blue-700">Whisone:</strong> <strong>🚨 High-priority alert:</strong> TechCorp proposal ($50K project) buried in unread. Expires Friday. Key points: 3-month contract, remote OK.
-                    </p>
-                    <div className="p-3 bg-white rounded-lg border-l-4 border-green-500">
-                      <p className="text-xs text-gray-500 mb-2">Suggested reply:</p>
-                      <p className="text-sm text-gray-700">Excited about the $50K opportunity—let&apos;s hop on a quick call to align on scope. Available Thursday?</p>
-                    </div>
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <button className="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors">
-                      Edit
-                    </button>
-                    <button className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
-                      Send & Schedule Call
-                    </button>
-                  </div>
-                </div>
+
+            <div className="group relative bg-gradient-to-br from-purple-50 to-white rounded-3xl p-10 border border-purple-100 hover:shadow-2xl transition-all">
+              <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mb-6">
+                <Zap className="w-9 h-9 text-white" />
               </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Act For You</h3>
+              <p className="text-gray-600 mb-6">Whisone doesn’t just remember — it reminds, drafts, schedules, and executes.</p>
+              <ul className="space-y-3 text-gray-600">
+                <li className="flex items-center gap-3"><CheckSquare className="w-5 h-5 text-purple-600" /> Auto-reminders & follow-ups</li>
+                <li className="flex items-center gap-3"><CheckSquare className="w-5 h-5 text-purple-600" /> Draft replies in your tone</li>
+                <li className="flex items-center gap-3"><CheckSquare className="w-5 h-5 text-purple-600" /> Background automation engine</li>
+              </ul>
             </div>
+
+            <div className="group relative bg-gradient-to-br from-green-50 to-white rounded-3xl p-10 border border-green-100 hover:shadow-2xl transition-all">
+              <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center mb-6">
+                <MessageCircle className="w-9 h-9 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Chat With Your Life</h3>
+              <p className="text-gray-600 mb-6">Everything happens in WhatsApp — create, update, ask, automate — naturally.</p>
+              <ul className="space-y-3 text-gray-600">
+                <li className="flex items-center gap-3"><CheckSquare className="w-5 h-5 text-green-600" /> No new apps or dashboards</li>
+                <li className="flex items-center gap-3"><CheckSquare className="w-5 h-5 text-green-600" /> Works while you sleep</li>
+                <li className="flex items-center gap-3"><CheckSquare className="w-5 h-5 text-green-600" /> Mobile-first forever</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Who Is It For? – Personas */}
+      <section className="py-20 bg-gradient-to-br from-indigo-50 to-purple-50">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-16">Who Is Whisone For?</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+            {[
+              { title: "Busy Professionals", desc: "Managers & consultants who juggle 200+ emails daily", emoji: "👔" },
+              { title: "Founders & Freelancers", desc: "Never miss a lead or invoice again", emoji: "🚀" },
+              { title: "Students & Learners", desc: "Notes, deadlines, and study reminders in one chat", emoji: "🎓" },
+              { title: "Productivity Lovers", desc: "Replace Notion, Todoist, Gmail, Calendar — with one AI", emoji: "⚡" },
+              { title: "Digital Nomads", desc: "Time-zone-proof life, anywhere in the world", emoji: "🌍" },
+              { title: "Everyday Organizers", desc: "Groceries, bills, birthdays — never forget again", emoji: "❤️" }
+            ].map((persona) => (
+              <div key={persona.title} className="bg-white/70 backdrop-blur rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all">
+                <div className="text-5xl mb-4">{persona.emoji}</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">{persona.title}</h3>
+                <p className="text-gray-600">{persona.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Real Examples */}
+      <section className="py-20 bg-white">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-4xl font-bold text-center text-gray-900 mb-16">Real Things You’ll Say to Whisone</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            {[
+              "Summarize my inbox and pull action items",
+              "Find that budget email from Anthony last quarter",
+              "Draft a polite follow-up to Sarah about the contract",
+              "What meetings do I have tomorrow?",
+              "Remind me to pay rent every 1st of the month",
+              "Show me notes from my Portugal trip",
+              "What did I accomplish this week?",
+              "Flag any high-value leads in unread emails"
+            ].map((example) => (
+              <div key={example} className="flex gap-4 items-start bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6">
+                <MessageCircle className="w-6 h-6 text-indigo-600 mt-1 flex-shrink-0" />
+                <p className="text-lg text-gray-800 font-medium">“{example}”</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Social Proof */}
-      <section className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-2xl p-8 sm:p-12 shadow-sm border border-gray-200">
-            <Quote className="w-10 h-10 text-gray-300 mb-6" />
-            <blockquote className="text-xl sm:text-2xl text-gray-700 mb-6 leading-relaxed">
-              Whisone slashed my email stress in half—reclaimed a full day weekly. Haven&apos;t missed a key message since.
-            </blockquote>
-            <cite className="text-gray-600 font-semibold not-italic">— Alex Rivera, Serial Founder & Beta User</cite>
-            
-            <div className="mt-8 pt-8 border-t border-gray-200">
-              <p className="text-gray-600 leading-relaxed">
-                Beta users save <strong className="text-gray-900">5–7 hours weekly</strong>. <strong className="text-gray-900">95% zero missed priorities</strong>. Join the shift from chaos to control.
-              </p>
+      <section className="py-20 bg-gradient-to-br from-indigo-50 to-purple-50">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <Quote className="w-16 h-16 text-indigo-300 mx-auto mb-8" />
+          <p className="text-3xl lg:text-4xl font-bold text-gray-800 mb-6">
+            “I closed my biggest deal ever because Whisone found a buried email in 3 seconds.”
+          </p>
+          <p className="text-xl text-gray-600">— Alex R., Serial Founder (Beta User)</p>
+          <div className="mt-12 grid grid-cols-3 gap-8 text-center">
+            <div>
+              <div className="text-4xl font-bold text-indigo-600">5–9 hrs</div>
+              <div className="text-gray-600">saved weekly</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-purple-600">95%</div>
+              <div className="text-gray-600">fewer missed priorities</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-green-600">1 app</div>
+              <div className="text-gray-600">replaces 7 tools</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section id="signup" className="py-20 bg-white">
-        <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Grab Whisone Early—Before Slots Vanish
-            </h2>
-            <p className="text-lg text-gray-600">
-              Lock in access. Let AI handle alerts, summaries, and drafts. Reclaim your inbox—today.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <button
-              onClick={handleGetEarlyAccess}
-              className="w-full px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg transition-all"
-            >
-              Reserve Your Spot →
-            </button>
-            <p className="text-sm text-gray-500 text-center">
-              Limited: 500 MVP spots. Join 200+ on the list—in 30 seconds.
-            </p>
-            <p className="text-xs text-gray-500 text-center">
-              🔒 Whisone never shares your WhatsApp or email data. Everything stays secure and private.
-            </p>
+      {/* Final CTA */}
+      <section className="py-24 bg-gradient-to-r from-indigo-600 to-purple-600">
+        <div className="max-w-4xl mx-auto px-6 text-center text-white">
+          <h2 className="text-4xl lg:text-6xl font-bold mb-8">
+            Turn WhatsApp Into Your Second Brain — Today
+          </h2>
+          <p className="text-xl mb-10 opacity-90">
+            Limited to 500 early users. Join the waitlist in 30 seconds.
+          </p>
+          <button
+            onClick={handleGetEarlyAccess}
+            className="px-12 py-6 bg-white text-indigo-600 text-xl font-bold rounded-full shadow-2xl hover:shadow-white/50 transition-all inline-flex items-center gap-4"
+          >
+            Claim Your Spot Now <ArrowRight className="w-6 h-6" />
+          </button>
+          <div className="mt-8 flex items-center justify-center gap-2 text-sm opacity-80">
+            <Shield className="w-5 h-5" />
+            <span>Your data never leaves WhatsApp • End-to-end encrypted • Zero spam</span>
           </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-400">© 2025 Whisone. Built for pros who can&apos;t afford to miss.</p>
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="text-gray-400">© 2025 Whisone • Your AI Agent Inside WhatsApp</p>
         </div>
       </footer>
     </div>

@@ -42,8 +42,8 @@ export default function DashboardLayout({
       <div className="flex h-screen bg-gray-50">
         {/* Sidebar */}
         <Sidebar
-          isOpen={!isMobile && sidebarOpen}           // desktop: controlled by sidebarOpen
-          mobileOpen={isMobile && mobileMenuOpen}     // mobile: overlay when mobileMenuOpen
+          isOpen={!isMobile && sidebarOpen} 
+          mobileOpen={isMobile && mobileMenuOpen}     
           isMobile={isMobile}
           toggleSidebar={toggleSidebar}
           closeMobile={closeMobileMenu}

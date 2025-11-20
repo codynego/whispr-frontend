@@ -1,5 +1,5 @@
 "use client"
-import { Mail, Search, Send, FileText, Calendar, CheckCircle, Users, Quote, Zap, Bell, MessageCircle, ArrowRight, Check, Brain, Sparkles, Clock } from "lucide-react";
+import { Mail, FileText, Calendar, CheckCircle, Users, Quote, Zap, Bell, MessageCircle, ArrowRight, Check, Brain, Sparkles, Clock } from "lucide-react";
 
 export default function WhisoneLandingPage() {
   const handleGetEarlyAccess = () => {
@@ -421,7 +421,7 @@ export default function WhisoneLandingPage() {
                       <span className="font-mono">&quot;What restaurant did Sarah recommend?&quot;</span>
                     </div>
                     <div className="bg-white/60 rounded-lg p-3 border border-emerald-200">
-                      <strong>Whisone:</strong> Sarah recommended "Tasty Bites" on Nov 15. You saved: great pasta, book ahead.
+                      <strong>Whisone:</strong> Sarah recommended &quot;Tasty Bites&quot; on Nov 15. You saved: great pasta, book ahead.
                     </div>
                   </div>
                 </div>

@@ -145,7 +145,7 @@ export default function WhisoneLandingPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                  <span>Ask natural questions: "What did I buy last month?"</span>
+                  <span>Ask natural questions: &quo;What did I buy last month?&quot;</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
@@ -195,7 +195,7 @@ export default function WhisoneLandingPage() {
               <ul className="space-y-3 text-sm text-gray-600">
                 <li className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                  <span>Send reminders when they're due</span>
+                  <span>Send reminders when they&lsquo;re due</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
@@ -292,7 +292,7 @@ export default function WhisoneLandingPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <ArrowRight className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
-                  <span>Ask: "What's due this week?"</span>
+                  <span>Ask: &quot;What&apos;s due this week?&quot;</span>
                 </li>
               </ul>
             </div>
@@ -315,7 +315,7 @@ export default function WhisoneLandingPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <ArrowRight className="w-4 h-4 text-orange-600 flex-shrink-0 mt-0.5" />
-                  <span>Ask: "What did I accomplish?"</span>
+                  <span>Ask: &quot;What did I accomplish?&quot;</span>
                 </li>
               </ul>
             </div>
@@ -361,7 +361,7 @@ export default function WhisoneLandingPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <ArrowRight className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-                  <span>Ask: "What did I miss today?"</span>
+                  <span>Ask: &quot;What did I miss today?&quot;</span>
                 </li>
               </ul>
             </div>
@@ -395,7 +395,7 @@ export default function WhisoneLandingPage() {
                 2
               </div>
               <h3 className="text-xl font-semibold text-gray-900">Message Whisone</h3>
-              <p className="text-gray-600">Talk naturally. "Remind me to call mom tomorrow at 3pm."</p>
+              <p className="text-gray-600">Talk naturally. &quot;Remind me to call mom tomorrow at 3pm.&quot;</p>
             </div>
 
             <div className="text-center space-y-4">
@@ -418,7 +418,7 @@ export default function WhisoneLandingPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Smart Memory Search</h3>
                   <div className="space-y-2 text-sm text-gray-700">
                     <div className="bg-white/60 rounded-lg p-3 border border-emerald-200">
-                      <span className="font-mono">"What restaurant did Sarah recommend?"</span>
+                      <span className="font-mono">&quot;What restaurant did Sarah recommend?&quot;</span>
                     </div>
                     <div className="bg-white/60 rounded-lg p-3 border border-emerald-200">
                       <strong>Whisone:</strong> Sarah recommended "Tasty Bites" on Nov 15. You saved: great pasta, book ahead.
@@ -437,7 +437,7 @@ export default function WhisoneLandingPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Intelligence</h3>
                   <div className="space-y-2 text-sm text-gray-700">
                     <div className="bg-white/60 rounded-lg p-3 border border-blue-200">
-                      <span className="font-mono">"Summarize urgent emails from this week"</span>
+                      <span className="font-mono">&quot;Summarize urgent emails from this week&quot;</span>
                     </div>
                     <div className="bg-white/60 rounded-lg p-3 border border-blue-200">
                       <strong>Whisone:</strong> 2 urgent: Client needs proposal by Friday (mark@tech.co). Invoice overdue from supplier (alert sent 3 days ago).
@@ -456,7 +456,7 @@ export default function WhisoneLandingPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Background Automation</h3>
                   <div className="space-y-2 text-sm text-gray-700">
                     <div className="bg-white/60 rounded-lg p-3 border border-orange-200">
-                      <span className="font-mono">"Remind me every Monday at 9am to review tasks"</span>
+                      <span className="font-mono">&quot;Remind me every Monday at 9am to review tasks&quot;</span>
                     </div>
                     <div className="bg-white/60 rounded-lg p-3 border border-orange-200">
                       <strong>Whisone:</strong> ✅ Set. I'll ping you every Monday 9am. (Next: Nov 25)
@@ -475,7 +475,7 @@ export default function WhisoneLandingPage() {
           <div className="bg-white rounded-2xl p-8 sm:p-12 shadow-xl border border-gray-200">
             <Quote className="w-10 h-10 text-gray-300 mb-6" />
             <blockquote className="text-xl sm:text-2xl text-gray-700 mb-6 leading-relaxed">
-              I used to juggle 5 apps for notes, reminders, and email. Now it's just WhatsApp and Whisone. I'm actually organized for the first time in years.
+              I used to juggle 5 apps for notes, reminders, and email. Now it&apos;s just WhatsApp and Whisone. I&apos;m actually organized for the first time in years.
             </blockquote>
             <cite className="text-gray-600 font-semibold not-italic">— Alex Rivera, Product Manager & Beta User</cite>
             
@@ -519,7 +519,7 @@ export default function WhisoneLandingPage() {
               
               <div className="flex justify-start">
                 <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 max-w-xs border border-gray-200">
-                  <p className="text-sm text-gray-700"><strong className="text-emerald-600">Whisone:</strong> ✅ Saved. I'll remind you Monday 5pm to prep.</p>
+                  <p className="text-sm text-gray-700"><strong className="text-emerald-600">Whisone:</strong> ✅ Saved. I&apos;ll remind you Monday 5pm to prep.</p>
                 </div>
               </div>
 
@@ -548,10 +548,10 @@ export default function WhisoneLandingPage() {
               
               <div className="flex justify-start">
                 <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 max-w-md border border-gray-200">
-                  <p className="text-sm text-gray-700 mb-2"><strong className="text-emerald-600">Whisone:</strong> Here's your draft:</p>
+                  <p className="text-sm text-gray-700 mb-2"><strong className="text-emerald-600">Whisone:</strong> Here&apos;s your draft:</p>
                   <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700 border border-gray-200">
                     Hi TechCorp team,<br/><br/>
-                    Looking forward to our meeting Tuesday at 2pm. We'll cover pricing options and project timeline as discussed.<br/><br/>
+                    Looking forward to our meeting Tuesday at 2pm. We&apos;ll cover pricing options and project timeline as discussed.<br/><br/>
                     See you then!
                   </div>
                   <button className="mt-3 text-xs text-emerald-600 font-semibold hover:text-emerald-700">
@@ -573,7 +573,7 @@ export default function WhisoneLandingPage() {
               <span className="text-sm font-semibold text-green-700">Powered by WhatsApp</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Why WhatsApp? Because You're Already There.
+              Why WhatsApp? Because You&apos;re Already There.
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               2 billion people use WhatsApp daily. No new app to learn. No dashboard to check. Just message Whisone like you message anyone else.
@@ -648,7 +648,7 @@ export default function WhisoneLandingPage() {
             </p>
           </div>
           <div className="mt-8 pt-8 border-t border-gray-800 text-center">
-            <p className="text-gray-400 text-sm">© 2025 Whisone. Built for people who can't afford to forget.</p>
+            <p className="text-gray-400 text-sm">© 2025 Whisone. Built for people who can&apos;t afford to forget.</p>
           </div>
         </div>
       </footer>

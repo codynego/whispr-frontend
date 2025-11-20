@@ -58,6 +58,7 @@ export default function DashboardLayout({
                   <MessageCircle className="w-7 h-7 text-emerald-600" />
                 </div>
                 <span className="text-2xl font-bold text-gray-900">Whisone</span>
+                <p className="text-xs text-emerald-600 font-medium">Your AI Second Brain</p>
               </div>
               {isMobile && (
                 <button

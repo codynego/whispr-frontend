@@ -77,7 +77,7 @@ export default function Sidebar({
     >
       {/* Sidebar Header */}
       <div className="flex items-center justify-between px-6 py-6 border-b border-gray-100">
-        <div className={`flex items-center gap-4 transition-all duration-300 ${isCollapsed ? "justify-center" : ""}`}>
+        {/* <div className={`flex items-center gap-4 transition-all duration-300 ${isCollapsed ? "justify-center" : ""}`}>
           <div className="p-2.5 bg-emerald-100 rounded-2xl shadow-lg">
             <MessageCircle className="w-8 h-8 text-emerald-600" />
           </div>
@@ -87,7 +87,7 @@ export default function Sidebar({
               <p className="text-xs text-emerald-600 font-medium">Your AI Second Brain</p>
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Collapse button (desktop) + Close (mobile) */}
         {!isMobile ? (

@@ -47,7 +47,6 @@ export default function Sidebar({
     { name: "Reminders", icon: Bell, href: "/dashboard/reminders" },
     { name: "Todos", icon: CheckSquare, href: "/dashboard/todos" },
     { name: "Notes", icon: FileText, href: "/dashboard/notes" },
-    { name: "Integrations", icon: MessageCircle, href: "/dashboard/settings/integrations" },
     { name: "Profile", icon: User, href: "/dashboard/profile" },
     { name: "Settings", icon: Settings, href: "/dashboard/settings" },
   ];

@@ -125,7 +125,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         <div className="mt-8 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-200">
           <p className="text-sm font-semibold text-emerald-900 mb-1">Need help?</p>
           <p className="text-xs text-emerald-700">
-            We're here 24/7. Just say "help" to your assistant.
+            We&apos;re here 24/7. Just say &quot;help&quot; to your assistant.
           </p>
         </div>
       </main>

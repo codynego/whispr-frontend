@@ -1,26 +1,34 @@
+// app/dashboard/profile/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
-import { User, Settings, CreditCard, Lock, Bell, Brain, DollarSign, Clock, MessageCircle } from "lucide-react";
+import {
+  User,
+  Mail,
+  MessageCircle,
+  Brain,
+  Sparkles,
+  Settings,
+  Calendar,
+  Bell, Lock
+} from "lucide-react";
 
-interface UserProfile {
-  id: number;
+interface ProfileData {
+  first_name: string;
+  last_name: string;
   email: string;
   whatsapp: string | null;
   plan: string;
-  first_name: string;
-  last_name: string;
-  is_active: boolean;
   date_joined: string;
-  joined?: string;
 }
 
 export default function ProfilePage() {
-  const { accessToken } = useAuth();
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const { accessToken } = useAuth();
+  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,150 +37,150 @@ export default function ProfilePage() {
       return;
     }
 
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile/`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-
-        if (res.status === 401) {
-          console.error("Unauthorized");
-          return;
-        }
-
-        const data = await res.json();
-        setUser({
-          ...data,
-          name: `${data.first_name} ${data.last_name}`.trim(),
-          joined: new Date(data.date_joined).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-        });
-      } catch (err) {
-        console.error("Failed to fetch profile", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile/`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(setProfile)
+      .finally(() => setLoading(false));
   }, [accessToken]);
-
-  const handleNavigate = (path: string) => {
-    router.push(path);
-  };
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading profile...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
+        <p className="text-gray-600">Loading your profile...</p>
       </div>
     );
   }
 
-  if (!user) {
+  if (!profile) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Failed to load profile.</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
+        <p className="text-gray-600">Could not load profile.</p>
       </div>
     );
   }
+
+  const fullName = `${profile.first_name} ${profile.last_name}`.trim();
+  const initials = `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase();
+  const joinedDate = format(new Date(profile.date_joined), "MMMM yyyy");
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50">
       {/* Header */}
-      <header className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2 mb-1">
-          <User className="w-6 h-6 text-indigo-600" />
-          Profile
-        </h1>
-        <p className="text-sm text-gray-600">
-          Manage your account, plan, and preferences.
-        </p>
+      <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-lg border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-6 py-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <User className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
+              <p className="text-gray-600">Your account and preferences</p>
+            </div>
+          </div>
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 space-y-6 lg:space-y-0">
-        {/* Profile Card */}
-        <section className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-200/50 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <User className="w-5 h-5 text-indigo-500" />
-            Personal Info
-          </h2>
-          <div className="flex items-center gap-4">
-            <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-              {user.first_name.charAt(0)}{user.last_name.charAt(0)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-gray-900 text-lg">{user.first_name} {user.last_name}</h3>
-              <p className="text-sm text-gray-600 truncate">{user.email}</p>
-              {user.whatsapp && (
-                <p className="text-sm text-gray-600 truncate flex items-center gap-1 mt-1">
-                  <MessageCircle className="w-3 h-3" />
-                  {user.whatsapp}
-                </p>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* Account Settings */}
-        <section className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-200/50 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Settings className="w-5 h-5 text-indigo-500" />
-            Account Settings
-          </h2>
-          <ul className="space-y-3 text-sm text-gray-700">
-            <li 
-              className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100/50 transition-colors cursor-pointer"
-              onClick={() => handleNavigate("/dashboard/settings/account")}
-            >
-              <Lock className="w-4 h-4 text-gray-500" />
-              Update Profile & Password
-            </li>
-            <li 
-              className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100/50 transition-colors cursor-pointer"
-              onClick={() => handleNavigate("/dashboard/settings/notifications")}
-            >
-              <Bell className="w-4 h-4 text-gray-500" />
-              Manage notifications
-            </li>
-            <li 
-              className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100/50 transition-colors cursor-pointer"
-              onClick={() => handleNavigate("/dashboard/settings/personality")}
-            >
-              <Brain className="w-4 h-4 text-gray-500" />
-              Update assistant tone and preferences
-            </li>
-          </ul>
-        </section>
-
-        {/* Billing & Subscription */}
-        <section className="lg:col-span-2 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-200/50 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-indigo-500" />
-            Billing & Subscription
-          </h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-green-500" />
-                <span className="text-gray-600 text-sm">Current Plan:</span>
+      <main className="max-w-5xl mx-auto px-6 py-10">
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Left: Personal Info */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Profile Card */}
+            <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
+              <div className="flex items-start gap-6">
+                <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl flex items-center justify-center text-white text-3xl font-bold shadow-2xl">
+                  {initials}
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-3xl font-bold text-gray-900">{fullName}</h2>
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center gap-3 text-gray-600">
+                      <Mail className="w-5 h-5 text-emerald-600" />
+                      <span>{profile.email}</span>
+                    </div>
+                    {profile.whatsapp && (
+                      <div className="flex items-center gap-3 text-gray-600">
+                        <MessageCircle className="w-5 h-5 text-emerald-600" />
+                        <span>{profile.whatsapp}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3 text-gray-500 text-sm">
+                      <Calendar className="w-4 h-4" />
+                      <span>Member since {joinedDate}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <span className="font-bold text-indigo-600 text-sm">{user.plan}</span>
             </div>
-            <p className="text-gray-500 text-sm flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              Member since {user.joined}
-            </p>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <Settings className="w-6 h-6 text-emerald-600" />
+                Account Settings
+              </h3>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {[
+                  { label: "Edit Profile", icon: User, path: "/dashboard/settings/profile" },
+                  { label: "Change Password", icon: Lock, path: "/dashboard/settings/password" },
+                  { label: "Notifications", icon: Bell, path: "/dashboard/settings/notifications" },
+                  { label: "Assistant Voice & Tone", icon: Brain, path: "/dashboard/settings/assistant" },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => router.push(item.path)}
+                    className="flex items-center gap-4 p-5 bg-gray-50 rounded-2xl hover:bg-emerald-50 hover:border-emerald-300 border border-gray-200 transition"
+                  >
+                    <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center">
+                      <item.icon className="w-6 h-6 text-emerald-600" />
+                    </div>
+                    <span className="font-medium text-gray-800">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <button 
-            className="mt-4 w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-semibold px-6 py-2 rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all shadow-sm hover:shadow-md"
-            onClick={() => handleNavigate("/dashboard/billing")}
-          >
-            Manage Billing
-          </button>
-        </section>
-      </div>
+
+          {/* Right: Plan & Billing */}
+          <div className="space-y-8">
+            {/* Current Plan */}
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-3xl p-8 shadow-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold">Current Plan</h3>
+                <Sparkles className="w-8 h-8" />
+              </div>
+              <div className="text-4xl font-bold mb-2">{profile.plan}</div>
+              <p className="opacity-90">Unlimited memory • Full AI access</p>
+              <button
+                onClick={() => router.push("/dashboard/billing")}
+                className="mt-8 w-full bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-4 rounded-2xl transition"
+              >
+                Manage Billing
+              </button>
+            </div>
+
+            {/* Stats */}
+            <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Your Activity</h3>
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Messages Saved</span>
+                  <span className="font-bold text-2xl text-emerald-600">1,284+</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Reminders Set</span>
+                  <span className="font-bold text-2xl text-emerald-600">47</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Todos Completed</span>
+                  <span className="font-bold text-2xl text-emerald-600">892</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

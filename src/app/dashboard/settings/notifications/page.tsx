@@ -51,9 +51,9 @@ export default function NotificationSettings() {
       });
 
       setPrefs(prev => ({ ...prev, [key]: newValue }));
-      toast.success("Notification settings updated");
+      toast.success("Updated");
     } catch {
-      toast.error("Failed to update settings");
+      toast.error("Failed to save");
     } finally {
       setSaving(false);
     }
@@ -62,7 +62,7 @@ export default function NotificationSettings() {
   const channels = [
     {
       name: "WhatsApp Alerts",
-      description: "Get reminders and updates directly in your chat",
+      desc: "Reminders in your chat",
       icon: MessageCircle,
       active: true,
       enabled: prefs.whatsapp_notifications,
@@ -70,7 +70,7 @@ export default function NotificationSettings() {
     },
     {
       name: "Daily Morning Brief",
-      description: "Your personalized AI summary every morning",
+      desc: "Your AI summary every morning",
       icon: Sparkles,
       active: true,
       enabled: prefs.daily_summary,
@@ -78,98 +78,89 @@ export default function NotificationSettings() {
     },
     {
       name: "Email Notifications",
-      description: "Important updates delivered to your inbox",
+      desc: "Coming soon",
       icon: Mail,
       active: false,
     },
     {
       name: "Push Notifications",
-      description: "Instant alerts on your phone",
+      desc: "Coming soon",
       icon: Smartphone,
       active: false,
     },
     {
       name: "SMS Alerts",
-      description: "Critical reminders via text message",
+      desc: "Coming soon",
       icon: Bell,
       active: false,
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 py-12 px-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-emerald-600 rounded-3xl shadow-2xl mb-6">
-            <Bell className="w-10 h-10 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 py-10 px-6">
+      <div className="max-w-3xl mx-auto">
+        {/* Compact Header */}
+        <div className="text-center mb-10">
+          <div className="w-16 h-16 bg-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Bell className="w-9 h-9 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900">Notification Preferences</h1>
-          <p className="text-lg text-gray-600 mt-3">
-            Choose how your second brain stays in touch
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+          <p className="text-gray-600 mt-2">How your second brain reaches you</p>
         </div>
 
-        <div className="space-y-6">
-          {channels.map((channel) => (
+        {/* Compact Cards */}
+        <div className="space-y-4">
+          {channels.map((c) => (
             <div
-              key={channel.name}
-              className={`bg-white rounded-3xl shadow-xl border ${
-                channel.active ? "border-gray-100" : "border-gray-200 opacity-75"
-              } p-8 transition-all hover:shadow-2xl`}
+              key={c.name}
+              className={`bg-white rounded-2xl p-6 shadow-sm border ${
+                c.active ? "border-gray-100" : "border-gray-200 opacity-70"
+              } flex items-center justify-between transition hover:shadow-md`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                  <div className={`w-16 h-16 rounded-3xl flex items-center justify-center shadow-lg ${
-                    channel.active
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-gray-100 text-gray-500"
-                  }`}>
-                    <channel.icon className="w-8 h-8" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
-                      {channel.name}
-                      {!channel.active && (
-                        <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                          Coming Soon
-                        </span>
-                      )}
-                    </h3>
-                    <p className="text-gray-600 mt-1">{channel.description}</p>
-                  </div>
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                  c.active ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
+                }`}>
+                  <c.icon className="w-6 h-6" />
                 </div>
-
-                {channel.active ? (
-                  <button
-                    onClick={channel.onToggle}
-                    disabled={saving}
-                    className={`relative w-14 h-8 rounded-full transition-all ${
-                      channel.enabled
-                        ? "bg-emerald-600"
-                        : "bg-gray-300"
-                    } ${saving ? "opacity-70" : ""}`}
-                  >
-                    <span
-                      className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform ${
-                        channel.enabled ? "translate-x-6" : "translate-x-0"
-                      }`}
-                    />
-                  </button>
-                ) : (
-                  <div className="w-14 h-8 bg-gray-200 rounded-full" />
-                )}
+                <div>
+                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                    {c.name}
+                    {!c.active && (
+                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                        Soon
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-sm text-gray-600">{c.desc}</p>
+                </div>
               </div>
+
+              {c.active ? (
+                <button
+                  onClick={c.onToggle}
+                  disabled={saving}
+                  className={`relative w-12 h-7 rounded-full transition ${
+                    c.enabled ? "bg-emerald-600" : "bg-gray-300"
+                  } ${saving ? "opacity-70" : ""}`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
+                      c.enabled ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              ) : (
+                <div className="w-12 h-7 bg-gray-200 rounded-full" />
+              )}
             </div>
           ))}
         </div>
 
-        {/* Footer Hint */}
-        <div className="mt-16 text-center">
-          <p className="text-sm text-gray-500">
-            You’re always in control. We’ll never spam you — only the good stuff
-          </p>
-        </div>
+        {/* Subtle Footer */}
+        <p className="text-center text-xs text-gray-500 mt-10">
+          We only send what matters • Never spam
+        </p>
       </div>
     </div>
   );

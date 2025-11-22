@@ -13,6 +13,66 @@ interface Message {
   created_at: string;
 }
 
+// === Smart Markdown → React renderer ===
+const renderMessage = (content: string): React.ReactNode => {
+  const lines = content.split("\n").map(line => line.trim()).filter(Boolean);
+
+  // Handle bullet lists: - Item or • Item
+  if (lines.every(line => /^\s*[-•]\s/.test(line))) {
+    return (
+      <ul className="space-y-2">
+        {lines.map((line, i) => {
+          const text = line.replace(/^\s*[-•]\s+/, "").trim();
+          const formatted = formatInline(text);
+          return (
+            <li key={i} className="flex items-start gap-3">
+              <span className="text-emerald-600 mt-1.5">•</span>
+              <span className="text-gray-800 leading-relaxed">{formatted}</span>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+
+  // Handle numbered lists: 1. Item
+  if (lines.every(line => /^\s*\d+\.\s/.test(line))) {
+    return (
+      <ol className="space-y-2 list-decimal pl-6">
+        {lines.map((line, i) => {
+          const text = line.replace(/^\s*\d+\.\s+/, "").trim();
+          const formatted = formatInline(text);
+          return (
+            <li key={i} className="text-gray-800 leading-relaxed pl-2">{formatted}</li>
+          );
+        })}
+      </ol>
+    );
+  }
+
+  // Default: paragraph with inline formatting
+  return lines.map((line, i) => (
+    <p key={i} className="mb-3 last:mb-0 text-gray-800 leading-relaxed whitespace-pre-wrap">
+      {formatInline(line)}
+    </p>
+  ));
+};
+
+// Inline: **bold**, *italic*, plain text
+const formatInline = (text: string): React.ReactNode => {
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g).filter(Boolean);
+
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("*") && part.endsWith("*")) {
+      return <em key={i} className="italic text-gray-700">{part.slice(1, -1)}</em>;
+    }
+    return <span key={i}>{part}</span>;
+  });
+};
+
 export default function AssistantPage() {
   const { accessToken } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -27,7 +87,7 @@ export default function AssistantPage() {
 
   useEffect(() => scrollToBottom(), [messages]);
 
-  // Load chat history
+  // Load history
   useEffect(() => {
     if (!accessToken) return;
 
@@ -49,34 +109,29 @@ export default function AssistantPage() {
       });
   }, [accessToken]);
 
-  // Polling for async response
+  // Polling
   useEffect(() => {
     if (!currentTaskId || !accessToken) return;
 
     const interval = setInterval(async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/assistant/chat/response/${currentTaskId}/`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/assistant/chat/response/${currentTaskId}/`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
 
-        if (!res.ok) return;
+      if (!res.ok) return;
 
-        const data = await res.json();
-        if (data.status === "done") {
-          setMessages(prev => [...prev, {
-            id: Date.now(),
-            role: "assistant",
-            content: data.assistant_reply || "Got it.",
-            created_at: new Date().toISOString(),
-          }]);
-          setLoading(false);
-          setCurrentTaskId(null);
-          clearInterval(interval);
-        }
-      } catch (err) {
-        clearInterval(interval);
+      const data = await res.json();
+      if (data.status === "done") {
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          role: "assistant",
+          content: data.assistant_reply || "Got it.",
+          created_at: new Date().toISOString(),
+        }]);
         setLoading(false);
+        setCurrentTaskId(null);
+        clearInterval(interval);
       }
     }, 1200);
 
@@ -176,18 +231,14 @@ export default function AssistantPage() {
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-lg px-6 py-4 rounded-3xl shadow-sm ${
+                  className={`max-w-2xl px-6 py-4 rounded-3xl shadow-sm ${
                     msg.role === "user"
                       ? "bg-emerald-600 text-white"
                       : "bg-white text-gray-800 border border-gray-100"
                   }`}
                 >
                   <div className="prose prose-sm max-w-none">
-                    {msg.content.split("\n").map((line, i) => (
-                      <p key={i} className="mb-2 last:mb-0 whitespace-pre-wrap">
-                        {line || <br />}
-                      </p>
-                    ))}
+                    {renderMessage(msg.content)}
                   </div>
                   <p className={`text-xs mt-3 ${msg.role === "user" ? "text-emerald-100" : "text-gray-500"}`}>
                     {format(new Date(msg.created_at), "h:mm a")}

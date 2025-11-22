@@ -12,7 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 // === Types ===
 interface DailySummary {
   id: number;
-  content: string;
+  summary_text: string;
   summary_date: string;
 }
 
@@ -193,10 +193,10 @@ export default function WhisoneDashboard() {
                 Morning Briefing
               </h3>
 
-              {overview?.daily_summary?.content ? (
+              {overview?.daily_summary?.summary_text ? (
                 <div
                   className="prose prose-invert max-w-none text-lg leading-relaxed space-y-6"
-                  dangerouslySetInnerHTML={{ __html: safeContent(overview.daily_summary.content) }}
+                  dangerouslySetInnerHTML={{ __html: safeContent(overview.daily_summary.summary_text) }}
                 />
               ) : (
                 <div className="text-white/90 text-lg space-y-4">

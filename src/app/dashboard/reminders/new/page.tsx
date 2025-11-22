@@ -215,7 +215,7 @@ export default function NewReminder() {
 
             {!datetime && (
               <p className="mt-4 text-sm text-gray-400">
-                No time set — this reminder won't trigger a notification
+                No time set — this reminder won&apos;t trigger a notification
               </p>
             )}
           </div>

@@ -173,7 +173,7 @@ export default function ReminderEditPage() {
                 <div className="mt-5 p-5 bg-emerald-50 border border-emerald-200 rounded-2xl">
                   <div className="flex items-center gap-3 text-emerald-700">
                     <Bell className="w-5 h-5" />
-                    <span className="font-medium">You'll be reminded:</span>
+                    <span className="font-medium">You&apos;ll be reminded:</span>
                   </div>
                   <p className="mt-2 text-emerald-900 font-semibold text-lg">
                     {formatDateTime()}
@@ -190,7 +190,7 @@ export default function ReminderEditPage() {
 
               {!reminder.remind_at && (
                 <p className="mt-5 text-gray-500 text-sm">
-                  No date set — this reminder will be saved but won't trigger a notification.
+                  No date set — this reminder will be saved but won&apos;t trigger a notification.
                 </p>
               )}
             </div>

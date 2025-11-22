@@ -249,7 +249,7 @@ export default function WhisoneDashboard() {
                 <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-100 text-center">
                   <Sparkles className="w-10 h-10 text-purple-600 mx-auto mb-3" />
                   <p className="text-3xl font-bold text-gray-900">{overview?.has_summary ? "1" : "0"}</p>
-                  <p className="text-sm text-gray-600">Today's Summary</p>
+                  <p className="text-sm text-gray-600">Today&apos;s Summary</p>
                 </div>
               </div>
             </div>

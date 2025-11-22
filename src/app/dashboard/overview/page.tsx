@@ -1,420 +1,266 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { MessageCircle, Zap, Clock, TrendingUp, TrendingDown, CheckCircle, Eye, Settings, Sparkles, Mail, MessageSquare, FileText, User, Brain } from "lucide-react";
-import Chart from "chart.js/auto";
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import {
+  Brain, Search, Settings, Clock, CheckCircle2, Calendar, Sparkles,
+  FileText, Lightbulb, AlertCircle, 
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
-interface Summary {
-  greeting: string;
-  summary_text: string;
-  suggestions: string[];
-}
-
-interface ChannelBreakdown {
-  [key: string]: number;
-}
-
-interface Stats {
-  total_channels: number;
-  total_messages: number;
-  unread_messages: number;
-  important_messages: number;
-  channel_breakdown: ChannelBreakdown;
-}
-
-interface Task {
+interface DailySummary {
   id: number;
-  task_type: string;
-  status: string;
-  input_text: string;
-  due_datetime: string | null;
-  is_completed: boolean;
+  summary_date: string;
+  content: string;
+}
+
+interface Note {
+  id: number;
+  content: string;
   created_at: string;
 }
 
-interface Performance {
-  ai_tasks_completed: number;
-  important_threads: number;
-  missed_messages: number;
-  connected_channels: number;
-  trend: string;
+interface Reminder {
+  id: number;
+  text: string;
+  remind_at: string;
+  completed: boolean;
+  created_at: string;
 }
 
-interface DashboardData {
-  summary: Summary;
-  stats: Stats;
-  tasks: Task[];
-  performance: Performance;
+interface Todo {
+  id: number;
+  task: string;
+  done: boolean;
+  created_at: string;
 }
 
-export default function OverviewPage() {
-  const { accessToken } = useAuth();
-  const [userName] = useState("Abednego");
-  const [isCompactMode, setIsCompactMode] = useState(false);
-  const [data, setData] = useState<DashboardData | null>(null);
+interface OverviewData {
+  has_summary: boolean;
+  daily_summary: DailySummary | null;
+  stats: {
+    total_reminders: number;
+    completed_todos: number;
+  };
+  recent_notes: Note[];
+}
+
+export default function WhisoneDashboard() {
+  const { user, accessToken } = useAuth();
+  const [overview, setOverview] = useState<OverviewData | null>(null);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const currentDate = new Date().toLocaleDateString('en-US', {
-  weekday: 'long',
-  month: 'short',
-  day: 'numeric'
-});
+  const today = format(new Date(), "EEEE, MMMM d");
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
-
-  const lineChartRef = useRef<Chart | null>(null);
-
+  // Fetch all real data
   useEffect(() => {
-    if (!accessToken) {
-      setLoading(false);
-      return;
-    }
+    if (!accessToken) return;
 
-    const fetchData = async () => {
+    const fetchAll = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/overview/`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+        const [overviewRes, notesRes, remindersRes, todosRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/overview/`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/notes/`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+        ]);
 
-        if (res.status === 401) {
-          console.error("Unauthorized");
-          return;
-        }
-
-        const fetchedData = await res.json();
-        setData(fetchedData as DashboardData);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        if (overviewRes.ok) setOverview(await overviewRes.json());
+        if (notesRes.ok) setNotes((await notesRes.json()).slice(0, 6));
+        if (remindersRes.ok) setReminders(await remindersRes.json());
+        if (todosRes.ok) setTodos(await todosRes.json());
+      } catch (err) {
+        console.error("Failed to load data", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchAll();
   }, [accessToken]);
 
-  useEffect(() => {
-    const lineCtx = document.getElementById("miniChart") as HTMLCanvasElement;
-    if (lineCtx) {
-      if (lineChartRef.current) {
-        lineChartRef.current.destroy();
-      }
-      lineChartRef.current = new Chart(lineCtx, {
-        type: "line",
-        data: {
-          labels: ["8AM", "9AM", "10AM", "11AM", "12PM", "1PM", "2PM"],
-          datasets: [{
-            label: "Messages",
-            data: [5, 12, 8, 15, 10, 18, 14],
-            borderColor: "rgb(59, 130, 246)",
-            backgroundColor: "rgba(59, 130, 246, 0.1)",
-            tension: 0.4,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { 
-            x: { display: false },
-            y: { display: false },
-          },
-        },
-      });
-    }
+  // Derive today’s reminders & overdue todos
+  const todayReminders = reminders
+    .filter(r => !r.completed && new Date(r.remind_at).toDateString() === new Date().toDateString());
 
-    return () => {
-      if (lineChartRef.current) {
-        lineChartRef.current.destroy();
-        lineChartRef.current = null;
-      }
-    };
-  }, [isCompactMode, loading]);
+  const overdueTodos = todos.filter(t => !t.done && new Date(t.created_at) < new Date(Date.now() - 86400000));
 
   if (loading) {
-    return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">Loading...</div>;
-  }
-
-  if (!data) {
-    return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">Error loading data</div>;
-  }
-
-  const { summary, stats, tasks, performance } = data;
-
-  const aiSummary = summary.summary_text;
-
-  const inboxInsights = {
-    total: stats.total_messages,
-    unread: stats.unread_messages,
-    prioritized: stats.important_messages,
-    responseTime: performance.trend,
-    channels: Object.entries(stats.channel_breakdown).reduce((acc, [channel, count]) => {
-      const percentage = stats.total_messages > 0 ? Math.round((count / stats.total_messages) * 100) : 0;
-      acc[channel] = percentage;
-      return acc;
-    }, {} as Record<string, number>),
-  };
-
-  const focusSuggestions = summary.suggestions[0] || "You’ve got important threads that require fast replies. Should I bring them up first?";
-
-  const aiToDos = tasks
-    .filter((t: Task) => !t.is_completed)
-    .slice(0, 3)
-    .map((t: Task) => ({
-      task: t.input_text,
-      icon: t.task_type === 'reply' ? MessageCircle : t.task_type === 'summarize' ? FileText : CheckCircle,
-    }));
-
-  const aiSuggestions = summary.suggestions.slice(1);
-
-  const performanceMetrics = [
-    { metric: "AI Tasks Completed", today: performance.ai_tasks_completed.toString(), trend: "↑" },
-    { metric: "Important Threads", today: performance.important_threads.toString(), trend: performance.trend },
-    { metric: "Missed Messages", today: performance.missed_messages.toString(), trend: "↓" },
-    { metric: "Connected Channels", today: performance.connected_channels.toString(), trend: "👍" },
-  ];
-
-  const aiComment = `Great consistency today, ${userName} — you’ve replied well. Trend: ${performance.trend}`;
-
-  const compactStats = {
-    totalMessages: stats.total_messages,
-    unread: stats.unread_messages,
-    urgent: stats.important_messages,
-    tasksPending: tasks.filter((t: Task) => !t.is_completed).length,
-    tasksCompleted: tasks.filter((t: Task) => t.is_completed).length,
-    trend: performance.trend,
-  };
-
-  if (isCompactMode) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Compact Mode Header */}
-        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">Whisone Dashboard — {currentDate}</h1>
-          <button
-            onClick={() => setIsCompactMode(false)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
-          >
-            Assistant Mode
-          </button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
+        <div className="text-center">
+          <Brain className="w-16 h-16 text-emerald-600 animate-pulse mx-auto mb-4" />
+          <p className="text-xl text-gray-600">Loading your second brain...</p>
         </div>
-
-        {/* Compact Stats Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center">
-            <p className="text-2xl font-bold text-gray-900">{compactStats.totalMessages}</p>
-            <p className="text-sm text-gray-600">Total Messages Today</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center">
-            <p className="text-2xl font-bold text-gray-900">{compactStats.unread}</p>
-            <p className="text-sm text-gray-600">Unread</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center">
-            <p className="text-2xl font-bold text-red-600">{compactStats.urgent}</p>
-            <p className="text-sm text-gray-600">Urgent</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center">
-            <p className="text-2xl font-bold text-gray-900">{compactStats.tasksCompleted}</p>
-            <p className="text-sm text-gray-600">Tasks Completed</p>
-          </div>
-        </section>
-
-        {/* Compact Summary */}
-        <section className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Inbox Summary</h2>
-          <p className="text-gray-700 mb-4">{stats.total_messages} new messages, {stats.unread_messages} unread, {stats.important_messages} urgent</p>
-          <p className="text-gray-700 mb-4">Tasks: {compactStats.tasksPending} pending | {compactStats.tasksCompleted} completed</p>
-          <p className="text-green-600 font-medium">Trend: {compactStats.trend}</p>
-          <div className="h-32 mt-4">
-            <canvas id="miniChart"></canvas>
-          </div>
-        </section>
       </div>
     );
   }
 
-  // Assistant Mode (default full layout)
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* Assistant Mode Header */}
-      <section className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 lg:p-8 shadow-sm border border-white/20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10" />
-        <div className="relative">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Brain className="w-6 h-6 text-blue-600" />
-              AI Summary — {currentDate}
-            </h1>
-            <button
-              onClick={() => setIsCompactMode(true)}
-              className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition-colors"
-            >
-              Compact Mode
-            </button>
-          </div>
-          <p className="text-lg text-gray-700 mb-4 leading-relaxed">{summary.greeting}</p>
-          <p className="text-lg text-gray-700 mb-4 leading-relaxed">{aiSummary}</p>
-          <div className="flex gap-2 mb-6">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors flex items-center gap-1">
-              <Eye className="w-4 h-4" />
-              Review Drafts
-            </button>
-            <button className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors flex items-center gap-1">
-              <CheckCircle className="w-4 h-4" />
-              Mark Done
-            </button>
-            <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition-colors">
-              Ignore
-            </button>
-          </div>
-          <div className="flex items-center gap-6 text-sm text-gray-600">
-            <div className="flex items-center gap-1">
-              <TrendingUp className="w-4 h-4 text-green-600" />
-              <span>Replies ↑</span>
+    <>
+      {/* Navigation */}
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
+              <Brain className="w-6 h-6 text-white" />
             </div>
-            <div className="flex items-center gap-1">
-              <Clock className="w-4 h-4 text-yellow-600" />
-              <span>Time ↓</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <MessageCircle className="w-4 h-4 text-blue-600" />
-              <span>Conversations</span>
-            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Whisone</h1>
           </div>
+          <nav className="hidden md:flex items-center gap-6">
+            <button className="flex items-center gap-3 px-4 py-2.5 bg-gray-100 rounded-xl hover:bg-gray-200 transition">
+              <Search className="w-5 h-5 text-gray-600" />
+              <span className="text-gray-700">Search your memory...</span>
+            </button>
+            <button className="p-2 hover:bg-gray-100 rounded-xl"><Settings className="w-6 h-6" /></button>
+            <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center text-white font-semibold">
+              {user?.first_name?.[0] || "U"}
+            </div>
+          </nav>
         </div>
-      </section>
+      </header>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Middle Section — Inbox Insights & Focus */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Inbox Insights */}
-          <section className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/20">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Mail className="w-5 h-5" />
-              Inbox Insights
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <div className="space-y-2 text-sm">
-                  <p><span className="font-semibold">Total Messages Today:</span> {inboxInsights.total}</p>
-                  <p><span className="font-semibold">Unread:</span> {inboxInsights.unread}</p>
-                  <p><span className="font-semibold">AI Prioritized:</span> {inboxInsights.prioritized}</p>
-                  <p><span className="font-semibold">Response Time:</span> <span className="text-green-600">{inboxInsights.responseTime}</span></p>
-                </div>
-                <div className="mt-4 space-y-1 text-xs">
-                  <p><span className="font-semibold">Top Channels:</span></p>
-                  {Object.entries(inboxInsights.channels).map(([channel, percentage]) => (
-                    <p key={channel}>{channel} {percentage}%</p>
-                  ))}
-                </div>
-              </div>
-              <div className="h-48">
-                <canvas id="miniChart"></canvas>
-              </div>
-            </div>
-          </section>
+      <main className="max-w-7xl mx-auto px-5 py-8">
+        {/* Greeting */}
+        <section className="mb-10 text-center md:text-left">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+            {greeting}, {user?.first_name || "there"}
+          </h2>
+          <p className="text-lg text-gray-600">
+            You have <strong>{todayReminders.length} reminder{todayReminders.length !== 1 && "s"}</strong> today
+            {overdueTodos.length > 0 && <> and <strong className="text-red-600">{overdueTodos.length} overdue</strong></>}
+          </p>
+        </section>
 
-          {/* Focus Mode */}
-          <section className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/20">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-yellow-600" />
-              Focus Mode
-            </h2>
-            <p className="text-gray-700 mb-4 leading-relaxed">{focusSuggestions}</p>
-            <div className="flex gap-2">
-              <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-1">
-                <MessageSquare className="w-4 h-4" />
-                Open Priority Threads
+        {/* Quick Actions */}
+        <section className="mb-10 overflow-x-auto md:overflow-visible">
+          <div className="flex gap-5 pb-4 md:pb-0 md:justify-center">
+            {[
+              { label: "Create Note", icon: FileText, color: "emerald" },
+              { label: "Add Reminder", icon: Clock, color: "amber" },
+              { label: "New Todo", icon: CheckCircle2, color: "blue" },
+              { label: "Add Event", icon: Calendar, color: "purple" },
+              { label: "Ask Whisone", icon: Sparkles, color: "pink" },
+            ].map((a) => (
+              <button key={a.label} className="flex flex-col items-center gap-3 min-w-[120px] p-6 bg-white rounded-2xl shadow-md hover:shadow-xl border-2 border-transparent hover:border-emerald-300 transition-all hover:-translate-y-1">
+                <div className={`w-14 h-14 rounded-2xl bg-${a.color}-100 flex items-center justify-center`}>
+                  <a.icon className={`w-8 h-8 text-${a.color}-600`} />
+                </div>
+                <span className="text-sm font-medium text-gray-800">{a.label}</span>
               </button>
-              <button className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors flex items-center justify-center gap-1">
-                <Sparkles className="w-4 h-4" />
-                Let AI Handle Follow-ups
-              </button>
-            </div>
-          </section>
-        </div>
-
-        {/* Right Panel — Tasks & Smart Actions */}
-        <section className="lg:col-span-1 space-y-6">
-          {/* AI To-Dos */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/20">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">AI To-Dos</h3>
-            <div className="space-y-3">
-              {aiToDos.map((todo, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <todo.icon className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{todo.task}</p>
-                    <div className="flex gap-2 mt-2">
-                      <button className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200 transition-colors">
-                        <CheckCircle className="w-3 h-3 inline" /> Done
-                      </button>
-                      <button className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 transition-colors">
-                        <Eye className="w-3 h-3 inline" /> View
-                      </button>
-                      <button className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200 transition-colors">
-                        <Settings className="w-3 h-3 inline" /> Delegate
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* AI Suggestions */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/20">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Suggestions</h3>
-            <ul className="space-y-2 text-sm text-gray-600">
-              {aiSuggestions.map((suggestion, i) => (
-                <li key={i} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                  <User className="w-3 h-3 text-blue-600" />
-                  {suggestion}
-                </li>
-              ))}
-            </ul>
-            <button className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-sm hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center gap-1">
-              <Sparkles className="w-4 h-4" />
-              Generate Today’s Summary
-            </button>
+            ))}
           </div>
         </section>
-      </div>
 
-      {/* Bottom Section — Performance & Mood */}
-      <section className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/20">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Performance & Mood</h2>
-        <div className="overflow-x-auto mb-6">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3">Metric</th>
-                <th className="text-left py-3">Today</th>
-                <th className="text-left py-3">Trend</th>
-              </tr>
-            </thead>
-            <tbody>
-              {performanceMetrics.map((metric, i) => (
-                <tr key={i} className="border-b border-gray-100">
-                  <td className="py-3">{metric.metric}</td>
-                  <td className="py-3 font-semibold">{metric.today}</td>
-                  <td className="py-3">
-                    <span className={`flex items-center gap-1 ${metric.trend.includes("↓") || metric.trend === "👍" ? "text-green-600" : "text-blue-600"}`}>
-                      {metric.trend.includes("↓") && <TrendingDown className="w-4 h-4" />}
-                      {metric.trend.includes("↑") && <TrendingUp className="w-4 h-4" />}
-                      {metric.trend === "👍" && <CheckCircle className="w-4 h-4" />}
-                      {metric.trend}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Left: Daily Summary + Today at a Glance + Recent Notes */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Daily Summary */}
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-3xl p-8 shadow-xl">
+              <h3 className="text-2xl font-bold mb-6">Morning Briefing</h3>
+              {overview?.daily_summary ? (
+                <div className="prose prose-invert max-w-none text-lg leading-relaxed space-y-4"
+                  dangerouslySetInnerHTML={{ __html: overview.daily_summary.content.replace(/\n/g, "<br />") }}
+                />
+              ) : (
+                <p className="text-white/90 text-lg">Your AI is watching everything. Summary coming tonight.</p>
+              )}
+            </div>
+
+            {/* Today at a Glance */}
+            <div className="bg-white rounded-3xl p-8 shadow-md border border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Today at a Glance</h3>
+              <div className="space-y-4">
+                {todayReminders.map(r => (
+                  <div key={r.id} className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-200">
+                    <div className="flex items-center gap-4">
+                      <Clock className="w-5 h-5 text-amber-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">{r.text}</p>
+                        <p className="text-sm text-gray-600">{format(new Date(r.remind_at), "h:mm a")}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {overdueTodos.map(t => (
+                  <div key={t.id} className="flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-200">
+                    <div className="flex items-center gap-4">
+                      <AlertCircle className="w-5 h-5 text-red-600" />
+                      <p className="font-medium text-gray-900">{t.task}</p>
+                    </div>
+                    <input type="checkbox" className="w-5 h-5 rounded text-emerald-600" />
+                  </div>
+                ))}
+                {todayReminders.length === 0 && overdueTodos.length === 0 && (
+                  <p className="text-gray-500 text-center py-8">All clear for today</p>
+                )}
+              </div>
+            </div>
+
+            {/* Recent Notes */}
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-5">Recent Memories</h3>
+              <div className="grid md:grid-cols-2 gap-5">
+                {notes.map(note => (
+                  <div key={note.id} className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 hover:shadow-lg transition">
+                    <p className="text-gray-900 text-sm leading-relaxed line-clamp-4">{note.content}</p>
+                    <p className="text-xs text-gray-500 mt-4">{format(new Date(note.created_at), "MMM d, h:mm a")}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Stats + Smart Suggestion */}
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-5">Your Brain</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-100">
+                  <FileText className="w-8 h-8 text-emerald-600 mb-3" />
+                  <p className="text-2xl font-bold text-gray-900">{notes.length}+</p>
+                  <p className="text-sm text-gray-600">Notes Saved</p>
+                </div>
+                <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-100">
+                  <Clock className="w-8 h-8 text-amber-600 mb-3" />
+                  <p className="text-2xl font-bold text-gray-900">{overview?.stats.total_reminders || 0}</p>
+                  <p className="text-sm text-gray-600">Active Reminders</p>
+                </div>
+                <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-100">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600 mb-3" />
+                  <p className="text-2xl font-bold text-gray-900">{overview?.stats.completed_todos || 0}</p>
+                  <p className="text-sm text-gray-600">Todos Completed</p>
+                </div>
+                <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-100">
+                  <Sparkles className="w-8 h-8 text-purple-600 mb-3" />
+                  <p className="text-2xl font-bold text-gray-900">{overview?.has_summary ? 1 : 0}</p>
+                  <p className="text-sm text-gray-600">Today’s Summary</p>
+                </div>
+              </div>
+            </div>
+
+            {(overdueTodos.length > 0 || todayReminders.length > 0) && (
+              <div className="bg-red-50 rounded-3xl p-6 border-2 border-red-200">
+                <div className="flex items-center gap-3 mb-4">
+                  <Lightbulb className="w-7 h-7 text-red-600" />
+                  <h4 className="text-lg font-bold text-gray-900">Smart Suggestion</h4>
+                </div>
+                <p className="text-gray-800 mb-4">
+                  You have {overdueTodos.length > 0 ? "overdue tasks" : "tasks due today"}. Want to clear them now?
+                </p>
+                <button className="w-full bg-red-600 text-white py-3 rounded-xl hover:bg-red-700 transition font-medium">
+                  Tackle Now
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-        <p className="text-gray-700 italic text-center">{aiComment}</p>
-      </section>
-    </div>
+      </main>
+    </>
   );
 }

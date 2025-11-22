@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Send, Sparkles, Clock, ArrowUp, Brain } from "lucide-react";
+import { Sparkles, ArrowUp, Brain } from "lucide-react";
 import { format } from "date-fns";
 
 interface Message {

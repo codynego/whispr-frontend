@@ -9,7 +9,7 @@ import { toast } from "sonner";
 interface ConnectedAccount {
   id: number;
   provider: "gmail";
-  email: string;
+  external_id: string;
   connected_at: string;
 }
 
@@ -115,11 +115,11 @@ export default function IntegrationsPage() {
                     <div className="w-9 h-9 bg-emerald-600 rounded-2xl flex items-center justify-center">
                       <Mail className="w-4.5 h-4.5 text-white" />
                     </div>
-                    <span className="font-medium text-gray-900 text-sm">{acc.email}</span>
+                    <span className="font-medium text-gray-900 text-sm">{acc.external_id}</span>
                   </div>
 
                   <button
-                    onClick={() => disconnect(acc.id, acc.email)}
+                    onClick={() => disconnect(acc.id, acc.external_id)}
                     className="w-8 h-8 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition flex items-center justify-center"
                   >
                     <X className="w-4 h-4" />

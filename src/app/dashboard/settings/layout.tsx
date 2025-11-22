@@ -116,7 +116,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       </header>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-2 sm:px-2 lg:px-8 py-2 lg:py-6">
+      <main className="max-w-6xl mx-auto lg:px-8 lg:py-6">
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8 lg:p-12">
           {children}
         </div>

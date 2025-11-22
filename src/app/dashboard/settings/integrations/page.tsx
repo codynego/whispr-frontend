@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Mail, MessageCircle, Sparkles, Check, X } from "lucide-react";
+import { Mail, MessageCircle, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface ConnectedAccount {
@@ -48,7 +48,7 @@ export default function IntegrationsPage() {
   };
 
   const disconnect = async (accountId: number, email: string) => {
-    if (!confirm(`Disconnect ${email}? Calendar access will be removed.`)) return;
+    if (!confirm(`Disconnect ${email}?`)) return;
 
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/integrations/${accountId}/deactivate/`, {
       method: "PATCH",
@@ -56,7 +56,7 @@ export default function IntegrationsPage() {
     });
 
     setAccounts(prev => prev.filter(a => a.id !== accountId));
-    toast.success(`${email} disconnected`);
+    toast.success("Disconnected");
   };
 
   if (loading) {
@@ -70,87 +70,78 @@ export default function IntegrationsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50">
       {/* Header */}
-      <div className="text-center pt-8 pb-10">
-        <div className="w-16 h-16 bg-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-lg">
-          <Sparkles className="w-9 h-9 text-white" />
+      <div className="text-center pt-8 pb-8">
+        <div className="w-14 h-14 bg-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <Sparkles className="w-8 h-8 text-white" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900">Integrations</h1>
-        <p className="text-gray-600 mt-2">Connect your world</p>
+        <h1 className="text-2xl font-bold text-gray-900">Integrations</h1>
       </div>
 
-      {/* Gmail + Calendar Section */}
+      {/* Gmail + Calendar */}
       <div className="pb-20">
-        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-2">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-orange-600 rounded-3xl flex items-center justify-center shadow-lg">
-                <Mail className="w-7 h-7 text-white" />
+        <div className="bg-white rounded-3xl shadow-lg border border-gray-100">
+          {/* Top: Title + Connect */}
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-600 rounded-3xl flex items-center justify-center shadow-lg">
+                  <Mail className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Gmail + Calendar</h3>
+                  <p className="text-sm text-gray-600">Email & calendar sync</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">Gmail + Calendar</h3>
-                <p className="text-sm text-gray-600">Email and calendar sync</p>
-              </div>
-            </div>
 
-            {/* Always show Connect button */}
-            <button
-              onClick={connectGmail}
-              disabled={loading}
-              className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-medium hover:bg-emerald-700 disabled:opacity-50 transition shadow-lg"
-            >
-              {loading ? "Connecting..." : "+ Connect Gmail"}
-            </button>
+              <button
+                onClick={connectGmail}
+                disabled={loading}
+                className="px-5 py-2.5 bg-emerald-600 text-white rounded-2xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition shadow-md"
+              >
+                {loading ? "Connecting..." : "+ Connect"}
+              </button>
+            </div>
           </div>
 
-          {/* List of Connected Accounts */}
+          {/* Connected Accounts */}
           {accounts.length > 0 ? (
-            <div className="space-y-3 pt-5 border-t border-gray-100">
-              <p className="text-sm font-medium text-gray-700 mb-3">
-                Connected accounts ({accounts.length})
-              </p>
+            <div className="p-5 space-y-3">
               {accounts.map((acc) => (
                 <div
                   key={acc.id}
                   className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-2xl border border-emerald-200"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center">
-                      <Check className="w-5 h-5 text-white" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-emerald-600 rounded-2xl flex items-center justify-center">
+                      <Mail className="w-4.5 h-4.5 text-white" />
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{acc.email}</p>
-                      <p className="text-xs text-gray-500">
-                        Connected {new Date(acc.connected_at).toLocaleDateString()}
-                      </p>
-                    </div>
+                    <span className="font-medium text-gray-900 text-sm">{acc.email}</span>
                   </div>
 
                   <button
                     onClick={() => disconnect(acc.id, acc.email)}
-                    className="px-4 py-2 bg-red-100 text-red-700 rounded-xl text-sm font-medium hover:bg-red-200 transition flex items-center gap-1.5"
+                    className="w-8 h-8 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition flex items-center justify-center"
                   >
-                    <X className="w-3.5 h-3.5" />
-                    Disconnect
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-center text-gray-500 py-8">No Gmail accounts connected yet</p>
+            <p className="text-center text-gray-500 py-10 text-sm">No Gmail accounts connected</p>
           )}
         </div>
 
         {/* WhatsApp */}
-        <div className="mt-6 bg-white rounded-3xl shadow-lg border border-gray-100 p-6">
+        <div className="mt-5 bg-white rounded-3xl shadow-lg border border-gray-100 p-6">
           <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl flex items-center justify-center shadow-lg">
-              <MessageCircle className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl flex items-center justify-center shadow-lg">
+              <MessageCircle className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
                 WhatsApp
-                <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Check className="w-3 h-3" />
+                <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
                   Always On
                 </span>
               </h3>
@@ -160,13 +151,13 @@ export default function IntegrationsPage() {
         </div>
 
         {/* Outlook - Coming Soon */}
-        <div className="mt-6 bg-white/70 rounded-3xl border border-gray-200 p-6 opacity-75">
+        <div className="mt-5 bg-white/70 rounded-3xl p-6 border border-gray-200 opacity-75">
           <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-3xl flex items-center justify-center shadow-lg">
-              <Mail className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-3xl flex items-center justify-center shadow-lg">
+              <Mail className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
                 Outlook
                 <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
                   Coming Soon
@@ -178,9 +169,9 @@ export default function IntegrationsPage() {
         </div>
       </div>
 
-      {/* Footer */}
+      {/* Minimal Footer */}
       <div className="text-center text-xs text-gray-500 pb-8">
-        More coming: Slack • Notion • Files
+        More coming soon
       </div>
     </div>
   );

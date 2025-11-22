@@ -133,7 +133,7 @@ export default function IntegrationsPage() {
         </div>
 
         {/* WhatsApp */}
-        <div className="mt-5 bg-white rounded-3xl shadow-lg border border-gray-100 p-6">
+        <div className="mt-5 bg-white rounded-3xl shadow-lg border border-gray-100">
           <div className="flex items-center gap-5">
             <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl flex items-center justify-center shadow-lg">
               <MessageCircle className="w-6 h-6 text-white" />

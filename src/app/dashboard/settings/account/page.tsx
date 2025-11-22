@@ -136,7 +136,7 @@ export default function AccountSettings() {
 
         <div className="space-y-10">
           {/* Personal Info */}
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-10">
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
               <User className="w-7 h-7 text-emerald-600" />
               Personal Information
@@ -208,7 +208,7 @@ export default function AccountSettings() {
           </div>
 
           {/* Security */}
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-10">
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
               <Lock className="w-7 h-7 text-emerald-600" />
               Security
@@ -247,7 +247,7 @@ export default function AccountSettings() {
         {/* Password Change Modal */}
         {showPassword && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-10">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full">
               <h3 className="text-2xl font-bold text-gray-900 mb-8">Change Password</h3>
 
               <div className="space-y-6">

@@ -1,9 +1,9 @@
-// app/dashboard/layout.tsx   (or components/layouts/DashboardLayout.tsx)
+// app/dashboard/layout.tsx
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu } from "lucide-react";
-import Sidebar from "@/components/sidebar"; // keep your existing Sidebar component
+import { Menu, Brain } from "lucide-react";
+import Sidebar from "@/components/sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function DashboardLayout({
@@ -11,76 +11,65 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);       // Desktop: expanded by default
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // Mobile: overlay menu
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile on mount + resize
+  // Detect mobile
   useEffect(() => {
-    const check = () => {
-      const mobile = window.innerWidth < 1024; // lg breakpoint
-      setIsMobile(mobile);
-      if (mobile) setSidebarOpen(false); // collapsed on mobile by default
-    };
+    const check = () => setIsMobile(window.innerWidth < 1024);
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const toggleSidebar = () => {
-    if (isMobile) {
-      setMobileMenuOpen((v) => !v);
-    } else {
-      setSidebarOpen((v) => !v);
-    }
-  };
-
-  const closeMobileMenu = () => setMobileMenuOpen(false);
-
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-gray-50">
-        {/* Sidebar */}
+      <div className="flex h-screen bg-gradient-to-br from-slate-50 to-emerald-50">
+        {/* Sidebar — Always visible on desktop, fixed */}
         <Sidebar
-          isOpen={!isMobile && sidebarOpen} 
-          mobileOpen={isMobile && mobileMenuOpen}     
+          mobileOpen={mobileMenuOpen}
           isMobile={isMobile}
-          toggleSidebar={toggleSidebar}
-          closeMobile={closeMobileMenu}
+          toggleSidebar={() => setMobileMenuOpen(!mobileMenuOpen)}
         />
 
         {/* Mobile backdrop */}
-        {mobileMenuOpen && isMobile && (
+        {isMobile && mobileMenuOpen && (
           <div
             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-            onClick={closeMobileMenu}
+            onClick={() => setMobileMenuOpen(false)}
           />
         )}
 
-        {/* Main content */}
+        {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Top bar (mobile hamburger only) */}
+          {/* Mobile Header */}
           {isMobile && (
-            <header className="fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-200 px-4 py-3">
-              <button
-                onClick={() => setMobileMenuOpen(true)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition"
-                aria-label="Open menu"
-              >
-                <Menu className="w-6 h-6 text-gray-700" />
-              </button>
+            <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-200">
+              <div className="flex items-center justify-between px-6 py-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
+                    <Brain className="w-6 h-6 text-white" />
+                  </div>
+                  <h1 className="text-xl font-bold text-gray-900">Whisone</h1>
+                </div>
+                <button
+                  onClick={() => setMobileMenuOpen(true)}
+                  className="p-2.5 rounded-xl hover:bg-gray-100 transition"
+                >
+                  <Menu className="w-6 h-6 text-gray-700" />
+                </button>
+              </div>
             </header>
           )}
 
-          {/* Page content */}
+          {/* Page Content */}
           <main
             className={`
-              flex-1 overflow-y-auto bg-gray-50
-              transition-all duration-300
-              ${isMobile ? "pt-16" : sidebarOpen ? "lg:ml-64" : "lg:ml-20"}
+              flex-1 overflow-y-auto
+              ${isMobile ? "pt-20" : "pt-0"}  // Space for mobile header
             `}
           >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="max-w-7xl mx-auto px-6 py-10">
               {children}
             </div>
           </main>

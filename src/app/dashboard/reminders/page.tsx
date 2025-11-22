@@ -1,10 +1,10 @@
-// app/dashboard/reminders/[id]/page.tsx
+// app/dashboard/reminders/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { format, isPast } from "date-fns";
-import { ArrowLeft, Clock, CheckCircle2, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { format, isToday, isTomorrow, isPast } from "date-fns";
+import { Bell, Plus, Clock, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 interface Reminder {
@@ -16,106 +16,138 @@ interface Reminder {
   updated_at: string;
 }
 
-export default function ReminderDetail() {
+export default function RemindersPage() {
   const router = useRouter();
-  const { id } = useParams();
   const { accessToken } = useAuth();
-  const [reminder, setReminder] = useState<Reminder | null>(null);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id || !accessToken) return;
+    if (!accessToken) return;
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/${id}/`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/?ordering=remind_at`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
-      .then(r => r.ok ? r.json() : router.replace("/dashboard/reminders"))
-      .then(setReminder)
+      .then(r => r.json())
+      .then(data => setReminders(Array.isArray(data) ? data : data.results || []))
       .finally(() => setLoading(false));
-  }, [id, accessToken, router]);
+  }, [accessToken]);
 
-  const toggleComplete = async () => {
-    if (!reminder) return;
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/${id}/`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({ completed: !reminder.completed }),
-    });
-    setReminder({ ...reminder, completed: !reminder.completed });
+  const pending = reminders.filter(r => !r.completed);
+  const completed = reminders.filter(r => r.completed);
+
+  const formatDue = (dateStr: string | null) => {
+    if (!dateStr) return "No due date";
+    const date = new Date(dateStr);
+    if (isToday(date)) return `Today at ${format(date, "h:mm a")}`;
+    if (isTomorrow(date)) return `Tomorrow at ${format(date, "h:mm a")}`;
+    if (isPast(date)) return `Overdue • ${format(date, "MMM d, h:mm a")}`;
+    return format(date, "MMM d, yyyy • h:mm a");
   };
 
-  const deleteReminder = async () => {
-    if (!confirm("Delete this reminder?")) return;
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/${id}/`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    router.push("/dashboard/reminders");
-  };
-
-  if (loading || !reminder) {
-    return <div className="min-h-screen flex items-center justify-center"><p>Loading...</p></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
+        <div className="text-center">
+          <Bell className="w-16 h-16 text-emerald-600 animate-pulse mb-4" />
+          <p className="text-lg text-gray-600">Loading your reminders...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50">
+      {/* Header */}
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-100">
-        <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
-          <button
-            onClick={() => router.push("/dashboard/reminders")}
-            className="flex items-center gap-3 text-gray-700 hover:bg-gray-100 rounded-xl px-4 py-2 transition"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            All Reminders
-          </button>
-          <button
-            onClick={deleteReminder}
-            className="p-3 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
+        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <Bell className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Reminders</h1>
+              <p className="text-gray-600">
+                {pending.length} active • {completed.length} completed
+              </p>
+            </div>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-3xl p-10 shadow-xl border border-gray-100">
-          <div className="flex items-start justify-between mb-8">
-            <h1 className={`text-3xl font-bold ${reminder.completed ? "line-through text-gray-500" : "text-gray-900"}`}>
-              {reminder.text}
-            </h1>
-            <button
-              onClick={toggleComplete}
-              className={`px-6 py-3 rounded-2xl font-medium transition ${
-                reminder.completed
-                  ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  : "bg-emerald-600 text-white hover:bg-emerald-700"
-              }`}
-            >
-              {reminder.completed ? "Undo" : "Mark Done"}
-            </button>
-          </div>
-
-          <div className="space-y-4 text-gray-600">
-            <div className="flex items-center gap-4">
-              <Clock className="w-5 h-5" />
-              <span className={isPast(new Date(reminder.remind_at!)) ? "text-red-600 font-medium" : ""}>
-                {reminder.remind_at
-                  ? format(new Date(reminder.remind_at), "PPP 'at' p")
-                  : "No due date"}
-              </span>
+      <main className="max-w-5xl mx-auto px-6 py-10">
+        {reminders.length === 0 ? (
+          <div className="text-center py-24">
+            <div className="w-32 h-32 bg-emerald-100 rounded-3xl flex items-center justify-center mx-auto mb-8">
+              <Bell className="w-16 h-16 text-emerald-600" />
             </div>
-            {reminder.completed && (
-              <div className="flex items-center gap-4 text-emerald-600">
-                <CheckCircle2 className="w-5 h-5" />
-                <span>Completed</span>
-              </div>
+            <h3 className="text-2xl font-semibold text-gray-800 mb-4">No reminders yet</h3>
+            <p className="text-gray-600 max-w-md mx-auto">
+              Say “Remind me to call Mom tomorrow” on WhatsApp — it appears here instantly.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Active Reminders */}
+            {pending.length > 0 && (
+              <section>
+                <h2 className="text-xl font-semibold text-gray-900 mb-5">Active</h2>
+                <div className="space-y-4">
+                  {pending.map((r) => (
+                    <div
+                      key={r.id}
+                      onClick={() => router.push(`/dashboard/reminders/${r.id}`)}
+                      className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-emerald-300 transition cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-lg font-medium text-gray-900">{r.text}</p>
+                          <div className="flex items-center gap-3 mt-3 text-sm">
+                            <Clock className="w-4 h-4 text-emerald-600" />
+                            <span className={isPast(new Date(r.remind_at!)) ? "text-red-600 font-medium" : "text-gray-600"}>
+                              {formatDue(r.remind_at)}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-emerald-600 group-hover:translate-x-1 transition">View</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Completed */}
+            {completed.length > 0 && (
+              <section>
+                <h2 className="text-xl font-semibold text-gray-900 mb-5 mt-12">Completed</h2>
+                <div className="space-y-4">
+                  {completed.map((r) => (
+                    <div
+                      key={r.id}
+                      onClick={() => router.push(`/dashboard/reminders/${r.id}`)}
+                      className="group bg-white/70 rounded-2xl p-6 border border-gray-200 cursor-pointer opacity-80"
+                    >
+                      <div className="flex items-center gap-4">
+                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                        <p className="text-gray-700 line-through">{r.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
             )}
           </div>
-        </div>
+        )}
       </main>
+
+      {/* FAB */}
+      <button
+        onClick={() => router.push("/dashboard/reminders/new")}
+        className="fixed bottom-8 right-8 w-16 h-16 bg-emerald-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 hover:bg-emerald-700 transition-all z-50"
+      >
+        <Plus className="w-8 h-8" />
+      </button>
     </div>
   );
 }

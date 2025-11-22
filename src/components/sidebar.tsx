@@ -1,30 +1,29 @@
+// components/Sidebar.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import {
-  BarChart2,
+  BarChart3,
   Sparkles,
-  Inbox,
   Bell,
   CheckSquare,
   FileText,
   User,
   Settings,
   X,
+  Brain,
 } from "lucide-react";
 
 interface SidebarProps {
-  isOpen?: boolean;        // Desktop: collapsed or expanded
-  mobileOpen: boolean;     // Mobile: overlay open or closed
+  mobileOpen: boolean;
   isMobile: boolean;
   toggleSidebar: () => void;
   closeMobile?: () => void;
 }
 
 export default function Sidebar({
-  isOpen = true,
   mobileOpen,
   isMobile,
   toggleSidebar,
@@ -32,7 +31,6 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
 
-  // Auto-close mobile sidebar on route change
   useEffect(() => {
     if (isMobile && mobileOpen) {
       closeMobile?.() || toggleSidebar();
@@ -40,9 +38,8 @@ export default function Sidebar({
   }, [pathname, isMobile, mobileOpen, closeMobile, toggleSidebar]);
 
   const navItems = [
-    { name: "Overview", icon: BarChart2, href: "/dashboard/overview" },
+    { name: "Overview", icon: BarChart3, href: "/dashboard/overview" },
     { name: "Assistant", icon: Sparkles, href: "/dashboard/assistant" },
-    { name: "Inbox", icon: Inbox, href: "/dashboard/inbox" },
     { name: "Reminders", icon: Bell, href: "/dashboard/reminders" },
     { name: "Todos", icon: CheckSquare, href: "/dashboard/todos" },
     { name: "Notes", icon: FileText, href: "/dashboard/notes" },
@@ -50,107 +47,89 @@ export default function Sidebar({
     { name: "Settings", icon: Settings, href: "/dashboard/settings" },
   ];
 
-  // Close mobile menu on nav click
-  const handleNavClick = () => {
+  const handleClick = () => {
     if (isMobile && mobileOpen) {
-      closeMobile?.() || toggleSidebar();
+      toggleSidebar();
     }
   };
-
-  const width = !isMobile && !isOpen ? "w-20" : "w-72";
-  const hideLabels = !isMobile && !isOpen;
 
   return (
     <aside
       className={`
         fixed inset-y-0 left-0 z-50 flex flex-col
-        bg-slate-900 text-gray-100
-        border-r border-slate-800
+        bg-white border-r border-gray-200
         transition-all duration-300 ease-out
         ${isMobile 
           ? mobileOpen ? "translate-x-0" : "-translate-x-full" 
           : "translate-x-0"
         }
-        ${width}
+        w-72
       `}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-slate-800">
-        <div className={`flex items-center gap-4 transition-all duration-300 ${hideLabels ? "justify-center" : ""}`}>
-          <div className="p-3 bg-blue-600 rounded-2xl shadow-lg ring-4 ring-blue-600/20">
-            <Sparkles className="w-7 h-7 text-white" />
+      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-600/20">
+            <Brain className="w-7 h-7 text-white" />
           </div>
-          {!hideLabels && (
-            <h1 className="text-2xl font-bold text-white">Whisone</h1>
-          )}
+          <h1 className="text-2xl font-bold text-gray-900">Whisone</h1>
         </div>
 
-        {/* Close button (mobile only) */}
-        {isMobile && mobileOpen && (
+        {isMobile && (
           <button
             onClick={toggleSidebar}
-            className="p-2.5 rounded-xl hover:bg-white/10 transition lg:hidden"
-            aria-label="Close menu"
+            className="p-2.5 rounded-xl hover:bg-gray-100 transition"
           >
-            <X className="w-6 h-6" />
+            <X className="w-6 h-6 text-gray-600" />
           </button>
         )}
       </div>
 
-      {/* Navigation — No scrollbar, perfect fit */}
-      <nav className="flex-1 px-4 py-6 space-y-2 overflow-hidden">
-        <div className="space-y-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+      {/* Navigation */}
+      <nav className="flex-1 px-4 py-6 space-y-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={handleNavClick}
-                className={`
-                  group relative flex items-center gap-4
-                  px-4 py-3.5 rounded-2xl text-sm font-medium
-                  transition-all duration-200
-                  ${isActive
-                    ? "bg-blue-600 text-white shadow-xl shadow-blue-600/30"
-                    : "text-gray-400 hover:bg-slate-800 hover:text-white"
-                  }
-                  ${hideLabels ? "justify-center px-3" : ""}
-                `}
-              >
-                {/* Active bar */}
-                {isActive && (
-                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500 rounded-r-full" />
-                )}
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              onClick={handleClick}
+              className={`
+                group relative flex items-center gap-4
+                px-4 py-3.5 rounded-2xl text-sm font-medium
+                transition-all duration-200
+                ${isActive
+                  ? "bg-emerald-50 text-emerald-700 shadow-md shadow-emerald-600/10"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }
+              `}
+            >
+              {/* Active indicator */}
+              {isActive && (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-600 rounded-r-full" />
+              )}
 
-                <div className={`transition-transform duration-200 ${isActive ? "scale-110" : "group-hover:scale-110"}`}>
-                  <Icon className={`w-5 h-5 ${isActive ? "text-white" : "group-hover:text-white"}`} />
-                </div>
+              <div className={`transition-transform ${isActive ? "scale-110" : "group-hover:scale-110"}`}>
+                <Icon className={`w-5 h-5 ${isActive ? "text-emerald-700" : "text-gray-500 group-hover:text-gray-700"}`} />
+              </div>
 
-                {!hideLabels && (
-                  <span className="tracking-wide">{item.name}</span>
-                )}
+              <span className="tracking-wide">{item.name}</span>
 
-                {/* Tooltip when collapsed (desktop only) */}
-                {hideLabels && !isMobile && (
-                  <div className="absolute left-full ml-4 px-4 py-2 bg-slate-800 text-white text-sm rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 shadow-2xl border border-slate-700 transition-opacity">
-                    {item.name}
-                  </div>
-                )}
-              </Link>
-            );
-          })}
-        </div>
+              {/* Subtle glow on hover */}
+              <div className="absolute inset-0 bg-emerald-600/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            </Link>
+          );
+        })}
       </nav>
 
-      {/* Footer — always visible */}
-      <div className="p-6 border-t border-slate-800">
-        <p className={`text-xs text-center text-slate-500 transition-all duration-300 ${hideLabels ? "opacity-0" : "opacity-100"}`}>
-          © 2025 Whisone
-          <span className="text-blue-500 mx-1">♥</span>
-          Made for you
+      {/* Footer */}
+      <div className="p-6 border-t border-gray-100">
+        <p className="text-xs text-center text-gray-500">
+          © 2025 Whisone 
+          <span className="text-emerald-600 mx-1">♥</span>
+          Your second brain
         </p>
       </div>
     </aside>

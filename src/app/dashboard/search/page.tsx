@@ -115,7 +115,7 @@ export default function SearchPage() {
           <div className="flex items-center gap-3 flex-1">
             <Search className="w-6 h-6 text-emerald-600" />
             <h1 className="text-2xl font-bold text-gray-900">
-              Search results for <span className="text-emerald-600">"{query}"</span>
+              Search results for <span className="text-emerald-600">&quot;{query}&quot;</span>
             </h1>
           </div>
         </div>

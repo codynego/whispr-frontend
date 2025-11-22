@@ -1,9 +1,11 @@
+// app/dashboard/todos/page.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { CheckSquare, Square, Calendar, Trash2, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
+import { CheckSquare, Plus } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 interface Todo {
   id: number;
@@ -14,372 +16,123 @@ interface Todo {
 }
 
 export default function TodosPage() {
+  const router = useRouter();
   const { accessToken } = useAuth();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [toggling, setToggling] = useState<Record<number, boolean>>({});
-  const [deleting, setDeleting] = useState<Record<number, boolean>>({});
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const [pageSize] = useState(20);
-  const [filter, setFilter] = useState<"all" | "pending" | "done">("all");
-
-  // Modal state
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newTask, setNewTask] = useState("");
-  const [creating, setCreating] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!accessToken) {
-      setError("Please log in to view your todos.");
-      setLoading(false);
-      return;
-    }
-    fetchTodos(1);
-  }, [accessToken, filter]);
-
-  // Auto-focus input when modal opens
-  useEffect(() => {
-    if (isCreateModalOpen && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  }, [isCreateModalOpen]);
-
-  const fetchTodos = async (page: number) => {
     if (!accessToken) return;
 
-    try {
-      setLoading(true);
-      setError(null);
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/?ordering=-updated_at`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then(r => r.json())
+      .then(data => setTodos(Array.isArray(data) ? data : data.results || []))
+      .finally(() => setLoading(false));
+  }, [accessToken]);
 
-      let url = `${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/?page=${page}&page_size=${pageSize}`;
-      if (filter === "pending") url += "&done=false";
-      if (filter === "done") url += "&done=true";
+  const pending = todos.filter(t => !t.done);
+  const completed = todos.filter(t => t.done);
 
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.status === 401) {
-        setError("Session expired. Please log in again.");
-        setLoading(false);
-        return;
-      }
-
-      if (!response.ok) throw new Error("Failed to load todos");
-
-      const data = await response.json();
-      const apiTodos: Todo[] = data.results || data;
-
-      const sorted = apiTodos.sort((a, b) => {
-        if (a.done !== b.done) return a.done ? 1 : -1;
-        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-      });
-
-      setTodos(sorted);
-      setTotalCount(data.count ?? apiTodos.length);
-      setCurrentPage(page);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createTodo = async () => {
-    if (!newTask.trim() || !accessToken) return;
-
-    setCreating(true);
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ task: newTask.trim() }),
-      });
-
-      if (!response.ok) throw new Error("Failed to create todo");
-
-      const createdTodo: Todo = await response.json();
-
-      // Add to top of list (optimistic)
-      setTodos((prev) => [createdTodo, ...prev]);
-      setTotalCount((c) => c + 1);
-
-      // Reset & close
-      setNewTask("");
-      setIsCreateModalOpen(false);
-    } catch (err) {
-      alert("Could not create todo. Please try again.");
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const toggleTodo = async (id: number) => {
-    const todo = todos.find((t) => t.id === id);
-    if (!todo || !accessToken) return;
-
-    setToggling((prev) => ({ ...prev, [id]: true }));
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/${id}/`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ done: !todo.done }),
-      });
-
-      if (!response.ok && response.status !== 401) throw new Error("Update failed");
-
-      setTodos((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
-      );
-    } catch (err) {
-      console.error(err);
-      alert("Failed to update todo");
-    } finally {
-      setToggling((prev) => ({ ...prev, [id]: false }));
-    }
-  };
-
-  const deleteTodo = async (id: number) => {
-    if (!confirm("Delete this todo permanently?")) return;
-
-    setDeleting((prev) => ({ ...prev, [id]: true }));
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/${id}/`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-
-      if (response.ok || response.status === 204) {
-        setTodos((prev) => prev.filter((t) => t.id !== id));
-        setTotalCount((c) => c - 1);
-      }
-    } catch (err) {
-      alert("Could not delete todo");
-    } finally {
-      setDeleting((prev) => ({ ...prev, [id]: false }));
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const today = new Date();
-    const isToday = date.toDateString() === today.toDateString();
-
-    return isToday
-      ? `Today at ${date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
-      : format(date, "MMM d, yyyy");
-  };
-
-  const totalPages = Math.ceil(totalCount / pageSize);
-  const completedCount = todos.filter((t) => t.done).length;
-  const pendingCount = todos.length - completedCount;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
+        <div className="text-center">
+          <CheckSquare className="w-16 h-16 text-emerald-600 animate-pulse mb-4" />
+          <p className="text-lg text-gray-600">Loading your todos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div className="p-6 bg-gray-50 min-h-screen relative">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <h1 className="text-3xl font-bold mb-2 text-gray-800 flex items-center gap-3">
-            <CheckSquare className="w-9 h-9 text-green-600" />
-            My Todos
-          </h1>
-          <p className="text-gray-500 mb-8">
-            Simple, powerful task list. Created from your voice commands, emails, and Whisone AI.
-          </p>
-
-          {/* Stats + Filter */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-            <div className="flex gap-6 text-sm">
-              <span className="text-gray-600">
-                <strong className="text-indigo-600">{pendingCount}</strong> pending
-              </span>
-              <span className="text-gray-600">
-                <strong className="text-green-600">{completedCount}</strong> done
-              </span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <CheckSquare className="w-7 h-7 text-white" />
             </div>
-
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="all">All Todos</option>
-              <option value="pending">Pending Only</option>
-              <option value="done">Completed Only</option>
-            </select>
-          </div>
-
-          {/* Loading / Error */}
-          {loading && (
-            <div className="text-center py-12">
-              <div className="text-lg text-gray-600">Loading todos...</div>
-            </div>
-          )}
-
-          {error && (
-            <div className="text-center py-12">
-              <p className="text-lg text-red-600 mb-4">Error: {error}</p>
-              <button
-                onClick={() => fetchTodos(1)}
-                className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {!loading && !error && todos.length === 0 && (
-            <div className="text-center py-16">
-              <CheckSquare className="w-20 h-20 mx-auto mb-6 text-gray-300" />
-              <p className="text-xl text-gray-500">No todos yet!</p>
-              <p className="text-gray-400 mt-2">
-                Try saying: “Hey Whisone, add buy milk to my todos”
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">My Todos</h1>
+              <p className="text-gray-600">
+                {pending.length} pending • {completed.length} completed
               </p>
             </div>
-          )}
-
-          {/* Todo List */}
-          {!loading && !error && todos.length > 0 && (
-            <div className="space-y-3">
-              {todos.map((todo) => (
-                <div
-                  key={todo.id}
-                  className={`bg-white rounded-xl p-5 shadow-sm border transition-all hover:shadow-md flex items-start gap-4 group ${
-                    todo.done ? "opacity-70" : ""
-                  }`}
-                >
-                  <button
-                    onClick={() => toggleTodo(todo.id)}
-                    disabled={toggling[todo.id]}
-                    className="mt-1 transition-transform hover:scale-110"
-                  >
-                    {todo.done ? (
-                      <CheckSquare className="w-6 h-6 text-green-600" />
-                    ) : (
-                      <Square className="w-6 h-6 text-gray-400 hover:text-indigo-600" />
-                    )}
-                  </button>
-
-                  <div className="flex-1">
-                    <p
-                      className={`text-lg font-medium ${
-                        todo.done ? "line-through text-gray-500" : "text-gray-800"
-                      }`}
-                    >
-                      {todo.task}
-                    </p>
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>
-                        {todo.done
-                          ? `Completed ${formatDate(todo.updated_at)}`
-                          : `Added ${formatDate(todo.created_at)}`}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => deleteTodo(todo.id)}
-                    disabled={deleting[todo.id]}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition opacity-0 group-hover:opacity-100"
-                  >
-                    {deleting[todo.id] ? (
-                      <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Trash2 className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center mt-12 gap-6">
-              <button
-                onClick={() => fetchTodos(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-lg disabled:opacity-50 hover:bg-indigo-700 transition"
-              >
-                Previous
-              </button>
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages} ({totalCount} total)
-              </span>
-              <button
-                onClick={() => fetchTodos(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-lg disabled:opacity-50 hover:bg-indigo-700 transition"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Floating Action Button */}
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 hover:shadow-indigo-500/50 z-10"
-          aria-label="Add new todo"
-        >
-          <Plus className="w-8 h-8" />
-        </button>
-      </div>
-
-      {/* Create Todo Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-in fade-in zoom-in duration-200">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Create New Todo</h2>
-            <input
-              ref={inputRef}
-              type="text"
-              value={newTask}
-              onChange={(e) => setNewTask(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !creating && createTodo()}
-              placeholder="What needs to be done?"
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-lg"
-              disabled={creating}
-            />
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setIsCreateModalOpen(false);
-                  setNewTask("");
-                }}
-                className="px-5 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
-                disabled={creating}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={createTodo}
-                disabled={!newTask.trim() || creating}
-                className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition flex items-center gap-2"
-              >
-                {creating ? "Creating..." : "Create Todo"}
-              </button>
-            </div>
           </div>
         </div>
-      )}
-    </>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-6 py-10">
+        {todos.length === 0 ? (
+          <div className="text-center py-24">
+            <div className="w-32 h-32 bg-emerald-100 rounded-3xl flex items-center justify-center mx-auto mb-8">
+              <CheckSquare className="w-16 h-16 text-emerald-600" />
+            </div>
+            <h3 className="text-2xl font-semibold text-gray-800 mb-4">No todos yet</h3>
+            <p className="text-gray-600 max-w-md mx-auto">
+              Say “Add buy groceries to my todos” on WhatsApp — it appears here instantly.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Pending Todos */}
+            {pending.length > 0 && (
+              <section>
+                <h2 className="text-xl font-semibold text-gray-900 mb-5">To Do</h2>
+                <div className="space-y-4">
+                  {pending.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => router.push(`/dashboard/todos/${t.id}`)}
+                      className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-emerald-300 transition cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between">
+                        <p className="text-lg font-medium text-gray-900">{t.task}</p>
+                        <span className="text-emerald-600 group-hover:translate-x-1 transition">View</span>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Added {format(new Date(t.created_at), "MMM d, yyyy")}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Completed Todos */}
+            {completed.length > 0 && (
+              <section>
+                <h2 className="text-xl font-semibold text-gray-900 mb-5 mt-12">Completed</h2>
+                <div className="space-y-4">
+                  {completed.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => router.push(`/dashboard/todos/${t.id}`)}
+                      className="group bg-white/70 rounded-2xl p-6 border border-gray-200 cursor-pointer opacity-80"
+                    >
+                      <div className="flex items-center gap-4">
+                        <CheckSquare className="w-6 h-6 text-emerald-600" />
+                        <p className="text-gray-700 line-through">{t.task}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* FAB */}
+      <button
+        onClick={() => router.push("/dashboard/todos/new")}
+        className="fixed bottom-8 right-8 w-16 h-16 bg-emerald-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 hover:bg-emerald-700 transition-all z-50"
+      >
+        <Plus className="w-8 h-8" />
+      </button>
+    </div>
   );
 }

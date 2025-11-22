@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Mail, Calendar, MessageCircle, Sparkles, Check, X } from "lucide-react";
+import { Mail, MessageCircle, Sparkles, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface ConnectedAccount {
@@ -59,45 +59,18 @@ export default function IntegrationsPage() {
     toast.success(`${email} disconnected`);
   };
 
-  const integrations = [
-    {
-      name: "Gmail + Calendar",
-      description: "Email and calendar sync — one click",
-      icon: Mail,
-      color: "from-red-500 to-orange-600",
-      active: true,
-      accounts: accounts,
-      onConnect: connectGmail,
-    },
-    {
-      name: "WhatsApp",
-      description: "Your assistant lives here — always connected",
-      icon: MessageCircle,
-      color: "from-green-500 to-emerald-600",
-      active: true,
-      alwaysConnected: true,
-    },
-    {
-      name: "Outlook",
-      description: "Microsoft 365 integration — coming soon",
-      icon: Mail,
-      color: "from-blue-600 to-cyan-600",
-      active: false,
-    },
-  ];
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center px-6">
-        <p className="text-gray-600">Loading integrations...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50">
-      {/* Header — Full width */}
-      <div className="text-center pt-8 pb-10 px-6">
+      {/* Header */}
+      <div className="text-center pt-8 pb-10">
         <div className="w-16 h-16 bg-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-lg">
           <Sparkles className="w-9 h-9 text-white" />
         </div>
@@ -105,97 +78,108 @@ export default function IntegrationsPage() {
         <p className="text-gray-600 mt-2">Connect your world</p>
       </div>
 
-      {/* Cards — Full width on mobile */}
-      <div className="space-y-5 px-6 pb-20">
-        {integrations.map((integration) => {
-          const hasAccounts = integration.accounts && integration.accounts.length > 0;
-          const isConnected = hasAccounts || integration.alwaysConnected;
-
-          return (
-            <div
-              key={integration.name}
-              className={`bg-white rounded-3xl shadow-lg border ${
-                integration.active ? "border-gray-100" : "border-gray-200 opacity-75"
-              } p-6 transition hover:shadow-xl`}
-            >
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-5">
-                  <div className={`w-14 h-14 bg-gradient-to-br ${integration.color} rounded-3xl flex items-center justify-center shadow-lg`}>
-                    <integration.icon className="w-7 h-7 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                      {integration.name}
-                      {!integration.active && (
-                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                          Soon
-                        </span>
-                      )}
-                      {integration.alwaysConnected && (
-                        <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <Check className="w-3 h-3" />
-                          Always On
-                        </span>
-                      )}
-                    </h3>
-                    <p className="text-sm text-gray-600">{integration.description}</p>
-                  </div>
-                </div>
-
-                {integration.active && !isConnected && !integration.alwaysConnected && (
-                  <button
-                    onClick={integration.onConnect}
-                    disabled={loading}
-                    className="px-5 py-2.5 bg-emerald-600 text-white rounded-2xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition"
-                  >
-                    {loading ? "Connecting..." : "Connect"}
-                  </button>
-                )}
+      {/* Gmail + Calendar Section */}
+      <div className="pb-20">
+        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-2">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-orange-600 rounded-3xl flex items-center justify-center shadow-lg">
+                <Mail className="w-7 h-7 text-white" />
               </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Gmail + Calendar</h3>
+                <p className="text-sm text-gray-600">Email and calendar sync</p>
+              </div>
+            </div>
 
-              {/* Connected Gmail Accounts */}
-              {hasAccounts && (
-                <div className="space-y-3 pt-5 border-t border-gray-100">
-                  <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <Calendar className="w-4 h-4 text-emerald-600" />
-                    Calendar access enabled:
+            {/* Always show Connect button */}
+            <button
+              onClick={connectGmail}
+              disabled={loading}
+              className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-medium hover:bg-emerald-700 disabled:opacity-50 transition shadow-lg"
+            >
+              {loading ? "Connecting..." : "+ Connect Gmail"}
+            </button>
+          </div>
+
+          {/* List of Connected Accounts */}
+          {accounts.length > 0 ? (
+            <div className="space-y-3 pt-5 border-t border-gray-100">
+              <p className="text-sm font-medium text-gray-700 mb-3">
+                Connected accounts ({accounts.length})
+              </p>
+              {accounts.map((acc) => (
+                <div
+                  key={acc.id}
+                  className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-2xl border border-emerald-200"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center">
+                      <Check className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{acc.email}</p>
+                      <p className="text-xs text-gray-500">
+                        Connected {new Date(acc.connected_at).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
 
-                  {integration.accounts!.map((acc) => (
-                    <div
-                      key={acc.id}
-                      className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-2xl border border-emerald-200"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-emerald-600 rounded-2xl flex items-center justify-center">
-                          <Mail className="w-4.5 h-4.5 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 text-sm">{acc.email}</p>
-                          <p className="text-xs text-gray-500">
-                            Connected {new Date(acc.connected_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => disconnect(acc.id, acc.email)}
-                        className="px-4 py-2 bg-red-100 text-red-700 rounded-xl text-xs font-medium hover:bg-red-200 transition flex items-center gap-1.5"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                        Disconnect
-                      </button>
-                    </div>
-                  ))}
+                  <button
+                    onClick={() => disconnect(acc.id, acc.email)}
+                    className="px-4 py-2 bg-red-100 text-red-700 rounded-xl text-sm font-medium hover:bg-red-200 transition flex items-center gap-1.5"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Disconnect
+                  </button>
                 </div>
-              )}
+              ))}
             </div>
-          );
-        })}
+          ) : (
+            <p className="text-center text-gray-500 py-8">No Gmail accounts connected yet</p>
+          )}
+        </div>
+
+        {/* WhatsApp */}
+        <div className="mt-6 bg-white rounded-3xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl flex items-center justify-center shadow-lg">
+              <MessageCircle className="w-7 h-7 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                WhatsApp
+                <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Check className="w-3 h-3" />
+                  Always On
+                </span>
+              </h3>
+              <p className="text-sm text-gray-600">Your assistant lives here</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Outlook - Coming Soon */}
+        <div className="mt-6 bg-white/70 rounded-3xl border border-gray-200 p-6 opacity-75">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-3xl flex items-center justify-center shadow-lg">
+              <Mail className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                Outlook
+                <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                  Coming Soon
+                </span>
+              </h3>
+              <p className="text-sm text-gray-600">Microsoft 365 integration</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Minimal Footer */}
-      <div className="text-center text-xs text-gray-500 pb-6">
+      {/* Footer */}
+      <div className="text-center text-xs text-gray-500 pb-8">
         More coming: Slack • Notion • Files
       </div>
     </div>

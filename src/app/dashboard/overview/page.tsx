@@ -233,7 +233,7 @@ export default function WhisoneDashboard() {
                   }}
                 />
               ) : (
-                <p classText className="text-white/90 text-lg">
+                <p className="text-white/90 text-lg">
                   Your AI is quietly watching everything you say on WhatsApp.
                   <br />
                   Your personalized briefing arrives tonight.

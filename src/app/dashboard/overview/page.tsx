@@ -35,7 +35,7 @@ const safeArray = (data: any): any[] => {
 };
 
 const safeContent = (content: string | null | undefined): string => {
-  return content ? content.replace(/\n/g, "<br />") : "";
+  return content ? content : "";
 };
 
 export default function WhisoneDashboard() {

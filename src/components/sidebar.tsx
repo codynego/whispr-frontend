@@ -10,7 +10,6 @@ import {
   Bell,
   CheckSquare,
   FileText,
-  MessageCircle,
   User,
   Settings,
   X,

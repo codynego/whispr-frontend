@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { FileText, Plus, Search } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 interface Note {

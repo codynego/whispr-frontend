@@ -239,7 +239,7 @@ export default function WhisoneDashboard() {
 
                 {todayReminders.length === 0 && overdueTodos.length === 0 && (
                   <p className="text-center text-gray-500 py-16 text-xl font-medium">
-                    All clear today — you're absolutely crushing it
+                    All clear today — you&lsquo;re absolutely crushing it
                   </p>
                 )}
               </div>

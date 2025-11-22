@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
   Brain, Search, Settings, Clock, CheckCircle2, Calendar,
-  FileText, Lightbulb, AlertCircle, ChevronRight, Sparkles
+  FileText, Lightbulb, AlertCircle, Sparkles
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 

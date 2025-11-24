@@ -12,7 +12,6 @@ import {
   FileSpreadsheet,
   File,
   Send,
-  Brain,
   Download,
   Clock,
   MessageSquare,

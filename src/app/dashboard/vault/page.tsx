@@ -147,7 +147,7 @@ export default function VaultPage() {
         setChatMessages(prev => [...prev, {
           id: Date.now() + 1,
           role: "assistant",
-          content: data.reply || "I understand.",
+          content: data.answer || "I understand.",
           timestamp: new Date().toISOString(),
         }]);
       }

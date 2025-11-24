@@ -39,7 +39,8 @@ export default function Sidebar({
 
   const navItems = [
     { name: "Overview", icon: BarChart3, href: "/dashboard/overview" },
-    { name: "Assistant", icon: Sparkles, href: "/dashboard/assistant" },
+    { name: "Brain", icon: Sparkles, href: "/dashboard/assistant" },
+    { name: "Vault", icon: Brain, href: "/dashboard/vault" },
     { name: "Reminders", icon: Bell, href: "/dashboard/reminders" },
     { name: "Todos", icon: CheckSquare, href: "/dashboard/todos" },
     { name: "Notes", icon: FileText, href: "/dashboard/notes" },

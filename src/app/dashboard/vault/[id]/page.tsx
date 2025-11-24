@@ -5,7 +5,18 @@ import React, { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
-import { ArrowLeft, FileText, Image, FileSpreadsheet, File, Send, Brain, Download, Clock } from "lucide-react";
+import {
+  ArrowLeft,
+  FileText,
+  Image,
+  FileSpreadsheet,
+  File,
+  Send,
+  Brain,
+  Download,
+  Clock,
+  MessageSquare,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface UploadedFile {
@@ -15,7 +26,6 @@ interface UploadedFile {
   size: number;
   uploaded_at: string;
   processed: boolean;
-  content: string | null;
   file: string;
 }
 
@@ -52,9 +62,15 @@ export default function VaultDetailPage() {
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!input.trim() || !file || chatting) return;
+    if (!input.trim() || !file || chatting || !file.processed) return;
 
-    const userMsg = { id: Date.now(), role: "user" as const, content: input, timestamp: new Date().toISOString() };
+    const userMsg: ChatMessage = {
+      id: Date.now(),
+      role: "user",
+      content: input,
+      timestamp: new Date().toISOString(),
+    };
+
     setMessages(prev => [...prev, userMsg]);
     setInput("");
     setChatting(true);
@@ -74,26 +90,35 @@ export default function VaultDetailPage() {
         setMessages(prev => [...prev, {
           id: Date.now() + 1,
           role: "assistant",
-          content: data.answer || "Got it.",
+          content: data.answer || "I understand.",
           timestamp: new Date().toISOString(),
         }]);
+      } else {
+        throw new Error();
       }
     } catch {
-      toast.error("Failed to chat");
+      toast.error("Failed to get response");
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: "I'm having trouble right now. Try again in a moment.",
+        timestamp: new Date().toISOString(),
+      }]);
     } finally {
       setChatting(false);
     }
   };
 
   const getIcon = (type: string) => {
-    const icons: Record<string, React.ReactElement> = {
+    const icons: Record<string, React.JSX.Element> = {
       pdf: <FileText className="w-8 h-8 text-red-600" />,
       docx: <FileText className="w-8 h-8 text-blue-600" />,
       txt: <FileText className="w-8 h-8 text-gray-600" />,
       csv: <FileSpreadsheet className="w-8 h-8 text-green-600" />,
       image: <Image className="w-8 h-8 text-purple-600" />,
+      other: <File className="w-8 h-8 text-gray-600" />,
     };
-    return icons[type] || <File className="w-8 h-8 text-gray-600" />;
+    return icons[type] || icons.other;
   };
 
   if (!file) {
@@ -120,8 +145,8 @@ export default function VaultDetailPage() {
       </header>
 
       <div className="max-w-5xl mx-auto px-6 py-10">
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-          {/* File Info */}
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 h-full flex flex-col">
+          {/* File Header */}
           <div className="p-10 border-b border-gray-100">
             <div className="flex items-center gap-6">
               <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl flex items-center justify-center shadow-lg">
@@ -130,7 +155,7 @@ export default function VaultDetailPage() {
               <div className="flex-1">
                 <h1 className="text-3xl font-bold text-gray-900">{file.original_filename}</h1>
                 <p className="text-gray-600 mt-2">
-                  Uploaded {format(new Date(file.uploaded_at), "MMMM d, yyyy 'at' h:mm a")}
+                  Uploaded {format(new Date(file.uploaded_at), "MMMM d, yyyy")}
                 </p>
               </div>
               <a
@@ -144,69 +169,76 @@ export default function VaultDetailPage() {
             </div>
           </div>
 
-          {/* Extracted Text */}
-          <div className="p-10">
-            {!file.processed ? (
-              <div className="text-center py-16 text-gray-500">
-                <Clock className="w-16 h-16 mx-auto mb-4 animate-spin text-emerald-600" />
-                <p className="text-xl">Extracting content...</p>
-              </div>
-            ) : file.content ? (
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                  <Brain className="w-7 h-7 text-emerald-600" />
-                  Extracted Text
-                </h2>
-                <div className="bg-gray-50 rounded-2xl p-6 text-gray-800 whitespace-pre-wrap leading-relaxed border border-gray-200">
-                  {file.content}
+          {/* Chat Area */}
+          <div className="flex-1 flex flex-col">
+            <div className="flex-1 overflow-y-auto p-6">
+              {!file.processed ? (
+                <div className="h-full flex flex-col items-center justify-center text-gray-500">
+                  <Clock className="w-16 h-16 mb-4 animate-spin text-emerald-600" />
+                  <p className="text-xl font-medium">Preparing your file for chat...</p>
+                  <p className="text-sm mt-2">This usually takes a few seconds</p>
                 </div>
-              </div>
-            ) : (
-              <p className="text-center text-gray-500 py-16">No text could be extracted</p>
-            )}
-          </div>
-
-          {/* Chat */}
-          <div className="border-t border-gray-100">
-            <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Ask About This File</h2>
-              <div className="h-96 overflow-y-auto mb-6 space-y-4 p-4 bg-gray-50 rounded-2xl border border-gray-200">
-                {messages.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <Brain className="w-12 h-12 mx-auto mb-3 text-emerald-600" />
-                    <p>Ask anything about this file</p>
+              ) : messages.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-gray-500">
+                  <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-6">
+                    <MessageSquare className="w-12 h-12 text-emerald-600" />
                   </div>
-                ) : (
-                  messages.map((msg) => (
-                    <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-md px-5 py-3 rounded-2xl ${
-                        msg.role === "user" ? "bg-emerald-600 text-white" : "bg-white border border-gray-200 text-gray-800"
-                      }`}>
-                        <p className="text-sm">{msg.content}</p>
+                  <p className="text-2xl font-medium mb-2">Ask me anything about this file</p>
+                  <p className="text-center max-w-md">
+                    Summarize it, find key points, extract data, or just chat — I’ve read every word.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-2xl px-6 py-4 rounded-3xl shadow-sm ${
+                          msg.role === "user"
+                            ? "bg-emerald-600 text-white"
+                            : "bg-white text-gray-800 border border-gray-100"
+                        }`}
+                      >
+                        <p className="text-base leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                        <p className={`text-xs mt-3 ${msg.role === "user" ? "text-emerald-100" : "text-gray-500"}`}>
+                          {format(new Date(msg.timestamp), "h:mm a")}
+                        </p>
                       </div>
                     </div>
-                  ))
-                )}
-                <div ref={chatEndRef} />
-              </div>
+                  ))}
+                  <div ref={chatEndRef} />
+                </div>
+              )}
+            </div>
 
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                  placeholder="Ask about this file..."
-                  className="flex-1 px-5 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-600 transition"
-                  disabled={chatting || !file.processed}
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={chatting || !input.trim() || !file.processed}
-                  className="px-6 py-4 bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700 disabled:opacity-50 transition flex items-center gap-2"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
+            {/* Input */}
+            <div className="border-t border-gray-200 bg-white/90 backdrop-blur-lg">
+              <div className="px-6 py-5">
+                <div className="flex items-center gap-4 bg-gray-50 rounded-3xl px-5 py-4 border border-gray-200 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-100 transition">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+                    placeholder={file.processed ? "Ask about this file..." : "Waiting for file to be ready..."}
+                    className="flex-1 bg-transparent outline-none text-gray-800 placeholder-gray-500"
+                    disabled={chatting || !file.processed}
+                  />
+                  <button
+                    onClick={sendMessage}
+                    disabled={chatting || !input.trim() || !file.processed}
+                    className="p-3 bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg hover:shadow-emerald-600/30"
+                  >
+                    {chatting ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Send className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

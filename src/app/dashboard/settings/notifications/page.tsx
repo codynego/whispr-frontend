@@ -98,7 +98,7 @@ export default function NotificationSettings() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 py-10">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto">+
         {/* Compact Header */}
         <div className="text-center mb-10">
           <div className="w-16 h-16 bg-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">

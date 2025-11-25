@@ -13,7 +13,7 @@ interface Props {
 }
 
 export function TrainButton({ avatarId, trained, onTrained }: Props) {
-  const { data: status, mutate } = useSWR(`/api/avatars/${avatarId}/training-status/`, {
+  const { data: status, mutate } = useSWR(`/avatars/${avatarId}/training-status/`, {
     refreshInterval: 3000,
   })
 

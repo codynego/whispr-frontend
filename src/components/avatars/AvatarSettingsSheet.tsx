@@ -25,7 +25,7 @@ export function AvatarSettingsSheet({ avatar, open, onOpenChange, onSaved }: Pro
     const data = Object.fromEntries(formData)
 
     try {
-      const res = await fetch(`/api/avatars/${avatar.id}/`, {
+      const res = await fetch(`/avatars/${avatar.id}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

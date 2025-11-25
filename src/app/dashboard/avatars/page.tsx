@@ -11,7 +11,7 @@ import { useState } from "react"
 import { Plus } from "lucide-react"
 
 export default function AvatarsPage() {
-  const { data: avatars, mutate, isLoading } = useSWR<Avatar[]>("/api/avatars/", fetcher)
+  const { data: avatars, mutate, isLoading } = useSWR<Avatar[]>("/avatars/", fetcher)
   const [createOpen, setCreateOpen] = useState(false)
   const [selectedAvatar, setSelectedAvatar] = useState<Avatar | null>(null)
 

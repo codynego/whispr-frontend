@@ -50,7 +50,7 @@ export function CreateAvatarSheet({ open, onOpenChange, onSuccess }: Props) {
 
   const onSubmit = async (data: FormData) => {
     try {
-      const res = await api.post("/api/avatars/", data)
+      const res = await api.post("/avatars/", data)
 
       toast.success("Your AI clone is born! Now train it.")
       reset()

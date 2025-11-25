@@ -1,3 +1,4 @@
+"use client"
 // app/dashboard/avatars/page.tsx
 import { AvatarList } from "@/components/avatars/AvatarList"
 import { EmptyState } from "@/components/avatars/EmptyState"

@@ -1,3 +1,5 @@
+"use client"
+
 // components/avatars/AvatarCard.tsx
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"

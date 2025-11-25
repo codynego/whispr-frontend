@@ -1,3 +1,6 @@
+"use client"
+
+
 // components/avatars/AvatarSettingsSheet.tsx
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"

@@ -1,3 +1,5 @@
+"use client"
+
 // components/avatars/AvatarList.tsx
 import { AvatarCard } from "./AvatarCard"
 import { Avatar } from "@/types"

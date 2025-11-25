@@ -1,3 +1,5 @@
+
+"use client"
 // components/avatars/TrainButton.tsx
 import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2 } from "lucide-react"

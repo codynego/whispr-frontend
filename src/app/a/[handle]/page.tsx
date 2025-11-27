@@ -1,4 +1,4 @@
-"use client";
+"use client"; // <<< REQUIRED DIRECTIVE FOR USING HOOKS IN NEXT.JS
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Loader2, Brain, MessageSquare, ArrowUp } from "lucide-react";
@@ -57,13 +57,22 @@ export default function PublicChatShell({ params }: { params: { handle: string }
         if (!visitorId) return; // Wait for visitorId generation
 
         try {
-            // 1. Fetch Profile (GET /api/avatars/<handle>/ - using the proposed convenience route)
-            const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/`);
-            if (!profileRes.ok) throw new Error("Avatar not found or not public.");
+            // 1. Fetch Profile (GET /api/avatars/<handle>/public/ - USING THE CORRECT PUBLIC ROUTE)
+            const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/public/`); // <<< FIX APPLIED HERE
+            
+            if (!profileRes.ok) {
+                // If it fails, check for 404/403 and provide specific error
+                const errorText = await profileRes.text();
+                throw new Error(`Avatar not found or not public. (${profileRes.status}: ${errorText.substring(0, 50)}...)`);
+            }
             const profileData = await profileRes.json();
 
-            // Check public status
-            if (!profileData.settings.is_public) throw new Error("This Avatar is not currently public.");
+            // Note: The backend view (AvatarRetrievePublicView) already enforces is_public=True, 
+            // but this client-side check is a good safeguard.
+            if (!profileData.settings.is_public) {
+                // This shouldn't be reached if backend is correct, but safe check remains
+                throw new Error("This Avatar is not currently public.");
+            }
 
             setProfile(profileData);
 
@@ -71,8 +80,10 @@ export default function PublicChatShell({ params }: { params: { handle: string }
             const historyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/history/?visitor_id=${visitorId}`);
             if (!historyRes.ok) throw new Error("Failed to load conversation history.");
             
+            // Assuming historyData is an array of messages
             const historyData = await historyRes.json();
-            const historyMessages = historyData.messages || [];
+            // Note: History endpoint is ListAPIView, returns an array directly, not { messages: [...] }
+            const historyMessages: Message[] = Array.isArray(historyData) ? historyData : []; 
 
             setMessages(historyMessages.length > 0 ? historyMessages : [
                 {
@@ -84,6 +95,7 @@ export default function PublicChatShell({ params }: { params: { handle: string }
             ]);
 
         } catch (error: any) {
+            console.error("Fetch Error:", error);
             toast.error(error.message || "Failed to load the Avatar page.");
             setProfile(null); // Clear profile on error
         } finally {
@@ -107,19 +119,28 @@ export default function PublicChatShell({ params }: { params: { handle: string }
             // GET /api/avatars/training-jobs/<uuid:id>/status/ -- REUSING THE TASK STATUS ENDPOINT FOR CHAT
             const res = await fetch(
                 `${process.env.NEXT_PUBLIC_API_URL}/avatars/training-jobs/${currentTaskId}/status/` 
-                // Note: Chat should ideally have its own dedicated response endpoint: /api/avatars/<handle>/chat/response/<task_id>/
             ); 
 
             if (!res.ok) return;
 
             const data = await res.json();
-            if (data.status === "done") {
-                setMessages(prev => [...prev, {
-                    id: Date.now(),
-                    role: "assistant",
-                    content: data.assistant_reply || "I seem to be having trouble connecting. Please try again.",
-                    created_at: new Date().toISOString(),
-                }]);
+            // Assuming the successful completion status is 'success' as per your backend view:
+            if (data.status === "success") { 
+                setMessages(prev => {
+                    const assistantReply = data.assistant_reply || "I seem to be having trouble connecting. Please try again.";
+                    
+                    // Check if the reply is already present to prevent duplicates on successful poll
+                    const isReplyAlreadyAdded = prev.some(msg => msg.content === assistantReply && msg.role === 'assistant');
+                    
+                    if (isReplyAlreadyAdded) return prev;
+
+                    return [...prev, {
+                        id: Date.now(),
+                        role: "assistant",
+                        content: assistantReply,
+                        created_at: new Date().toISOString(),
+                    }];
+                });
                 setCurrentTaskId(null);
                 clearInterval(interval);
             }
@@ -127,8 +148,15 @@ export default function PublicChatShell({ params }: { params: { handle: string }
 
         const timeout = setTimeout(() => {
             clearInterval(interval);
+            if (currentTaskId) { // Only show error if a task was active
+                 setMessages(prev => [...prev, {
+                    id: Date.now(),
+                    role: "assistant",
+                    content: "The Avatar response timed out. Please try your message again.",
+                    created_at: new Date().toISOString(),
+                 }]);
+            }
             setCurrentTaskId(null);
-            // Handle timeout failure message
         }, 45000);
 
         return () => {
@@ -168,10 +196,13 @@ export default function PublicChatShell({ params }: { params: { handle: string }
                 const data = await res.json();
                 setCurrentTaskId(data.task_id);
             } else {
-                throw new Error("Failed to send message to Avatar.");
+                const errorData = await res.json();
+                throw new Error(errorData.error || "Failed to send message to Avatar.");
             }
-        } catch {
-            // Fallback error message
+        } catch (error: any) {
+             toast.error(error.message || "Failed to initiate chat.");
+             // Remove the user message on error to allow retry
+             setMessages(prev => prev.filter(msg => msg.id !== userMsg.id));
         }
     };
 
@@ -275,4 +306,3 @@ function PublicMessageInput({ sendMessage, isLoading }: PublicMessageInputProps)
         </div>
     );
 }
-

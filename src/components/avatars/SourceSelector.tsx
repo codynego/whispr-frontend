@@ -163,6 +163,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
                 },
                 body: JSON.stringify(payload),
             });
+            console.log("payload sent:", payload); // Debug log
 
             if (!res.ok) {
                  const errorData = await res.json();

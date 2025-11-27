@@ -58,7 +58,7 @@ export default function PublicChatShell({ params }: { params: { handle: string }
 
         try {
             // 1. Fetch Profile (GET /api/avatars/<handle>/public/ - USING THE CORRECT PUBLIC ROUTE)
-            const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/public/`); // <<< FIX APPLIED HERE
+            const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/public/${avatarHandle}/`); // <<< FIX APPLIED HERE
             
             if (!profileRes.ok) {
                 // If it fails, check for 404/403 and provide specific error

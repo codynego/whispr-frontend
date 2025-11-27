@@ -29,7 +29,7 @@ export const AvatarListCard = ({
 }: AvatarListCardProps) => {
   const publicPageUrl = `/a/${handle}`; 
   // Link to the main training/configuration page
-  const dashboardConfigUrl = `/dashboard/avatars/${handle}/training`; 
+  const dashboardConfigUrl = `/dashboard/avatars/${handle}/`; 
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 flex flex-col gap-5 transition-all hover:shadow-xl hover:border-emerald-200">

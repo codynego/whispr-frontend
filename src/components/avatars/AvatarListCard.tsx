@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Settings, Users, MessageSquare, TrendingUp, Cpu } from "lucide-react";
+import { Settings, Users, MessageSquare, TrendingUp, Cpu } from "lucide-react"; // Brain import removed
 
 interface AvatarListCardProps {
   id: string;
@@ -29,7 +29,7 @@ export const AvatarListCard = ({
 }: AvatarListCardProps) => {
   const publicPageUrl = `/a/${handle}`; 
   // Link to the main training/configuration page
-  const dashboardConfigUrl = `/avatars/${handle}/train`; 
+  const dashboardConfigUrl = `/avatars/${handle}/training`; 
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 flex flex-col gap-5 transition-all hover:shadow-xl hover:border-emerald-200">
@@ -85,13 +85,13 @@ export const AvatarListCard = ({
         {/* Conversations */}
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-emerald-500" />
-          <span>**{totalConversations}** Conversations</span>
+          <span><span className="font-bold">{totalConversations}</span> Conversations</span>
         </div>
         
         {/* Messages */}
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-emerald-500" />
-          <span>**{totalMessages}** Messages</span>
+          <span><span className="font-bold">{totalMessages}</span> Messages</span>
         </div>
         
         {/* Last Trained */}

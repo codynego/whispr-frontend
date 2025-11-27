@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Brain, Settings, Users, MessageSquare, TrendingUp, Cpu } from "lucide-react";
+import { Settings, Users, MessageSquare, TrendingUp, Cpu } from "lucide-react";
 
 interface AvatarListCardProps {
   id: string;

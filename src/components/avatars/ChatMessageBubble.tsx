@@ -2,7 +2,7 @@
 
 import React from "react";
 import Markdown from 'react-markdown'; // Assuming you use a markdown renderer
-import Image from 'next/image';     // If you display user/avatar photos
+// import Image from 'next/image';     // If you display user/avatar photos
 
 interface Message {
     id: number | string;

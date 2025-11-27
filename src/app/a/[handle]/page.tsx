@@ -193,7 +193,7 @@ export default function PublicChatShell({ params }: { params: { handle: string }
                     <Brain className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                    <h1 className="text-xl font-bold text-gray-900">{profile.name}'s AI</h1>
+                    <h1 className="text-xl font-bold text-gray-900">{profile.name}&apos;s AI</h1>
                     <p className="text-sm text-gray-600">Public Avatar | @{profile.handle}</p>
                 </div>
             </header>

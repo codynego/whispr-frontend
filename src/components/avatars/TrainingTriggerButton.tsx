@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Brain, Send, Loader2 } from 'lucide-react';
+import { Brain, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface TrainingTriggerButtonProps {

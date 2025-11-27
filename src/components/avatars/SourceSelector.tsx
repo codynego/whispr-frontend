@@ -2,22 +2,21 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { BookOpen, Calendar, ListChecks, Upload, Mail, Globe, Settings, Loader2, Save, Send } from "lucide-react";
+import { BookOpen, Calendar, ListChecks, Upload, Mail, Globe, Settings, Loader2, Save, Send, Brain } from "lucide-react";
 import toast from "react-hot-toast";
-import { Brain } from "lucide-react";
 
-// --- Types (Assumed imported from types/avatar.ts) ---
+// --- Types ---
 type SourceType = "notes" | "reminders" | "todos" | "uploads" | "gmail" | "manual" | "website";
 interface UnifiedItem { id: string | number; title: string; description?: string; }
 interface AvatarSourceConfig {
     type: SourceType;
     label: string;
-    icon: React.ElementType; // Add this line
+    icon: React.ElementType; 
     isEnabled: boolean;
     includeForTone: boolean;
     includeForKnowledge: boolean;
     selectedIds: (string | number)[];
-    data?: UnifiedItem[];
+    data?: UnifiedItem[]; // Items fetched from /unified/
     metadata?: any;
     hasDetailView: boolean;
 }
@@ -25,17 +24,18 @@ interface AvatarSourceConfig {
 
 interface SourceSelectorProps {
     avatarHandle: string;
-    onSaveSuccess: () => void; // Called after successful source save
+    onSaveSuccess: () => void; 
 }
 
 // Initial structure for all source types
 const INITIAL_SOURCES: AvatarSourceConfig[] = [
     { type: "notes", label: "Whisone Notes", icon: BookOpen, isEnabled: true, includeForTone: true, includeForKnowledge: true, selectedIds: [], hasDetailView: true },
-    { type: "reminders", label: "Reminders & Tasks", icon: Calendar, isEnabled: false, includeForTone: false, includeForKnowledge: true, selectedIds: [], hasDetailView: false }, // Simpler, just enable/disable
-    { type: "todos", label: "To-Dos", icon: ListChecks, isEnabled: false, includeForTone: false, includeForKnowledge: true, selectedIds: [], hasDetailView: false }, // Simpler, just enable/disable
+    // FIX: Set hasDetailView to true to allow item selection for Reminders/To-Dos
+    { type: "reminders", label: "Reminders & Tasks", icon: Calendar, isEnabled: false, includeForTone: false, includeForKnowledge: true, selectedIds: [], hasDetailView: true },
+    { type: "todos", label: "To-Dos", icon: ListChecks, isEnabled: false, includeForTone: false, includeForKnowledge: true, selectedIds: [], hasDetailView: true }, 
     { type: "uploads", label: "File Uploads", icon: Upload, isEnabled: true, includeForTone: true, includeForKnowledge: true, selectedIds: [], hasDetailView: true },
-    { type: "gmail", label: "Gmail Emails", icon: Mail, isEnabled: false, includeForTone: true, includeForKnowledge: true, selectedIds: [], hasDetailView: true }, // Special handling via integrations
-    { type: "website", label: "Website Crawl", icon: Globe, isEnabled: false, includeForTone: false, includeForKnowledge: true, selectedIds: [], hasDetailView: true }, // Placeholder
+    { type: "gmail", label: "Gmail Emails", icon: Mail, isEnabled: false, includeForTone: true, includeForKnowledge: true, selectedIds: [], hasDetailView: true },
+    { type: "website", label: "Website Crawl", icon: Globe, isEnabled: false, includeForTone: false, includeForKnowledge: true, selectedIds: [], hasDetailView: true },
 ];
 
 // Helper to determine the unified API endpoint based on source type
@@ -45,7 +45,7 @@ const getUnifiedEndpoint = (type: SourceType) => {
         case 'reminders': return 'reminders/';
         case 'todos': return 'todos/';
         case 'uploads': return 'files/';
-        default: return null;
+        default: return null; // 'gmail', 'website', 'manual' need custom handling/integrations
     }
 };
 
@@ -62,9 +62,13 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
         const endpoint = getUnifiedEndpoint(type);
         if (!endpoint || !accessToken) return;
 
+        // Prevent redundant fetching if data is already present for this type
+        const currentSource = sources.find(s => s.type === type);
+        if (currentSource?.data) return; 
+
         setLoading(true);
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/${endpoint}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/${endpoint}`, {
                 headers: { Authorization: `Bearer ${accessToken}` },
             });
             if (!res.ok) throw new Error(`Failed to fetch ${type}`);
@@ -81,20 +85,29 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
         } finally {
             setLoading(false);
         }
-    }, [accessToken]);
+    }, [accessToken, sources]); // Added sources to dependency array to check current data status
 
-
-    // Load data for initial detail views (Notes and Files)
+    // Load initial data for mandatory sources (Notes, Uploads) on first render
     useEffect(() => {
         if (accessToken) {
             fetchSourceData('notes');
             fetchSourceData('uploads');
-            // GMAIL: fetch integrations status here
         }
-    }, [accessToken, fetchSourceData]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [accessToken]); // fetchSourceData now handles the check internally
 
+    // --- FIX: Handler to set active source AND trigger data fetch if needed ---
+    const handleSetActiveSource = (type: SourceType) => {
+        setActiveSourceType(type);
+        const selectedSource = sources.find(s => s.type === type);
 
-    // --- Handlers ---
+        if (selectedSource?.hasDetailView && !selectedSource.data) {
+            fetchSourceData(type);
+        }
+    };
+    // --------------------------------------------------------------------------
+
+    // --- Other Handlers (Remains the same) ---
     const handleToggleSource = (type: SourceType, field: keyof AvatarSourceConfig, value: boolean) => {
         setSources(prev => prev.map(source => 
             source.type === type ? { ...source, [field]: value } : source
@@ -113,24 +126,25 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
         }));
     };
 
-    // --- API Save Handler ---
+    // --- API Save Handler (Remains the same) ---
     const handleSaveSources = async () => {
         if (!accessToken) return;
         setSaveLoading(true);
 
         const payload = sources
-            .filter(s => s.isEnabled || s.includeForTone || s.includeForKnowledge) // Only send active or configured sources
+            .filter(s => s.isEnabled || s.includeForTone || s.includeForKnowledge)
             .map(s => ({
                 source_type: s.type,
-                include_for_tone: s.includeForTone && s.isEnabled,
+                // Ensure we only include if enabled and checked
+                include_for_tone: s.includeForTone && s.isEnabled, 
                 include_for_knowledge: s.includeForKnowledge && s.isEnabled,
-                metadata: s.hasDetailView && s.selectedIds.length > 0 ? { ids: s.selectedIds } : {}, // Send IDs if available
+                // Ensure selectedIds metadata is only sent for detail views if IDs exist
+                metadata: s.hasDetailView && s.selectedIds.length > 0 ? { ids: s.selectedIds } : {}, 
             }));
 
         try {
-            // Note: This endpoint is scoped by handle in the URL, not the payload
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/sources/`, {
-                method: "POST", // POST /api/avatars/<handle>/sources/ (convenience route)
+                method: "POST", 
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${accessToken}`,
@@ -138,7 +152,10 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
                 body: JSON.stringify(payload),
             });
 
-            if (!res.ok) throw new Error("Failed to save avatar sources.");
+            if (!res.ok) {
+                 const errorData = await res.json();
+                 throw new Error(errorData.detail || "Failed to save avatar sources.");
+            }
 
             toast.success("Avatar sources updated!");
             onSaveSuccess();
@@ -149,7 +166,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
         }
     };
 
-    // --- Render Helpers ---
+    // --- Render Helpers (Remains the same) ---
     const activeSource = sources.find(s => s.type === activeSourceType);
 
     const SourceIcon = ({ type }: { type: SourceType }) => {
@@ -174,7 +191,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
                     {sources.map(source => (
                         <div key={source.type} className={`p-3 rounded-lg flex items-center justify-between transition cursor-pointer 
                             ${source.type === activeSourceType ? 'bg-emerald-50 border border-emerald-300' : 'hover:bg-gray-50'}`}
-                            onClick={() => setActiveSourceType(source.type)}
+                            onClick={() => handleSetActiveSource(source.type)}
                         >
                             <div className="flex items-center gap-3">
                                 <SourceIcon type={source.type} />
@@ -262,7 +279,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
                                             </div>
                                         ) : (
                                             <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-                                                No specific item selection needed or data not loaded.
+                                                No items available or data failed to load.
                                             </div>
                                         )}
                                     </div>

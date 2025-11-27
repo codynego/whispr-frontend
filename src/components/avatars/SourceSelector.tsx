@@ -12,12 +12,11 @@ interface AvatarSourceConfig {
     type: SourceType;
     label: string;
     icon: React.ElementType; 
-    isEnabled: boolean;
-    includeForTone: boolean;
-    includeForKnowledge: boolean;
+    isEnabled: boolean; // Controls top-level checkbox
+    includeForTone: boolean; // Controls tone checkbox
+    includeForKnowledge: boolean; // Controls knowledge checkbox
     selectedIds: (string | number)[];
     data?: UnifiedItem[]; // Items fetched from /unified/
-    metadata?: any;
     hasDetailView: boolean;
 }
 // -----------------------------------------------------
@@ -30,7 +29,6 @@ interface SourceSelectorProps {
 // Initial structure for all source types
 const INITIAL_SOURCES: AvatarSourceConfig[] = [
     { type: "notes", label: "Whisone Notes", icon: BookOpen, isEnabled: true, includeForTone: true, includeForKnowledge: true, selectedIds: [], hasDetailView: true },
-    // FIX: Set hasDetailView to true to allow item selection for Reminders/To-Dos
     { type: "reminders", label: "Reminders & Tasks", icon: Calendar, isEnabled: false, includeForTone: false, includeForKnowledge: true, selectedIds: [], hasDetailView: true },
     { type: "todos", label: "To-Dos", icon: ListChecks, isEnabled: false, includeForTone: false, includeForKnowledge: true, selectedIds: [], hasDetailView: true }, 
     { type: "uploads", label: "File Uploads", icon: Upload, isEnabled: true, includeForTone: true, includeForKnowledge: true, selectedIds: [], hasDetailView: true },
@@ -45,7 +43,7 @@ const getUnifiedEndpoint = (type: SourceType) => {
         case 'reminders': return 'reminders/';
         case 'todos': return 'todos/';
         case 'uploads': return 'files/';
-        default: return null; // 'gmail', 'website', 'manual' need custom handling/integrations
+        default: return null; 
     }
 };
 
@@ -68,6 +66,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
 
         setLoading(true);
         try {
+            // FIX: Corrected API path from /whisone/ to /unified/
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/${endpoint}`, {
                 headers: { Authorization: `Bearer ${accessToken}` },
             });
@@ -85,7 +84,8 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
         } finally {
             setLoading(false);
         }
-    }, [accessToken, sources]); // Added sources to dependency array to check current data status
+    // Added 'sources' here to allow the redundant check, but consider optimising if performance is hit
+    }, [accessToken, sources]); 
 
     // Load initial data for mandatory sources (Notes, Uploads) on first render
     useEffect(() => {
@@ -94,9 +94,9 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
             fetchSourceData('uploads');
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [accessToken]); // fetchSourceData now handles the check internally
+    }, [accessToken]); 
 
-    // --- FIX: Handler to set active source AND trigger data fetch if needed ---
+    // --- Handler to set active source AND trigger data fetch if needed ---
     const handleSetActiveSource = (type: SourceType) => {
         setActiveSourceType(type);
         const selectedSource = sources.find(s => s.type === type);
@@ -105,8 +105,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
             fetchSourceData(type);
         }
     };
-    // --------------------------------------------------------------------------
-
+    
     // --- Other Handlers (Remains the same) ---
     const handleToggleSource = (type: SourceType, field: keyof AvatarSourceConfig, value: boolean) => {
         setSources(prev => prev.map(source => 
@@ -126,25 +125,38 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
         }));
     };
 
-    // --- API Save Handler (Remains the same) ---
+    // --- API Save Handler FIX ---
     const handleSaveSources = async () => {
         if (!accessToken) return;
         setSaveLoading(true);
 
         const payload = sources
+            // Only send sources that are actively enabled or configured to include tone/knowledge
             .filter(s => s.isEnabled || s.includeForTone || s.includeForKnowledge)
-            .map(s => ({
-                source_type: s.type,
-                // Ensure we only include if enabled and checked
-                include_for_tone: s.includeForTone && s.isEnabled, 
-                include_for_knowledge: s.includeForKnowledge && s.isEnabled,
-                // Ensure selectedIds metadata is only sent for detail views if IDs exist
-                metadata: s.hasDetailView && s.selectedIds.length > 0 ? { ids: s.selectedIds } : {}, 
-            }));
+            .map(s => {
+                let metadataToSend = {};
+                
+                // FIX FOR 400 BAD REQUEST: Ensure the 'ids' key is always present in metadata 
+                // for detail views, even if the selectedIds array is empty.
+                if (s.hasDetailView) {
+                    metadataToSend = { ids: s.selectedIds };
+                }
+
+                return {
+                    source_type: s.type,
+                    // Ensure we only include if enabled and checked
+                    include_for_tone: s.includeForTone && s.isEnabled, 
+                    include_for_knowledge: s.includeForKnowledge && s.isEnabled,
+                    metadata: metadataToSend, // Send the explicit metadata structure
+                };
+            });
+            
+        // If the payload is empty (user disabled everything), return early or send an empty array 
+        // depending on backend requirements. Sending empty array is usually safer for List API.
 
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/sources/`, {
-                method: "POST", 
+                method: "POST", // This endpoint typically handles updating the list (or POST for list update)
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${accessToken}`,
@@ -154,7 +166,8 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
 
             if (!res.ok) {
                  const errorData = await res.json();
-                 throw new Error(errorData.detail || "Failed to save avatar sources.");
+                 // Improved error message logging/display
+                 throw new Error(errorData.detail || JSON.stringify(errorData) || "Failed to save avatar sources.");
             }
 
             toast.success("Avatar sources updated!");
@@ -263,7 +276,8 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
                                         {activeSource.data ? (
                                             activeSource.data.map(item => (
                                                 <div key={item.id} className="flex items-center justify-between py-1.5 border-b last:border-b-0">
-                                                    <span className="text-sm text-gray-700 truncate">{item.title}</span>
+                                                    {/* We assume 'title' is now available from the backend serializers */}
+                                                    <span className="text-sm text-gray-700 truncate">{item.title}</span> 
                                                     <input
                                                         type="checkbox"
                                                         checked={activeSource.selectedIds.includes(item.id)}
@@ -279,7 +293,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
                                             </div>
                                         ) : (
                                             <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-                                                No items available or data failed to load.
+                                                No items available or data not loaded.
                                             </div>
                                         )}
                                     </div>

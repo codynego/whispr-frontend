@@ -206,6 +206,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: SourceSelectorPr
         },
         body: JSON.stringify(payload), // [] is allowed and means "clear all"
       });
+      console.log("payload", payload);
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));

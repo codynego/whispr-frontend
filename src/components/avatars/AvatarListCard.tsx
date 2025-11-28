@@ -2,18 +2,18 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Settings, Users, MessageSquare, TrendingUp, Cpu } from "lucide-react"; // Brain import removed
+import { Settings, Users, MessageSquare, TrendingUp, Cpu, Globe, Lock } from "lucide-react"; 
 
 interface AvatarListCardProps {
   id: string;
   name: string;
   handle: string;
   photoUrl?: string | null;
-  isPublic: boolean; // New: Display public status
+  isPublic: boolean; 
   trained: boolean;
   totalConversations: number;
   totalMessages: number;
-  lastTrainedDate?: string | null; // New: Display last training time
+  lastTrainedDate?: string | null; 
 }
 
 export const AvatarListCard = ({
@@ -28,96 +28,126 @@ export const AvatarListCard = ({
   lastTrainedDate,
 }: AvatarListCardProps) => {
   const publicPageUrl = `/a/${handle}`; 
-  // Link to the main training/configuration page
   const dashboardConfigUrl = `/dashboard/avatars/${handle}/`; 
 
+  // Function to format the date robustly
+  const formatLastTrainedDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "Never";
+    try {
+      // Attempt to parse the date and show a relative/short format
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch {
+      return "Unknown Date";
+    }
+  };
+
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 flex flex-col gap-5 transition-all hover:shadow-xl hover:border-emerald-200">
+    <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 flex flex-col gap-6 transition-all hover:shadow-2xl hover:border-indigo-300">
       
       {/* --- Profile Header --- */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-start gap-4">
+        {/* Avatar Image / Placeholder */}
         {photoUrl ? (
           <Image
             src={photoUrl}
             alt={`${name}'s photo`}
             width={64}
             height={64}
-            className="rounded-full object-cover w-16 h-16 border-2 border-emerald-400"
+            className="rounded-full object-cover w-16 h-16 border-4 border-indigo-400 shadow-md"
           />
         ) : (
-          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center border-2 border-emerald-400">
-            <Cpu className="w-8 h-8 text-emerald-600" />
+          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center border-4 border-indigo-400 shadow-md">
+            <Cpu className="w-8 h-8 text-indigo-600" />
           </div>
         )}
-        <div className="flex-1">
-          <h3 className="text-xl font-semibold text-gray-900">{name}</h3>
-          <p className="text-sm text-gray-600">@{handle}</p>
+        
+        {/* Name and Handle */}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-xl font-bold text-gray-900 truncate">{name}</h3>
+          <p className="text-sm text-gray-500 truncate">@{handle}</p>
         </div>
       </div>
 
-      {/* --- Status & Analytics Grid --- */}
-      <div className="grid grid-cols-2 gap-3 text-sm text-gray-700">
-        
-        {/* Training Status */}
-        <div className="flex items-center gap-2">
-          <span
-            className={`w-2.5 h-2.5 rounded-full ${
-              trained ? "bg-green-500" : "bg-yellow-500 animate-pulse"
-            }`}
-          ></span>
-          <span className={`${trained ? "text-green-700" : "text-yellow-700"}`}>
-            {trained ? "Trained" : "Needs Training"}
-          </span>
-        </div>
-        
-        {/* Public Status */}
-        <div className="flex items-center gap-2">
-            <span
-                className={`w-2.5 h-2.5 rounded-full ${
-                    isPublic ? "bg-blue-500" : "bg-gray-400"
-                }`}
-            ></span>
-            <span className={`${isPublic ? "text-blue-700" : "text-gray-500"}`}>
-                {isPublic ? "Public" : "Private"}
-            </span>
-        </div>
+      {/* --- Status Badges --- */}
+      <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+          
+        {/* Training Status Badge */}
+        <span
+            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap 
+              ${trained 
+                ? "bg-green-100 text-green-700" 
+                : "bg-yellow-100 text-yellow-700 animate-pulse"
+              }`}
+        >
+            <TrendingUp className="w-3 h-3 mr-1" />
+            {trained ? "Trained & Live" : "Training Needed"}
+        </span>
 
+        {/* Visibility Status Badge */}
+        <span
+            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap 
+              ${isPublic 
+                ? "bg-blue-100 text-blue-700" 
+                : "bg-gray-100 text-gray-600"
+              }`}
+        >
+            {isPublic ? <Globe className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
+            {isPublic ? "Public Access" : "Private"}
+        </span>
+      </div>
+
+      {/* --- Performance Metrics Grid --- */}
+      <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
+        
         {/* Conversations */}
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-emerald-500" />
-          <span><span className="font-bold">{totalConversations}</span> Conversations</span>
+        <div className="flex flex-col gap-1 p-2 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-indigo-500" />
+            <span className="text-xs text-gray-500 font-medium">Conversations</span>
+          </div>
+          <span className="text-lg font-bold text-gray-900">{totalConversations.toLocaleString()}</span>
         </div>
         
         {/* Messages */}
-        <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-emerald-500" />
-          <span><span className="font-bold">{totalMessages}</span> Messages</span>
+        <div className="flex flex-col gap-1 p-2 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-indigo-500" />
+            <span className="text-xs text-gray-500 font-medium">Messages</span>
+          </div>
+          <span className="text-lg font-bold text-gray-900">{totalMessages.toLocaleString()}</span>
         </div>
         
-        {/* Last Trained */}
-        {lastTrainedDate && (
-            <div className="flex items-center gap-2 col-span-2 text-xs text-gray-500">
-                <TrendingUp className="w-4 h-4" />
-                <span>Last trained: {new Date(lastTrainedDate).toLocaleDateString()}</span>
-            </div>
-        )}
+      </div>
+      
+      {/* Last Trained Date */}
+      <div className="text-xs text-gray-500 mt-0 pt-2 border-t border-gray-100">
+          <span className="font-medium">Last Trained:</span> {formatLastTrainedDate(lastTrainedDate)}
       </div>
 
+
       {/* --- Actions --- */}
-      <div className="flex gap-3 mt-auto pt-4 border-t border-gray-100">
+      <div className="flex flex-col gap-2 mt-auto">
+        {/* Primary Action */}
+        <Link
+          href={dashboardConfigUrl}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-base font-semibold hover:bg-indigo-700 transition shadow-lg"
+        >
+          <Settings className="w-5 h-5" />
+          Configure Avatar
+        </Link>
+        
+        {/* Secondary Action */}
         <Link
           href={publicPageUrl}
-          className="flex-1 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium text-center hover:bg-emerald-100 transition disabled:opacity-50"
+          className={`flex items-center justify-center px-4 py-2 bg-indigo-50 rounded-xl text-sm font-medium transition disabled:opacity-50 
+            ${isPublic 
+              ? "text-indigo-700 hover:bg-indigo-100" 
+              : "text-gray-500 cursor-not-allowed pointer-events-none opacity-70"
+            }`}
           aria-disabled={!isPublic}
         >
           View Public Page
-        </Link>
-        <Link
-          href={dashboardConfigUrl}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
-        >
-          <Settings className="w-4 h-4" />
-          Configure
         </Link>
       </div>
     </div>

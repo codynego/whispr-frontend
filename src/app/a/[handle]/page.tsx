@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Brain, MessageSquare, ArrowUp, User } from "lucide-react";
+import { Loader2, Brain, MessageSquare, ArrowUp } from "lucide-react";
 import toast from "react-hot-toast";
-import { format } from "date-fns";
+// import { format } from "date-fns";
 // NOTE: Assuming ChatMessageBubble is styled to handle visitor/assistant roles
 import { ChatMessageBubble } from "@/components/avatars/ChatMessageBubble"; 
 

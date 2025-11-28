@@ -147,7 +147,7 @@ export default function NotePage() {
                     ) : (
                         <div className="flex items-center justify-center h-full text-gray-500 flex-col p-8">
                             <NotebookText className="w-12 h-12 mb-4" />
-                            <p className="text-lg">Select a note or click 'New' to begin.</p>
+                            <p className="text-lg">Select a note or click &apos;New&apos; to begin.</p>
                         </div>
                     )}
                 </div>

@@ -28,7 +28,7 @@ export const NoteList = ({ notes, selectedNoteId, onSelectNote }: NoteListProps)
                 // --- Empty State ---
                 <div className="p-4 text-center text-gray-500 flex flex-col items-center justify-center h-full min-h-[100px]">
                     <NotebookText className="w-6 h-6 mb-2 text-gray-400" />
-                    <p className="text-sm">No notes found. Click 'New' to start writing!</p>
+                    <p className="text-sm">No notes found. Click &apos;New&apos; to start writing!</p>
                 </div>
             ) : (
                 // --- Notes List ---

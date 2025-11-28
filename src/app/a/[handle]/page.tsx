@@ -1,11 +1,16 @@
+// src/components/PublicChatShell.tsx
+
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Brain, MessageSquare, ArrowUp } from "lucide-react";
+import { Loader2, Brain, MessageSquare, ArrowUp, User } from "lucide-react";
 import toast from "react-hot-toast";
-// import { format } from "date-fns";
-// NOTE: Assuming ChatMessageBubble is styled to handle visitor/assistant roles
+
+// NOTE: Ensure these components are imported/defined as required
 import { ChatMessageBubble } from "@/components/avatars/ChatMessageBubble"; 
+// Assuming PublicMessageInput is either defined below or imported
+// import { PublicMessageInput } from "@/components/avatars/PublicMessageInput"; 
+
 
 // --- Types ---
 interface AvatarProfile {
@@ -26,13 +31,13 @@ interface Message {
     created_at: string;
 }
 
+
 // --- Constants ---
-// Define a safe timeout for the async chat response (45 seconds)
 const CHAT_TIMEOUT_MS = 45000;
-// Polling interval for checking the status of the chat response task
 const CHAT_POLL_INTERVAL_MS = 1200;
 
-// --- Helper Component: PublicMessageInput ---
+
+// --- Helper Component: PublicMessageInput (Kept for completeness, assume moved to its own file) ---
 interface PublicMessageInputProps {
     sendMessage: (message: string) => void;
     isLoading: boolean;
@@ -84,25 +89,24 @@ export default function PublicChatShell({ params }: { params: { handle: string }
     const [profile, setProfile] = useState<AvatarProfile | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isSending, setIsSending] = useState(false); // New dedicated state for input/polling
+    const [isSending, setIsSending] = useState(false);
     const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // --- Helpers ---
     const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
-    // 1. Generate or retrieve persistent visitor ID (Runs once)
+    // 1. Generate or retrieve persistent visitor ID
     useEffect(() => {
         let id = localStorage.getItem("whisone_visitor_id");
         if (!id) {
-            // Generate a simple unique ID
             id = `vis_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
             localStorage.setItem("whisone_visitor_id", id);
         }
         setVisitorId(id);
     }, []);
 
-    // 2. Fetch Profile and History (Runs when visitorId is ready)
+    // 2. Fetch Profile and History
     const fetchProfileAndHistory = useCallback(async () => {
         setLoading(true);
         if (!visitorId) return;
@@ -152,35 +156,35 @@ export default function PublicChatShell({ params }: { params: { handle: string }
     useEffect(() => scrollToBottom(), [messages]);
 
     // 4. Chat Polling Logic (For checking the background task's completion)
+    // 💥 FIX APPLIED HERE: Polling URL changed from /training-jobs/ to /chat-tasks/
     useEffect(() => {
         if (!currentTaskId || !visitorId) return;
 
-        // Set UI loading state immediately when task starts
         setIsSending(true);
 
         const interval = setInterval(async () => {
-            // Use the generic task status endpoint, which is adapted to return chat data
+            // ⭐ CORRECTED ENDPOINT: Use the dedicated chat task status URL
             const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/avatars/training-jobs/${currentTaskId}/status/` 
+                `${process.env.NEXT_PUBLIC_API_URL}/avatars/chat-tasks/${currentTaskId}/status/` 
             ); 
 
             if (!res.ok) return;
 
             const data = await res.json();
             
-            // Check for task completion status (assuming 'success' for successful chat completion)
+            // Assuming the new view returns "SUCCESS" or "FAILURE"
             if (data.status === "SUCCESS" || data.status === "FAILURE") { 
                 
-                // Clear polling regardless of success/failure
                 setCurrentTaskId(null);
                 setIsSending(false);
                 
                 if (data.status === "SUCCESS") {
+                    // Note: The new backend view should return the actual message content,
+                    // which is what 'data.assistant_reply' should contain.
                     const assistantReply = data.assistant_reply || "I seem to be having trouble connecting. Please try again.";
                     
-                    // Add the final reply message
                     setMessages(prev => {
-                        // Simple check to prevent duplicates on successful poll completion
+                        // Simple check to prevent duplicates
                         const isReplyAlreadyAdded = prev.some(msg => msg.content === assistantReply && msg.role === 'assistant');
                         if (isReplyAlreadyAdded) return prev;
 
@@ -192,13 +196,12 @@ export default function PublicChatShell({ params }: { params: { handle: string }
                         }];
                     });
                 } else {
-                    // Handle FAILURE status
                     toast.error("Avatar failed to respond. Please try again.");
                 }
             }
         }, CHAT_POLL_INTERVAL_MS);
 
-        // Timeout handler for response
+        // Timeout handler
         const timeout = setTimeout(() => {
             clearInterval(interval);
             if (currentTaskId) {
@@ -210,7 +213,7 @@ export default function PublicChatShell({ params }: { params: { handle: string }
                  }]);
             }
             setCurrentTaskId(null);
-            setIsSending(false); // Clear sending state
+            setIsSending(false);
         }, CHAT_TIMEOUT_MS);
 
         return () => {
@@ -219,6 +222,7 @@ export default function PublicChatShell({ params }: { params: { handle: string }
         };
     }, [currentTaskId, visitorId]);
     
+
 
     // 5. Message Submission Handler
     const sendMessage = async (message: string) => {
@@ -244,15 +248,13 @@ export default function PublicChatShell({ params }: { params: { handle: string }
 
             if (res.ok) {
                 const data = await res.json();
-                // This triggers the polling useEffect
-                setCurrentTaskId(data.task_id); 
+                setCurrentTaskId(data.task_id); // Triggers the polling useEffect
             } else {
                 const errorData = await res.json();
                 throw new Error(errorData.error || "Failed to send message to Avatar.");
             }
         } catch (error: any) {
             toast.error(error.message || "Failed to initiate chat.");
-            // Remove the user message on error to allow retry
             setMessages(prev => prev.filter(msg => msg.id !== userMsg.id));
             setIsSending(false);
         }
@@ -260,6 +262,8 @@ export default function PublicChatShell({ params }: { params: { handle: string }
 
 
     // --- Render Logic ---
+
+    // ... (Loading/Error handling remains the same) ...
     if (loading || !visitorId) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -288,6 +292,7 @@ export default function PublicChatShell({ params }: { params: { handle: string }
             <header className="flex items-center gap-4 p-4 border-b border-gray-100 bg-white z-10 sticky top-0">
                 <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
                     {profile.photo_url ? (
+                        // Assuming you have a standard <img> or Next.js <Image> setup
                         <img src={profile.photo_url} alt={`${profile.name} photo`} className="w-full h-full object-cover rounded-full" />
                     ) : (
                         <Brain className="w-5 h-5 text-white" />
@@ -312,7 +317,6 @@ export default function PublicChatShell({ params }: { params: { handle: string }
                     <ChatMessageBubble 
                         key={msg.id}
                         message={msg}
-                        // Pass avatar profile details for consistent styling
                         avatarPhotoUrl={profile.photo_url} 
                         avatarName={profile.name}
                     />

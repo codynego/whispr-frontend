@@ -1,3 +1,5 @@
+// src/components/avatars/TrainingStatusMonitor.tsx
+
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -5,8 +7,8 @@ import { useAuth } from '@/context/AuthContext';
 import { Loader2, CheckCircle, AlertTriangle, Clock, ListChecks, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-
-type JobStatusKey =  'queued' | 'running' | 'completed' | 'error' | 'undefined';
+// Define the exact lowercase status strings expected from the backend/view
+type JobStatusKey = 'queued' | 'running' | 'completed' | 'error' | 'undefined';
 
 // Define the type for the function that performs the check (which is passed up to the parent)
 type ManualCheckFunction = (id: string) => Promise<void>; 
@@ -24,7 +26,7 @@ interface TrainingStatusMonitorProps {
     avatarHandle: string;
     onJobComplete: () => void; // Callback to refresh the Avatar status in the parent
     
-    // FIX: Prop accepts the ManualCheckFunction type
+    // Prop accepts the ManualCheckFunction type to send the function up to the parent
     onManualCheck: (func: ManualCheckFunction) => void; 
 }
 
@@ -32,12 +34,12 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete, onMa
     const { accessToken } = useAuth();
     
     // --- State setup ---
-    const initialStatus = jobId ? 'pending' : 'undefined';
+    // Use 'undefined' if no jobId is present, otherwise default to 'queued'
+    const initialStatus = jobId ? 'queued' : 'undefined';
     const [status, setStatus] = useState<JobStatusKey>(initialStatus as JobStatusKey);
     const [progress, setProgress] = useState(0); // 0 to 100
     const [loading, setLoading] = useState(false); // To show spinner during manual check
     
-    // Use a ref to keep track of the current job ID (not strictly necessary here but good for async safety)
     const currentJobIdRef = useRef(jobId);
 
     // 1. Function to fetch the status (The core logic, now triggered manually)
@@ -54,10 +56,18 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete, onMa
             if (!res.ok) throw new Error(`API Error: ${res.status} Failed to fetch job status.`);
 
             const data = await res.json();
-            console.log("Job Status Data:", data);
             
-            const newStatus = data.status as JobStatusKey;
+            const apiStatusString = data.status as string;
             const newProgress = data.progress || 0; 
+            
+            // ⭐ FIX: Determine the status key, falling back to 'error' if the API returned an unrecognized string.
+            const newStatus: JobStatusKey = (apiStatusString in STATUS_MAP) 
+                ? apiStatusString as JobStatusKey 
+                : 'error'; 
+            
+            if (!(apiStatusString in STATUS_MAP)) {
+                console.warn(`API returned unrecognized job status: "${apiStatusString}". Falling back to 'error'.`);
+            }
             
             setProgress(newProgress);
             setStatus(newStatus);
@@ -87,6 +97,7 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete, onMa
             setStatus('undefined');
             setProgress(0);
         } else {
+            // Set initial state to 'queued' for a new job ID
             setStatus('queued'); 
             setProgress(0);
             currentJobIdRef.current = jobId; 
@@ -105,7 +116,8 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete, onMa
     }, [jobId, accessToken, fetchAndSetStatus, onManualCheck]);
 
 
-    const currentStatus = STATUS_MAP[status];
+    // ⭐ FIX: Add safe fallback when reading status from the map
+    const currentStatus = STATUS_MAP[status] || STATUS_MAP['error'];
     const Icon = currentStatus.icon;
 
     // Determine visibility flags
@@ -120,6 +132,7 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete, onMa
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Training Job Status</h3>
             
             <div className="flex items-center gap-4 py-2">
+                {/* Icon rendering is now safe */}
                 <Icon className={`w-6 h-6 ${currentStatus.color}`} />
                 <span className={`font-medium ${currentStatus.color}`}>{currentStatus.label}</span>
             </div>

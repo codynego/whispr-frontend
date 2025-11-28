@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-// --- Type Definitions (Kept the same) ---
+// --- Type Definitions ---
 type SourceType = "notes" | "reminders" | "todos" | "uploads" | "gmail" | "website";
 
 interface Item {
@@ -43,7 +43,7 @@ interface Props {
   onSaveSuccess: () => void;
 }
 
-// --- Configuration (Kept the same) ---
+// --- Configuration ---
 const CONFIG: SourceConfig[] = [
   { type: "notes", label: "Whisone Notes", icon: Book, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: true },
   { type: "reminders", label: "Reminders", icon: Calendar, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: true },
@@ -66,20 +66,25 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
   const [sources, setSources] = useState(CONFIG);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  // 💡 New state for mobile: which panel is active ('list' or 'details')
   const [activePanel, setActivePanel] = useState<'list' | 'details'>('list'); 
   const [activeType, setActiveType] = useState<SourceType | null>(null);
 
-  // Helper component for Icon
+  // 🐛 FIX: Rewritten Icon Helper for robust checking
   const Icon = ({ type, className }: { type: SourceType, className?: string }) => {
     const cfg = CONFIG.find((c) => c.type === type);
-    const C = cfg?.icon || Settings;
-    return <C className={`w-5 h-5 text-emerald-600 ${className || ''}`} />;
+    
+    // 💡 Explicitly check for configuration existence before accessing properties
+    if (cfg && cfg.icon) {
+        const C = cfg.icon;
+        return <C className={`w-5 h-5 text-emerald-600 ${className || ''}`} />;
+    }
+    
+    // Fallback if config is missing (should not happen with correct types)
+    return <Settings className={`w-5 h-5 text-gray-400 ${className || ''}`} />;
   };
 
   const fetchItems = useCallback(
     async (type: SourceType) => {
-      // ... (fetchItems logic remains the same)
       const endpoint = ENDPOINTS[type];
       if (!endpoint || !accessToken) return;
 
@@ -109,14 +114,12 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
 
   useEffect(() => {
     if (accessToken) {
-      // Pre-fetch items for initial display/interaction
       fetchItems("notes");
       fetchItems("uploads");
     }
   }, [accessToken]);
 
   const toggle = (type: SourceType, field: keyof SourceConfig, value: boolean) => {
-    // ... (toggle logic remains the same)
     setSources((prev) =>
       prev.map((s) => {
         if (s.type !== type) return s;
@@ -125,7 +128,6 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
           updated.useForTone = false;
           updated.useForKnowledge = false;
         }
-        // Ensure that if both are disabled, isEnabled is also set to false
         if ((field === "useForTone" || field === "useForKnowledge") && !value && !updated.useForTone && !updated.useForKnowledge) {
             updated.isEnabled = false;
         }
@@ -135,7 +137,6 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
   };
 
   const toggleItem = (type: SourceType, id: string | number, checked: boolean) => {
-    // ... (toggleItem logic remains the same)
     setSources((prev) =>
       prev.map((s) =>
         s.type === type
@@ -150,42 +151,35 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
     );
   };
   
-  // 💡 New function to handle activation on click (for mobile transition)
   const handleSourceSelect = (type: SourceType, hasItems: boolean, items: Item[] | undefined) => {
     setActiveType(type);
     if (hasItems && !items) fetchItems(type);
-    setActivePanel('details'); // Switch to details view on mobile
+    setActivePanel('details'); 
   };
 
   const save = async () => {
     if (!accessToken) return;
     setSaving(true);
 
-    // 💡 Streamlined Payload Construction: Filter for enabled/used sources, 
-    // and only include fields the backend expects: source_type, include_for_tone, 
-    // include_for_knowledge, and metadata.
     const payload = sources
       .map((s) => {
         const tone = s.useForTone;
         const knowledge = s.useForKnowledge;
         
-        // If not used for tone AND not used for knowledge, skip (as per the model logic)
         if (!tone && !knowledge) return null;
 
         const sourcePayload = {
           source_type: s.type,
           include_for_tone: tone,
           include_for_knowledge: knowledge,
-          // Only include metadata if the source has select-able items
           metadata: s.hasItems ? { ids: s.selectedIds } : {},
         };
         
         return sourcePayload;
       })
-      .filter(Boolean); // Filter out nulls
+      .filter(Boolean); 
 
     try {
-      // 💡 The backend expects an ARRAY of sources now (due to many=True fix)
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/sources/`, {
         method: "POST",
         headers: {
@@ -197,8 +191,17 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
       console.log("payload sent", payload)
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Save failed");
+        // Log the detailed backend error to the browser console for debugging
+        const errorData = await res.json().catch(() => ({})); 
+        console.error("DRF Validation Error (400):", errorData);
+        
+        let message = errorData.detail || "Save failed";
+        if (Array.isArray(errorData) && errorData.length > 0) {
+            // Provide a generic message and point user to the console for the array details
+            message = `Validation failed for ${errorData.length} item(s). Check console for specific field errors.`;
+        }
+        
+        throw new Error(message);
       }
 
       toast.success("Sources saved!");

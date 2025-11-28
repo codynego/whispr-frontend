@@ -55,6 +55,7 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete, onMa
             if (!res.ok) throw new Error(`API Error: ${res.status} Failed to fetch job status.`);
 
             const data = await res.json();
+            console.log("Job Status Data:", data);
             
             const newStatus = data.status as JobStatusKey;
             const newProgress = data.progress || 0; 

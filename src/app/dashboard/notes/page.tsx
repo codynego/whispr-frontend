@@ -1,103 +1,157 @@
-// app/dashboard/notes/page.tsx
+// src/app/dashboard/notes/page.tsx or components/Notes/NotePage.tsx
+
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { format } from "date-fns";
-import { FileText, Plus } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { Plus, NotebookText, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
+// --- Import Developed Components ---
+import { NoteList } from '@/components/notes/NoteList';
+import { NoteEditor } from '@/components/notes/NoteEditor';
+// -----------------------------------
+
+// Type definition based on your Django Serializer output
 interface Note {
-  id: number;
-  content: string;
-  created_at: string;
-  updated_at: string;
+    id: number;
+    title: string;
+    content: string;
+    created_at: string;
+    updated_at: string;
 }
 
-export default function NotesPage() {
-  const router = useRouter();
-  const { accessToken } = useAuth();
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function NotePage() {
+    const { accessToken } = useAuth();
+    
+    // --- State Management ---
+    const [notes, setNotes] = useState<Note[]>([]);
+    const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!accessToken) return;
+    // --- API Interactions ---
+    
+    // 1. Fetch All Notes
+    const fetchNotes = useCallback(async () => {
+        if (!accessToken) return;
+        setLoading(true);
+        try {
+            // Your Django URL: /api/notes/
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notes/`, {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            
+            if (!res.ok) throw new Error("Failed to fetch notes.");
+            
+            const data: Note[] = await res.json();
+            setNotes(data);
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/notes/?ordering=-updated_at&limit=50`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then(r => r.json())
-      .then(data => setNotes(Array.isArray(data) ? data : data.results || []))
-      .finally(() => setLoading(false));
-  }, [accessToken]);
+        } catch (error: any) {
+            toast.error(error.message || "Could not load notes.");
+        } finally {
+            setLoading(false);
+        }
+    }, [accessToken]);
+    
+    useEffect(() => {
+        fetchNotes();
+    }, [fetchNotes]);
 
-  if (loading) {
+
+    // 2. Handlers for Child Components
+
+    const handleNewNote = () => {
+        // Clear selection to prepare a new note draft
+        setSelectedNote({ 
+            id: -1, // Temporary ID for a new note
+            title: "New Note", 
+            content: "",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        });
+    };
+
+    const handleSelectNote = (note: Note) => {
+        setSelectedNote(note);
+    };
+
+    const handleSaveSuccess = (updatedNote: Note, isNew: boolean) => {
+        toast.success(isNew ? "Note created!" : "Note saved!");
+        fetchNotes(); // Re-fetch the list to update titles/order
+        
+        // Update the selected note with the server's response (especially the real ID for new notes)
+        setSelectedNote(updatedNote); 
+    };
+
+    const handleDeleteSuccess = () => {
+        toast.success("Note deleted successfully.");
+        setSelectedNote(null);
+        fetchNotes(); // Re-fetch the list
+    };
+
+    // --- UI Logic ---
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const showList = !isMobile || selectedNote === null;
+    const showEditor = !isMobile || selectedNote !== null;
+
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-full min-h-[500px]">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            </div>
+        );
+    }
+
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
-        <div className="text-center">
-          <FileText className="w-16 h-16 text-emerald-600 animate-pulse mx-auto mb-4" />
-          <p className="text-lg text-gray-600">Loading your notes...</p>
-        </div>
-      </div>
-    );
-  }
+        <div className="flex flex-1 h-full overflow-hidden bg-gray-50 md:p-6 p-0">
+            
+            {/* --- Notes List Sidebar (Hidden on mobile when editor is open) --- */}
+            {showList && (
+                <div 
+                    className={`bg-white border-r border-gray-200 shadow-md ${showEditor ? 'md:w-1/3' : 'w-full'} min-w-80 h-full flex flex-col transition-all duration-300`}
+                >
+                    <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                        <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <NotebookText className="w-5 h-5 text-indigo-600" />
+                            My Notes
+                        </h1>
+                        <button 
+                            onClick={handleNewNote}
+                            className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition"
+                        >
+                            <Plus className="w-4 h-4" />
+                            New
+                        </button>
+                    </div>
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <FileText className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Notes</h1>
-              <p className="text-gray-600">{notes.length} note{notes.length !== 1 && "s"}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-6 py-10">
-        {notes.length === 0 ? (
-          <div className="text-center py-24">
-            <div className="w-32 h-32 bg-emerald-100 rounded-3xl flex items-center justify-center mx-auto mb-8">
-              <FileText className="w-16 h-16 text-emerald-600" />
-            </div>
-            <h3 className="text-2xl font-semibold text-gray-800 mb-4">No notes yet</h3>
-            <p className="text-gray-600 max-w-md mx-auto">
-              Just say anything to Whisone on WhatsApp — it all appears here automatically.
-            </p>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {notes.map((note) => (
-              <div
-                key={note.id}
-                onClick={() => router.push(`/dashboard/notes/${note.id}`)}
-                className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-emerald-300 transition-all cursor-pointer hover:-translate-y-1"
-              >
-                <p className="text-gray-800 leading-relaxed line-clamp-5 group-hover:line-clamp-none">
-                  {note.content || <span className="text-gray-400 italic">Empty note</span>}
-                </p>
-                <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
-                  <span>{format(new Date(note.updated_at), "MMM d, yyyy")}</span>
-                  <span className="text-emerald-600 group-hover:translate-x-1 transition">View →</span>
+                    <NoteList
+                        notes={notes}
+                        selectedNoteId={selectedNote?.id || null}
+                        onSelectNote={handleSelectNote}
+                    />
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
+            )}
 
-      {/* Floating Action Button */}
-      <button
-        onClick={() => router.push("/dashboard/notes/new")}
-        className="fixed bottom-8 right-8 w-16 h-16 bg-emerald-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 hover:bg-emerald-700 transition-all z-50"
-      >
-        <Plus className="w-8 h-8" />
-      </button>
-    </div>
-  );
+            {/* --- Note Editor Area (Takes full width on mobile when open) --- */}
+            {showEditor && (
+                <div className={`flex-1 ${!showList ? 'w-full' : 'hidden md:block'} h-full bg-white md:rounded-xl shadow-lg overflow-y-auto transition-all duration-300`}>
+                    {selectedNote ? (
+                        <NoteEditor 
+                            note={selectedNote} 
+                            onSaveSuccess={handleSaveSuccess} 
+                            onDeleteSuccess={handleDeleteSuccess}
+                            onBack={() => setSelectedNote(null)} // Mobile back action
+                            accessToken={accessToken!}
+                        />
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-gray-500 flex-col p-8">
+                            <NotebookText className="w-12 h-12 mb-4" />
+                            <p className="text-lg">Select a note or click 'New' to begin.</p>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
 }

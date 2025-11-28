@@ -6,17 +6,17 @@ import { Loader2, CheckCircle, AlertTriangle, Clock, ListChecks, RefreshCw } fro
 import toast from 'react-hot-toast';
 
 // Define the exact lowercase status strings expected from the backend/view
-type JobStatusKey = 'pending' | 'started' | 'processing' | 'success' | 'failure' | 'undefined';
+type JobStatusKey = 'pending' | 'queued' | 'running' | 'completed' | 'error' | 'undefined';
 
 // Define the type for the function that performs the check (which is passed up to the parent)
 type ManualCheckFunction = (id: string) => Promise<void>; 
 
 const STATUS_MAP: Record<JobStatusKey, { icon: React.FC<any>, color: string, label: string }> = {
     pending: { icon: Clock, color: 'text-gray-500', label: 'Queued (Awaiting Start)' },
-    started: { icon: Loader2, color: 'text-indigo-500 animate-spin', label: 'In Progress' },
-    processing: { icon: Loader2, color: 'text-indigo-500 animate-spin', label: 'Processing Data' },
-    success: { icon: CheckCircle, color: 'text-green-600', label: 'Complete! Avatar is Live' },
-    failure: { icon: AlertTriangle, color: 'text-red-600', label: 'Failed (Check Logs)' },
+    queued: { icon: Clock, color: 'text-gray-500', label: 'Queued (Awaiting Start)' },
+    running: { icon: Loader2, color: 'text-indigo-500 animate-spin', label: 'Processing Data' },
+    completed: { icon: CheckCircle, color: 'text-green-600', label: 'Complete! Avatar is Live' },
+    error: { icon: AlertTriangle, color: 'text-red-600', label: 'Failed (Check Logs)' },
     undefined: { icon: ListChecks, color: 'text-gray-400', label: 'No Active Job' },
 };
 
@@ -63,8 +63,8 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete, onMa
             setProgress(newProgress);
             setStatus(newStatus);
             
-            if (newStatus === 'success' || newStatus === 'failure') {
-                if (newStatus === 'success') {
+            if (newStatus === 'completed' || newStatus === 'error') {
+                if (newStatus === 'completed') {
                     toast.success(`Training for @${avatarHandle} complete!`);
                 } else {
                     toast.error(`Training failed for @${avatarHandle}.`);
@@ -74,7 +74,7 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete, onMa
         } catch (error) {
             console.error("Manual Check error:", error);
             toast.error("Error checking job status.");
-            setStatus('failure');
+            setStatus('error');
         } finally {
             setLoading(false);
         }
@@ -111,8 +111,8 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete, onMa
     const Icon = currentStatus.icon;
 
     // Determine visibility flags
-    const isRunning = status === 'started' || status === 'processing' || status === 'pending';
-    const isFinished = status === 'success' || status === 'failure';
+    const isRunning = status === 'pending' || status === 'queued' || status === 'running';
+    const isFinished = status === 'completed' || status === 'error';
     const showRefreshButton = jobId && !isFinished;
     
     const refreshButtonLabel = loading ? 'Checking...' : 'Check Status Now';
@@ -144,7 +144,7 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete, onMa
             )}
 
             {/* Failure Message */}
-            {isFinished && status === 'failure' && (
+            {isFinished && status === 'error' && (
                 <p className="text-sm text-red-500 mt-3 p-3 bg-red-50 rounded-lg">
                     The training failed. Check the server logs for detailed error information.
                 </p>

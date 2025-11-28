@@ -13,9 +13,12 @@ import {
   Loader2,
   Save,
   Brain,
+  ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
+// --- Type Definitions (Kept the same) ---
 type SourceType = "notes" | "reminders" | "todos" | "uploads" | "gmail" | "website";
 
 interface Item {
@@ -40,6 +43,7 @@ interface Props {
   onSaveSuccess: () => void;
 }
 
+// --- Configuration (Kept the same) ---
 const CONFIG: SourceConfig[] = [
   { type: "notes", label: "Whisone Notes", icon: Book, isEnabled: true, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: true },
   { type: "reminders", label: "Reminders", icon: Calendar, isEnabled: true, useForTone: false, useForKnowledge: true, selectedIds: [], hasItems: true },
@@ -56,15 +60,26 @@ const ENDPOINTS: Record<string, string> = {
   uploads: "files/",
 };
 
+// --- Component Start ---
 export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
   const { accessToken } = useAuth();
   const [sources, setSources] = useState(CONFIG);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  // 💡 New state for mobile: which panel is active ('list' or 'details')
+  const [activePanel, setActivePanel] = useState<'list' | 'details'>('list'); 
   const [activeType, setActiveType] = useState<SourceType | null>(null);
+
+  // Helper component for Icon
+  const Icon = ({ type, className }: { type: SourceType, className?: string }) => {
+    const cfg = CONFIG.find((c) => c.type === type);
+    const C = cfg?.icon || Settings;
+    return <C className={`w-5 h-5 text-emerald-600 ${className || ''}`} />;
+  };
 
   const fetchItems = useCallback(
     async (type: SourceType) => {
+      // ... (fetchItems logic remains the same)
       const endpoint = ENDPOINTS[type];
       if (!endpoint || !accessToken) return;
 
@@ -94,12 +109,14 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
 
   useEffect(() => {
     if (accessToken) {
+      // Pre-fetch items for initial display/interaction
       fetchItems("notes");
       fetchItems("uploads");
     }
   }, [accessToken]);
 
   const toggle = (type: SourceType, field: keyof SourceConfig, value: boolean) => {
+    // ... (toggle logic remains the same)
     setSources((prev) =>
       prev.map((s) => {
         if (s.type !== type) return s;
@@ -108,12 +125,17 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
           updated.useForTone = false;
           updated.useForKnowledge = false;
         }
+        // Ensure that if both are disabled, isEnabled is also set to false
+        if ((field === "useForTone" || field === "useForKnowledge") && !value && !updated.useForTone && !updated.useForKnowledge) {
+            updated.isEnabled = false;
+        }
         return updated;
       })
     );
   };
 
   const toggleItem = (type: SourceType, id: string | number, checked: boolean) => {
+    // ... (toggleItem logic remains the same)
     setSources((prev) =>
       prev.map((s) =>
         s.type === type
@@ -127,29 +149,43 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
       )
     );
   };
+  
+  // 💡 New function to handle activation on click (for mobile transition)
+  const handleSourceSelect = (type: SourceType, hasItems: boolean, items: Item[] | undefined) => {
+    setActiveType(type);
+    if (hasItems && !items) fetchItems(type);
+    setActivePanel('details'); // Switch to details view on mobile
+  };
 
   const save = async () => {
     if (!accessToken) return;
     setSaving(true);
 
+    // 💡 Streamlined Payload Construction: Filter for enabled/used sources, 
+    // and only include fields the backend expects: source_type, include_for_tone, 
+    // include_for_knowledge, and metadata.
     const payload = sources
-      sources
-        .map((s) => {
-          if (!s.isEnabled) return null;
-          const tone = s.useForTone;
-          const knowledge = s.useForKnowledge;
-          if (!tone && !knowledge) return null;
+      .map((s) => {
+        const tone = s.useForTone;
+        const knowledge = s.useForKnowledge;
+        
+        // If not used for tone AND not used for knowledge, skip (as per the model logic)
+        if (!tone && !knowledge) return null;
 
-          return {
-            source_type: s.type,
-            include_for_tone: tone,
-            include_for_knowledge: knowledge,
-            metadata: s.hasItems ? { ids: s.selectedIds } : {},
-          };
-        })
-        .filter(Boolean) || [];
+        const sourcePayload = {
+          source_type: s.type,
+          include_for_tone: tone,
+          include_for_knowledge: knowledge,
+          // Only include metadata if the source has select-able items
+          metadata: s.hasItems ? { ids: s.selectedIds } : {},
+        };
+        
+        return sourcePayload;
+      })
+      .filter(Boolean); // Filter out nulls
 
     try {
+      // 💡 The backend expects an ARRAY of sources now (due to many=True fix)
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/sources/`, {
         method: "POST",
         headers: {
@@ -158,7 +194,6 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
         },
         body: JSON.stringify(payload),
       });
-      console.log("payload sent", payload)
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -176,129 +211,148 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
 
   const active = sources.find((s) => s.type === activeType);
 
-  const Icon = ({ type }: { type: SourceType }) => {
-    const cfg = CONFIG.find((c) => c.type === type);
-    const C = cfg?.icon || Settings;
-    return <C className="w-5 h-5 text-emerald-600" />;
+  // --- Render Sections ---
+  
+  const SourceList = () => (
+    <div className={`space-y-2 ${activePanel === 'details' ? 'hidden md:block' : 'block'}`}>
+      {sources.map((s) => (
+        <button
+          key={s.type}
+          onClick={() => handleSourceSelect(s.type, s.hasItems, s.items)}
+          className={`w-full text-left p-3 rounded-xl flex items-center justify-between transition border-2 
+            ${
+              activeType === s.type
+                ? "bg-emerald-50 border-emerald-400"
+                : "hover:bg-gray-50 border-transparent"
+            }`}
+        >
+          <div className="flex items-center gap-3">
+            <Icon type={s.type} />
+            <span className="font-semibold text-sm">{s.label}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {s.isEnabled && <div className="w-2 h-2 bg-emerald-500 rounded-full" />}
+            <ChevronRight className="w-4 h-4 text-gray-400 md:hidden" />
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+
+  const SourceDetails = () => {
+    if (!active) return (
+      <div className="text-center text-gray-400 py-12">
+        <Settings className="w-12 h-12 mx-auto mb-4" />
+        <p>Select a source to configure</p>
+      </div>
+    );
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+            <Icon type={active.type} className="w-6 h-6" />
+            {active.label}
+            </h3>
+            {/* Mobile back button */}
+            <button 
+                onClick={() => setActivePanel('list')} 
+                className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-emerald-600 md:hidden"
+            >
+                <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+        </div>
+
+        <div className="bg-gray-50 rounded-xl p-5 space-y-5 border border-gray-200">
+          <label className="flex items-center justify-between cursor-pointer">
+            <span className="font-medium text-gray-800">Enable Source</span>
+            <input
+              type="checkbox"
+              checked={active.isEnabled}
+              onChange={(e) => toggle(active.type, "isEnabled", e.target.checked)}
+              className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500"
+            />
+          </label>
+
+          <div className={`space-y-5 transition-all duration-300 ${!active.isEnabled ? 'opacity-50' : ''}`}>
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-gray-600">Use for <strong>Tone</strong> (Writing Style)</span>
+              <input
+                type="checkbox"
+                checked={active.useForTone}
+                onChange={(e) => toggle(active.type, "useForTone", e.target.checked)}
+                disabled={!active.isEnabled}
+                className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500"
+              />
+            </label>
+
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-gray-600">Use for <strong>Knowledge</strong> (Information)</span>
+              <input
+                type="checkbox"
+                checked={active.useForKnowledge}
+                onChange={(e) => toggle(active.type, "useForKnowledge", e.target.checked)}
+                disabled={!active.isEnabled}
+                className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500"
+              />
+            </label>
+          </div>
+        </div>
+
+        {active.hasItems && active.isEnabled && (
+          <div>
+            <p className="font-medium text-gray-800 mb-3">Select items (optional)</p>
+            <div className="border border-gray-200 rounded-xl max-h-64 overflow-y-auto bg-white shadow-sm">
+              {active.items ? (
+                active.items.length > 0 ? (
+                  active.items.map((item) => (
+                    <label
+                      key={item.id}
+                      className="flex items-center justify-between px-4 py-3 hover:bg-emerald-50 transition border-b last:border-0 cursor-pointer"
+                    >
+                      <span className="text-sm truncate pr-4 text-gray-700">{item.title}</span>
+                      <input
+                        type="checkbox"
+                        checked={active.selectedIds.includes(item.id)}
+                        onChange={(e) => toggleItem(active.type, item.id, e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                      />
+                    </label>
+                  ))
+                ) : (
+                  <p className="text-center text-gray-400 py-6 text-sm">No items found for this source.</p>
+                )
+              ) : loading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+                </div>
+              ) : null}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Leave selection empty to include **all** items from this source.
+            </p>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-      <h2 className="text-xl font-bold flex items-center gap-3 mb-6">
-        <Brain className="w-6 h-6 text-emerald-600" />
-        Knowledge & Tone Sources
+    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-4 sm:p-6 max-w-4xl mx-auto">
+      <h2 className="text-2xl font-extrabold flex items-center gap-3 mb-6 border-b pb-4 text-gray-800">
+        <Brain className="w-7 h-7 text-emerald-600" />
+        Configure Knowledge & Tone Sources
       </h2>
 
-      <div className="grid grid-cols-3 gap-8">
-        {/* Left */}
-        <div className="space-y-2">
-          {sources.map((s) => (
-            <button
-              key={s.type}
-              onClick={() => {
-                setActiveType(s.type);
-                if (s.hasItems && !s.items) fetchItems(s.type);
-              }}
-              className={`w-full text-left p-3 rounded-lg flex items-center justify-between transition ${
-                activeType === s.type
-                  ? "bg-emerald-50 border border-emerald-300"
-                  : "hover:bg-gray-50"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Icon type={s.type} />
-                <span className="font-medium text-sm">{s.label}</span>
-              </div>
-              {s.isEnabled && <div className="w-2 h-2 bg-emerald-500 rounded-full" />}
-            </button>
-          ))}
+      <div className="md:grid md:grid-cols-3 md:gap-8">
+        {/* Left Panel: Source List - Visible on all screen sizes */}
+        <div className={`md:block ${activePanel === 'details' ? 'hidden' : 'block'}`}>
+          <SourceList />
         </div>
 
-        {/* Right */}
-        <div className="col-span-2">
-          {active ? (
-            <div className="space-y-6">
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                <Icon type={active.type} />
-                {active.label}
-              </h3>
-
-              <div className="bg-gray-50 rounded-lg p-5 space-y-5">
-                <label className="flex items-center justify-between">
-                  <span className="font-medium">Enable Source</span>
-                  <input
-                    type="checkbox"
-                    checked={active.isEnabled}
-                    onChange={(e) => toggle(active.type, "isEnabled", e.target.checked)}
-                    className="w-5 h-5 text-emerald-600 rounded"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between">
-                  <span>Use for <strong>Tone</strong></span>
-                  <input
-                    type="checkbox"
-                    checked={active.useForTone}
-                    onChange={(e) => toggle(active.type, "useForTone", e.target.checked)}
-                    disabled={!active.isEnabled}
-                    className="w-5 h-5 text-emerald-600 rounded"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between">
-                  <span>Use for <strong>Knowledge</strong></span>
-                  <input
-                    type="checkbox"
-                    checked={active.useForKnowledge}
-                    onChange={(e) => toggle(active.type, "useForKnowledge", e.target.checked)}
-                    disabled={!active.isEnabled}
-                    className="w-5 h-5 text-emerald-600 rounded"
-                  />
-                </label>
-              </div>
-
-              {active.hasItems && (
-                <div>
-                  <p className="font-medium mb-3">Select items (optional)</p>
-                  <div className="border rounded-lg max-h-64 overflow-y-auto bg-white">
-                    {active.items ? (
-                      active.items.length > 0 ? (
-                        active.items.map((item) => (
-                          <label
-                            key={item.id}
-                            className="flex items-center justify-between px-4 py-2 hover:bg-gray-50 border-b last:border-0"
-                          >
-                            <span className="text-sm truncate pr-4">{item.title}</span>
-                            <input
-                              type="checkbox"
-                              checked={active.selectedIds.includes(item.id)}
-                              onChange={(e) => toggleItem(active.type, item.id, e.target.checked)}
-                              disabled={!active.isEnabled}
-                              className="w-4 h-4 text-emerald-600 rounded"
-                            />
-                          </label>
-                        ))
-                      ) : (
-                        <p className="text-center text-gray-400 py-6">No items</p>
-                      )
-                    ) : loading ? (
-                      <div className="flex justify-center py-8">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      </div>
-                    ) : null}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Leave empty = include <strong>all</strong>
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center text-gray-400 py-12">
-              <Settings className="w-12 h-12 mx-auto mb-4" />
-              <p>Select a source to configure</p>
-            </div>
-          )}
+        {/* Right Panel: Source Details - Mobile: Toggles visibility; Desktop: Always visible */}
+        <div className={`md:col-span-2 ${activePanel === 'list' ? 'hidden' : 'block md:block'}`}>
+          <SourceDetails />
         </div>
       </div>
 
@@ -306,7 +360,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
         <button
           onClick={save}
           disabled={saving || loading}
-          className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium flex items-center gap-2 disabled:opacity-50"
+          className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
         >
           {saving ? (
             <>

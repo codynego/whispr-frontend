@@ -5,14 +5,13 @@ import { useAuth } from '@/context/AuthContext';
 import { Loader2, CheckCircle, AlertTriangle, Clock, ListChecks, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-// Define the exact lowercase status strings expected from the backend/view
-type JobStatusKey = 'pending' | 'queued' | 'running' | 'completed' | 'error' | 'undefined';
+
+type JobStatusKey =  'queued' | 'running' | 'completed' | 'error' | 'undefined';
 
 // Define the type for the function that performs the check (which is passed up to the parent)
 type ManualCheckFunction = (id: string) => Promise<void>; 
 
 const STATUS_MAP: Record<JobStatusKey, { icon: React.FC<any>, color: string, label: string }> = {
-    pending: { icon: Clock, color: 'text-gray-500', label: 'Queued (Awaiting Start)' },
     queued: { icon: Clock, color: 'text-gray-500', label: 'Queued (Awaiting Start)' },
     running: { icon: Loader2, color: 'text-indigo-500 animate-spin', label: 'Processing Data' },
     completed: { icon: CheckCircle, color: 'text-green-600', label: 'Complete! Avatar is Live' },
@@ -88,8 +87,7 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete, onMa
             setStatus('undefined');
             setProgress(0);
         } else {
-            // If a new job ID is supplied, reset status to pending
-            setStatus('pending'); 
+            setStatus('queued'); 
             setProgress(0);
             currentJobIdRef.current = jobId; 
         }
@@ -111,7 +109,7 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete, onMa
     const Icon = currentStatus.icon;
 
     // Determine visibility flags
-    const isRunning = status === 'pending' || status === 'queued' || status === 'running';
+    const isRunning = status === 'queued' || status === 'running';
     const isFinished = status === 'completed' || status === 'error';
     const showRefreshButton = jobId && !isFinished;
     
@@ -137,8 +135,8 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete, onMa
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
                         {Math.round(progress)}% Complete 
-                        {status !== 'pending' && progress < 100 && ' (Vectorizing knowledge...)'}
-                        {status === 'pending' && ' (Job queued)'}
+                        {status !== 'queued' && progress < 100 && ' (Vectorizing knowledge...)'}
+                        {status === 'queued' && ' (Job queued)'}
                     </p>
                 </div>
             )}

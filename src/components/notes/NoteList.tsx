@@ -17,6 +17,7 @@ interface NoteListProps {
 }
 
 export const NoteList = ({ notes, selectedNoteId, onSelectNote }: NoteListProps) => {
+    console.log("NoteList received notes:", notes);
     
     // ⭐ CRITICAL FIX: Ensure 'notes' is an array before checking its length or mapping.
     const validNotes = Array.isArray(notes) ? notes : [];

@@ -45,12 +45,12 @@ interface Props {
 
 // --- Configuration (Kept the same) ---
 const CONFIG: SourceConfig[] = [
-  { type: "notes", label: "Whisone Notes", icon: Book, isEnabled: true, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: true },
-  { type: "reminders", label: "Reminders", icon: Calendar, isEnabled: true, useForTone: false, useForKnowledge: true, selectedIds: [], hasItems: true },
-  { type: "todos", label: "To-Dos", icon: CheckSquare, isEnabled: true, useForTone: false, useForKnowledge: true, selectedIds: [], hasItems: true },
-  { type: "uploads", label: "File Uploads", icon: Upload, isEnabled: true, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: true },
+  { type: "notes", label: "Whisone Notes", icon: Book, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: true },
+  { type: "reminders", label: "Reminders", icon: Calendar, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: true },
+  { type: "todos", label: "To-Dos", icon: CheckSquare, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: true },
+  { type: "uploads", label: "File Uploads", icon: Upload, isEnabled: false, useForTone: true, useForKnowledge: false, selectedIds: [], hasItems: true },
   { type: "gmail", label: "Gmail", icon: Mail, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: false },
-  { type: "website", label: "Website", icon: Globe, isEnabled: false, useForTone: false, useForKnowledge: true, selectedIds: [], hasItems: false },
+  { type: "website", label: "Website", icon: Globe, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: false },
 ];
 
 const ENDPOINTS: Record<string, string> = {

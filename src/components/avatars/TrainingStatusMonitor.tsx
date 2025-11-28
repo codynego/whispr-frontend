@@ -11,9 +11,11 @@ interface TrainingStatusMonitorProps {
     onJobComplete: () => void; // Callback to refresh the Avatar status in the parent
 }
 
-type JobStatus = 'pending' | 'started' | 'processing' | 'success' | 'failure' | undefined;
+// Define the exact lowercase status strings expected from the backend/view
+type JobStatusKey = 'pending' | 'started' | 'processing' | 'success' | 'failure' | 'undefined';
 
-const STATUS_MAP: Record<Exclude<JobStatus, undefined>, { icon: React.FC<any>, color: string, label: string }> & { undefined: { icon: React.FC<any>, color: string, label: string } } = {
+// Use the JobStatusKey for the map
+const STATUS_MAP: Record<JobStatusKey, { icon: React.FC<any>, color: string, label: string }> = {
     pending: { icon: Clock, color: 'text-gray-500', label: 'Queued (Waiting for worker)' },
     started: { icon: Loader2, color: 'text-indigo-500 animate-spin', label: 'In Progress' },
     processing: { icon: Loader2, color: 'text-indigo-500 animate-spin', label: 'Processing Data' },
@@ -24,7 +26,9 @@ const STATUS_MAP: Record<Exclude<JobStatus, undefined>, { icon: React.FC<any>, c
 
 export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete }: TrainingStatusMonitorProps) => {
     const { accessToken } = useAuth();
-    const [status, setStatus] = useState<JobStatus>(undefined);
+    // Initialize status based on whether a jobId is present
+    const initialStatus = jobId ? 'pending' : 'undefined';
+    const [status, setStatus] = useState<JobStatusKey>(initialStatus as JobStatusKey);
     const [progress, setProgress] = useState(0); // 0 to 100
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -37,23 +41,29 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete }: Tr
                 headers: { Authorization: `Bearer ${accessToken}` },
             });
 
-            if (!res.ok) throw new Error("Failed to fetch job status.");
+            if (!res.ok) throw new Error(`API Error: ${res.status} Failed to fetch job status.`);
 
             const data = await res.json();
-            const newStatus: JobStatus = data.status.toLowerCase() as JobStatus;
             
-            // Assuming the backend returns 'progress' field (e.g., 0-100)
-            setProgress(data.progress || (newStatus === 'success' ? 100 : 0));
+            // 💡 Guaranteed to be a lowercase, valid key from the revised backend view
+            const newStatus = data.status as JobStatusKey;
+            
+            // 💡 Guaranteed to be an integer (0-100) from the revised backend view
+            const newProgress = data.progress || 0; 
+            
+            setProgress(newProgress);
             setStatus(newStatus);
             
             if (newStatus === 'success' || newStatus === 'failure') {
                 if (intervalRef.current) clearInterval(intervalRef.current);
+                
                 if (newStatus === 'success') {
                     toast.success(`Training for @${avatarHandle} complete!`);
-                    onJobComplete(); 
                 } else {
+                    // Optional: You could show a link to logs here if data.logs is returned
                     toast.error(`Training failed for @${avatarHandle}.`);
                 }
+                onJobComplete(); // Notify parent to re-fetch avatar details
             }
         } catch (error) {
             console.error("Polling error:", error);
@@ -64,34 +74,42 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete }: Tr
 
 
     useEffect(() => {
+        // --- Cleanup Previous Job/Interval ---
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+
         if (!jobId || !accessToken) {
-            setStatus(undefined);
-            if (intervalRef.current) clearInterval(intervalRef.current);
+            setStatus('undefined');
+            setProgress(0);
             return;
         }
         
-        // Start polling if a new job ID is present and authenticated
-        setStatus('pending');
+        // --- Start Polling for New Job ---
         
-        // Clear previous interval if any
-        if (intervalRef.current) clearInterval(intervalRef.current);
-
-        // Start polling every 3 seconds (adjust based on expected Celery speed)
+        // Set initial status to 'pending' if a jobId is provided
+        setStatus('pending'); 
+        
+        // Start polling every 3 seconds
         intervalRef.current = setInterval(() => {
             fetchStatus(jobId);
         }, 3000);
 
-        // Initial fetch immediately
+        // Initial fetch immediately to get the current status right away
         fetchStatus(jobId);
 
-        // Cleanup function
+        // Cleanup function runs when component unmounts or dependencies change
         return () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
         };
+        
+    // fetchStatus is correctly included as a dependency
     }, [jobId, accessToken, fetchStatus]);
 
 
-    const currentStatus = STATUS_MAP[status ?? 'undefined'];
+    // 💡 SAFE LOOKUP: We now rely on the 'status' state being one of the keys in the map.
+    const currentStatus = STATUS_MAP[status];
     const Icon = currentStatus.icon;
 
     return (
@@ -103,7 +121,7 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete }: Tr
                 <span className={`font-medium ${currentStatus.color}`}>{currentStatus.label}</span>
             </div>
 
-            {status === 'started' || status === 'processing' ? (
+            {(status === 'started' || status === 'processing' || status === 'pending') && (
                 <div className="mt-3">
                     <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
                         <div 
@@ -111,9 +129,13 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete }: Tr
                             style={{ width: `${progress}%` }}
                         />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">{Math.round(progress)}% Complete (Vectorizing knowledge...)</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                        {Math.round(progress)}% Complete 
+                        {status !== 'pending' && progress < 100 && ' (Vectorizing knowledge...)'}
+                        {status === 'pending' && ' (Job queued)'}
+                    </p>
                 </div>
-            ) : null}
+            )}
 
             {status === 'failure' && (
                 <p className="text-sm text-red-500 mt-3 p-3 bg-red-50 rounded-lg">
@@ -121,7 +143,7 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete }: Tr
                 </p>
             )}
             
-            {status !== 'success' && status !== 'failure' && status !== null && (
+            {status !== 'success' && status !== 'failure' && status !== 'undefined' && (
                 <p className="text-xs text-gray-500 mt-3">
                     Training is running in the background. This page will update automatically.
                 </p>
@@ -129,5 +151,3 @@ export const TrainingStatusMonitor = ({ jobId, avatarHandle, onJobComplete }: Tr
         </div>
     );
 };
-
-// Removed custom useCallback stub; using React's built-in useCallback.

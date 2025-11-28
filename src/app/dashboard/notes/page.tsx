@@ -37,7 +37,7 @@ export default function NotePage() {
         setLoading(true);
         try {
             // Your Django URL: /api/notes/
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notes/`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/notes/`, {
                 headers: { Authorization: `Bearer ${accessToken}` },
             });
             

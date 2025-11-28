@@ -81,7 +81,7 @@ export const NoteEditor = ({ note, accessToken, onSaveSuccess, onDeleteSuccess, 
         setIsDeleting(true);
         try {
             // Your Django URL: /api/notes/<int:pk>/
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notes/${note.id}/`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/notes/${note.id}/`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${accessToken}` },
             });

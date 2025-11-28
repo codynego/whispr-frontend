@@ -158,7 +158,7 @@ export default function AvatarDashboardPage() {
               <Brain className="w-20 h-20 text-emerald-400 mb-6" />
               <p className="text-2xl font-bold text-gray-800 mb-2">No Avatars Found</p>
               <p className="mb-6 max-w-md text-gray-600">
-                It looks like you haven't created any personalized AI clones yet. Let's get your first one trained!
+                It looks like you haven&apos;t created any personalized AI clones yet. Let&apos;s get your first one trained!
               </p>
               <button
                 onClick={() => setIsModalOpen(true)}

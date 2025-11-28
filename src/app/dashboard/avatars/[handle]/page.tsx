@@ -38,7 +38,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<Tab>('training');
     const [isConfigSaved, setIsConfigSaved] = useState(true); 
-    const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+    const [currentJobId, setCurrentJobId] = useState<string | null>(null); // State for the currently monitored job
 
     // --- Data Fetching ---
     const fetchAvatarDetails = useCallback(async () => {
@@ -57,7 +57,22 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
             
             const data: FullAvatarData = await res.json();
             setFullAvatarData(data);
-            setCurrentJobId(data.last_training_job_id);
+            
+            // ⭐ CRITICAL FIX START ⭐
+            // We use the functional update form of setCurrentJobId.
+            // This prevents API data from overwriting a job ID that was just set 
+            // by the user clicking 'Start AI Training' if this fetch runs concurrently.
+            setCurrentJobId(prevJobId => {
+                // If a job is currently active/monitoring (set by the button click), keep monitoring it.
+                if (prevJobId !== null) {
+                    return prevJobId;
+                }
+                // Otherwise (on initial load or after a job completion/failure), 
+                // use the ID from the API data.
+                return data.last_training_job_id;
+            });
+            // ⭐ CRITICAL FIX END ⭐
+
             setIsConfigSaved(true); // Assume saved on initial load
 
         } catch (error: any) {
@@ -78,11 +93,14 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
     };
     
     const handleJobComplete = () => {
-        setCurrentJobId(null);
+        // 1. Clear the job ID to stop the monitor immediately.
+        setCurrentJobId(null); 
+        // 2. Fetch avatar details to get the final 'trained' status and new job ID if needed.
+        // The fix in fetchAvatarDetails ensures this won't restart monitoring if the ID is null.
         fetchAvatarDetails();
     };
 
-    // --- Tab Navigation Component ---
+    // --- Tab Navigation Component (Unchanged) ---
     const TabButton = ({ tab, icon: Icon, label }: { tab: Tab, icon: React.ElementType, label: string }) => (
         <button
             onClick={() => setActiveTab(tab)}
@@ -118,7 +136,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
 
     const isPublic = fullAvatarData.settings?.is_public ?? false;
 
-    // --- Render Component ---
+    // --- Render Component (Unchanged) ---
     return (
         <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-4 sm:px-6 py-10 space-y-8">
             

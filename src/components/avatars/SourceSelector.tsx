@@ -194,6 +194,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
         },
         body: JSON.stringify(payload),
       });
+      console.log("payload sent", payload)
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

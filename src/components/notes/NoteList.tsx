@@ -1,6 +1,5 @@
 // src/components/Notes/NoteList.tsx
 
-import { NotebookText } from 'lucide-react';
 
 interface Note {
     id: number;

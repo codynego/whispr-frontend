@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Brain, Settings, BarChart3, Loader2, Lock, Globe } from "lucide-react";
+import { Brain, Settings, BarChart3, Loader2, Lock, Globe, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 
 // --- Import Developed Components (Assumed) ---
@@ -28,6 +28,9 @@ interface FullAvatarData {
     };
 }
 
+// Define the type for the manual status check function (exposed by the Monitor)
+type ManualCheckFunction = (jobId: string) => Promise<void>;
+
 
 export default function AvatarConfigurationPage({ params }: { params: { handle: string } }) {
     const { accessToken } = useAuth();
@@ -38,7 +41,12 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<Tab>('training');
     const [isConfigSaved, setIsConfigSaved] = useState(true); 
-    const [currentJobId, setCurrentJobId] = useState<string | null>(null); // State for the currently monitored job
+    
+    // Store the job ID returned from the API, which serves as the trigger for the Monitor.
+    const [apiJobId, setApiJobId] = useState<string | null>(null); 
+
+    // State to hold the function provided by TrainingStatusMonitor for manual status checks
+    const [manualCheckFunction, setManualCheckFunction] = useState<ManualCheckFunction | null>(null);
 
     // --- Data Fetching ---
     const fetchAvatarDetails = useCallback(async () => {
@@ -58,22 +66,10 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
             const data: FullAvatarData = await res.json();
             setFullAvatarData(data);
             
-            // ⭐ CRITICAL FIX START ⭐
-            // We use the functional update form of setCurrentJobId.
-            // This prevents API data from overwriting a job ID that was just set 
-            // by the user clicking 'Start AI Training' if this fetch runs concurrently.
-            setCurrentJobId(prevJobId => {
-                // If a job is currently active/monitoring (set by the button click), keep monitoring it.
-                if (prevJobId !== null) {
-                    return prevJobId;
-                }
-                // Otherwise (on initial load or after a job completion/failure), 
-                // use the ID from the API data.
-                return data.last_training_job_id;
-            });
-            // ⭐ CRITICAL FIX END ⭐
-
-            setIsConfigSaved(true); // Assume saved on initial load
+            // Set the job ID from the API. This will be the ID the monitor uses.
+            setApiJobId(data.last_training_job_id); 
+            
+            setIsConfigSaved(true); 
 
         } catch (error: any) {
             toast.error(error.message || "Failed to load Avatar details.");
@@ -93,12 +89,22 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
     };
     
     const handleJobComplete = () => {
-        // 1. Clear the job ID to stop the monitor immediately.
-        setCurrentJobId(null); 
-        // 2. Fetch avatar details to get the final 'trained' status and new job ID if needed.
-        // The fix in fetchAvatarDetails ensures this won't restart monitoring if the ID is null.
+        // When a job finishes (success/failure), clear the current job ID 
+        // and fetch the details to update the Avatar's overall status (e.g., trained: true)
+        setApiJobId(null);
         fetchAvatarDetails();
     };
+
+    const handleTrainingStart = (jobId: string) => {
+        // When the button is clicked, immediately update the state to the new job ID, 
+        // which triggers the Monitor to initialize.
+        setApiJobId(jobId);
+    }
+    
+    const handleManualCheckSetup = useCallback((func: ManualCheckFunction) => {
+        // This callback receives the fetch function from the Monitor component
+        setManualCheckFunction(() => func);
+    }, []);
 
     // --- Tab Navigation Component (Unchanged) ---
     const TabButton = ({ tab, icon: Icon, label }: { tab: Tab, icon: React.ElementType, label: string }) => (
@@ -136,13 +142,13 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
 
     const isPublic = fullAvatarData.settings?.is_public ?? false;
 
-    // --- Render Component (Unchanged) ---
+    // --- Render Component ---
     return (
         <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-4 sm:px-6 py-10 space-y-8">
             
             <div className="space-y-6">
                 
-                {/* --- Header & Avatar Info --- */}
+                {/* --- Header & Avatar Info (Unchanged) --- */}
                 <header className="flex flex-col md:flex-row md:items-center md:justify-between pb-5 border-b border-gray-200">
                     <div className="flex items-center gap-4">
                         {/* Avatar Photo/Icon */}
@@ -206,9 +212,10 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                                         Job Status
                                     </h2>
                                     <TrainingStatusMonitor 
-                                        jobId={currentJobId} 
+                                        jobId={apiJobId} 
                                         avatarHandle={avatarHandle} 
                                         onJobComplete={handleJobComplete} 
+                                        onManualCheck={handleManualCheckSetup} // Pass the setup function
                                     />
                                     
                                     <hr className="my-4" />
@@ -216,7 +223,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                                     <TrainingTriggerButton 
                                         avatarHandle={avatarHandle} 
                                         isConfigSaved={isConfigSaved} 
-                                        onTrainingStart={setCurrentJobId}
+                                        onTrainingStart={handleTrainingStart} // Changed callback
                                     />
                                 </div>
                                 

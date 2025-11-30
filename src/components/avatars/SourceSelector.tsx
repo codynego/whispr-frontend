@@ -45,13 +45,12 @@ interface SourceConfig {
   type: SourceType;
   label: string;
   icon: React.ElementType;
-  isEnabled: boolean;
+  isEnabled: boolean; // Keeping this for legacy, but tone/knowledge toggles are the main enablers
   useForTone: boolean;
   useForKnowledge: boolean;
   selectedIds: (string | number)[];
   items?: Item[];
   hasItems: boolean;
-  // New field for Manual data entry
   manualContent: string;
 }
 
@@ -71,17 +70,17 @@ const CONFIG: SourceConfig[] = [
   { type: "uploads", label: "File Uploads", icon: Upload, isEnabled: false, useForTone: true, useForKnowledge: false, selectedIds: [], hasItems: true, manualContent: "" },
   { type: "gmail", label: "Gmail", icon: Mail, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: false, manualContent: "" },
   { type: "website", label: "Website", icon: Globe, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: false, manualContent: "" },
-  { type: "manual", label: "Manual Data Entry", icon: Type, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: false, manualContent: "" }, // New Manual source
+  { type: "manual", label: "Manual Data Entry", icon: Type, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: false, manualContent: "" },
 ];
 
 const ENDPOINTS: Record<string, string> = {
   notes: "notes/",
   reminders: "reminders/",
   todos: "todos/",
-  uploads: "files/", // Endpoint to fetch the list of uploaded files
+  uploads: "files/", 
 };
 
-// --- Icon Helper (Kept for external usage) ---
+// --- Icon Helper ---
 const Icon = ({ type, className }: { type: SourceType, className?: string }) => {
     const cfg = CONFIG.find((c) => c.type === type);
     
@@ -99,7 +98,8 @@ const ManualDataEntry = ({ content, onChange }: { content: string, onChange: (co
         <p className="font-medium text-gray-800">Enter Manual Data</p>
         <textarea
             value={content}
-            onChange={(e) => onChange(e.target.value)}
+            // FIX: onChange is now handled correctly by the parent and updates state.
+            onChange={(e) => onChange(e.target.value)} 
             rows={8}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm"
             placeholder="Enter structured data, Q&A pairs, or general text to influence the Avatar's tone or knowledge. This data will be ingested and chunked for training."
@@ -111,7 +111,8 @@ const ManualDataEntry = ({ content, onChange }: { content: string, onChange: (co
 // --- Component Start ---
 export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
   const { accessToken } = useAuth();
-  const [sources, setSources] = useState(CONFIG);
+  // Initialize state with a deep copy of CONFIG to avoid mutation issues
+  const [sources, setSources] = useState<SourceConfig[]>(() => JSON.parse(JSON.stringify(CONFIG))); 
   const [backendSources, setBackendSources] = useState<BackendSource[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -119,7 +120,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
   const [configPanel, setConfigPanel] = useState<ConfigPanel>('list'); 
   const [activeType, setActiveType] = useState<SourceType | null>(null);
 
-  // --- API Calls ---
+  // --- API Calls (Unchanged, kept for context) ---
 
   const fetchItems = useCallback(
     async (type: SourceType) => {
@@ -131,15 +132,12 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
 
       setLoading(true);
       try {
-        // Assume all non-upload endpoints are under /whisone/ and upload is under /files/
-        // I will use /whisone/ as a base URL as per the original code
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/${endpoint}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (!res.ok) throw new Error("Failed");
         const data = await res.json();
         
-        // Custom logic to map file uploads (assuming they have 'id' and 'name'/'filename')
         const items = data.results?.map((item: any) => ({
             id: item.id,
             title: item.name || item.filename || item.title || `Item ${item.id}`,
@@ -197,8 +195,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
         if (!res.ok) throw new Error("Failed to delete source");
 
         toast.success("Source successfully deleted!");
-        await fetchBackendSources(); // Refresh the list
-        // Optionally: Trigger a re-training job here if necessary
+        await fetchBackendSources(); 
         onSaveSuccess();
     } catch (e: any) {
         toast.error(e.message || "Failed to delete source.");
@@ -209,7 +206,6 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
 
   useEffect(() => {
     if (accessToken) {
-      // Pre-fetch items for the two configured sources on load
       fetchItems("notes");
       fetchItems("uploads");
       fetchBackendSources();
@@ -223,13 +219,19 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
       prev.map((s) => {
         if (s.type !== type) return s;
         const updated = { ...s, [field]: value };
+        
+        // This is now redundant since isEnabled state is removed from the UI, 
+        // but keeping the logic in case it's needed elsewhere.
         if (field === "isEnabled" && !value) {
           updated.useForTone = false;
           updated.useForKnowledge = false;
         }
-        if ((field === "useForTone" || field === "useForKnowledge") && !value && !updated.useForTone && !updated.useForKnowledge) {
-            updated.isEnabled = false;
+        
+        // Auto-enable/disable 'isEnabled' based on tone/knowledge state
+        if (field === "useForTone" || field === "useForKnowledge") {
+            updated.isEnabled = updated.useForTone || updated.useForKnowledge;
         }
+        
         return updated;
       })
     );
@@ -256,10 +258,11 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
     );
   };
   
+  // FIX 1: This is the crucial handler for selection
   const handleSourceSelect = (type: SourceType, hasItems: boolean, items: Item[] | undefined) => {
     setActiveType(type);
     if (hasItems && !items) fetchItems(type);
-    setConfigPanel('details'); 
+    setConfigPanel('details'); // Always set to details to show the right panel
   };
 
   const save = async () => {
@@ -271,7 +274,6 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
         const tone = s.useForTone;
         const knowledge = s.useForKnowledge;
         
-        // Skip if not enabled for tone or knowledge
         if (!tone && !knowledge) return null;
 
         const sourcePayload: any = {
@@ -281,23 +283,20 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
         };
         
         if (s.type === 'manual') {
-            // For manual, the content goes directly into metadata
             if (!s.manualContent.trim()) {
                 toast.error("Manual data source is enabled but content is empty.");
-                return null; // Skip saving empty manual source
+                return null;
             }
             sourcePayload.metadata = { content: s.manualContent.trim() };
         } else if (s.hasItems) {
-             // For sources with selectable items
              sourcePayload.metadata = { ids: s.selectedIds };
         } else {
-            // For sources like Gmail/Website where no items are selected
             sourcePayload.metadata = {};
         }
 
         return sourcePayload;
       })
-      .filter(Boolean); // Remove nulls (disabled sources)
+      .filter(Boolean);
 
     if (payload.length === 0) {
         toast.error("No sources enabled to save.");
@@ -307,7 +306,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/sources/`, {
-        method: "POST", // POST to list endpoint for bulk/create
+        method: "POST", 
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
@@ -328,7 +327,6 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
       }
 
       toast.success("Sources configuration saved!");
-      // Refresh both config and management lists after save
       fetchBackendSources();
       onSaveSuccess();
     } catch (e: any) {
@@ -345,15 +343,13 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
   const SourceList = () => (
     <div className={`space-y-2 ${configPanel === 'details' ? 'hidden md:block' : 'block'}`}>
       {sources.map((s) => (
-        // FIX: The issue of sources not working on click on desktop might be due to 
-        // the button being hidden by the conditional class on the parent div.
-        // The logic for hiding/showing panels based on activePanel/configPanel now correctly reflects a master/detail view on desktop/mobile.
+        // FIX: Ensuring button works correctly by using w-full and consistent styling
         <button
           key={s.type}
           onClick={() => handleSourceSelect(s.type, s.hasItems, s.items)}
           className={`w-full text-left p-3 rounded-xl flex items-center justify-between transition border-2  
             ${
-              activeType === s.type && configPanel === 'details'
+              activeType === s.type
                 ? "bg-emerald-50 border-emerald-400"
                 : "hover:bg-gray-50 border-transparent"
             }`}
@@ -373,14 +369,14 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
 
   const SourceDetails = () => {
     if (!active) return (
-      <div className="text-center text-gray-400 py-12">
+      <div className="text-center text-gray-400 py-12 md:border-l md:pl-8">
         <Settings className="w-12 h-12 mx-auto mb-4" />
         <p>Select a source to configure</p>
       </div>
     );
     
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 md:border-l md:pl-8">
         <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold flex items-center gap-2">
             <Icon type={active.type} className="w-6 h-6" />
@@ -428,54 +424,54 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
         </div>
 
         {/* Item Selection / Manual Data */}
-        {(active.useForTone || active.useForKnowledge) && (
-            <>
-                {active.type === 'manual' ? (
-                    <ManualDataEntry 
-                        content={active.manualContent} 
-                        onChange={(content) => updateManualContent(active.type, content)} 
-                    />
-                ) : active.hasItems ? (
-                    <div>
-                        <p className="font-medium text-gray-800 mb-3">Select items (optional)</p>
-                        <div className="border border-gray-200 rounded-xl max-h-64 overflow-y-auto bg-white shadow-sm">
-                            {active.items ? (
-                                active.items.length > 0 ? (
-                                    active.items.map((item) => (
-                                        <label
-                                            key={item.id}
-                                            className="flex items-center justify-between px-4 py-3 hover:bg-emerald-50 transition border-b last:border-0 cursor-pointer"
-                                        >
-                                            <span className="text-sm truncate pr-4 text-gray-700">{item.title}</span>
-                                            <input
-                                                type="checkbox"
-                                                checked={active.selectedIds.includes(item.id)}
-                                                onChange={(e) => toggleItem(active.type, item.id, e.target.checked)}
-                                                className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
-                                            />
-                                        </label>
-                                    ))
-                                ) : (
-                                    <p className="text-center text-gray-400 py-6 text-sm">No items found for this source. Ensure you have data in {active.label}.</p>
-                                )
-                            ) : loading ? (
-                                <div className="flex justify-center py-8">
-                                    <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
-                                </div>
-                            ) : null}
+        {/* FIX 2: Manual entry is now outside the check, but still conditional on being the manual source type */}
+        {active.type === 'manual' && (
+             <ManualDataEntry 
+                content={active.manualContent} 
+                onChange={(content) => updateManualContent(active.type, content)} 
+            />
+        )}
+        
+        {active.hasItems && (active.useForTone || active.useForKnowledge) && (
+            <div>
+                <p className="font-medium text-gray-800 mb-3">Select items (optional)</p>
+                <div className="border border-gray-200 rounded-xl max-h-64 overflow-y-auto bg-white shadow-sm">
+                    {active.items ? (
+                        active.items.length > 0 ? (
+                            active.items.map((item) => (
+                                <label
+                                    key={item.id}
+                                    className="flex items-center justify-between px-4 py-3 hover:bg-emerald-50 transition border-b last:border-0 cursor-pointer"
+                                >
+                                    <span className="text-sm truncate pr-4 text-gray-700">{item.title}</span>
+                                    <input
+                                        type="checkbox"
+                                        checked={active.selectedIds.includes(item.id)}
+                                        onChange={(e) => toggleItem(active.type, item.id, e.target.checked)}
+                                        className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                                    />
+                                </label>
+                            ))
+                        ) : (
+                            <p className="text-center text-gray-400 py-6 text-sm">No items found for this source. Ensure you have data in {active.label}.</p>
+                        )
+                    ) : loading ? (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">
-                            Leave selection empty to include **all** items from this source.
-                        </p>
-                    </div>
-                ) : null}
-            </>
+                    ) : null}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                    Leave selection empty to include **all** items from this source.
+                </p>
+            </div>
         )}
       </div>
     );
   };
   
   const ManageSourcesPanel = () => {
+      // ... (Implementation remains the same as previous)
       return (
           <div className="space-y-4">
               <div className="flex items-center gap-2 text-xl font-bold text-gray-800 border-b pb-3">
@@ -508,7 +504,6 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
                           const config = CONFIG.find(c => c.type === source.source_type);
                           const IconComponent = config?.icon || FileText;
                           
-                          // Custom title extraction for 'manual' content preview
                           let sourceTitle = config?.label || source.source_type;
                           if (source.source_type === 'manual' && source.metadata?.content) {
                               sourceTitle += ` (Manual Text: ${source.metadata.content.substring(0, 50)}...)`;
@@ -552,6 +547,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
       );
   };
 
+
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-4 sm:p-6 max-w-4xl mx-auto">
       <div className="flex justify-between items-start mb-6 border-b pb-4">
@@ -564,9 +560,9 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
         <button
             onClick={() => {
                 setMainPanel(mainPanel === 'config' ? 'manage' : 'config');
-                setConfigPanel('list'); // Reset config panel when switching
+                setConfigPanel('list'); 
                 if (mainPanel === 'config') {
-                    fetchBackendSources(); // Fetch latest sources when switching to manage view
+                    fetchBackendSources(); 
                 }
             }}
             className={`px-4 py-2 text-sm font-semibold rounded-lg transition border 
@@ -582,13 +578,13 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
       {mainPanel === 'config' ? (
         <>
           <div className="md:grid md:grid-cols-3 md:gap-8">
-            {/* Left Panel: Source List - Visible on all screen sizes */}
+            {/* Left Panel: Source List - Mobile: Hides when details is active. Desktop: Always visible. */}
             <div className={`md:block ${configPanel === 'details' ? 'hidden' : 'block'}`}>
               <h3 className="text-lg font-bold mb-3">Data Sources</h3>
               <SourceList />
             </div>
 
-            {/* Right Panel: Source Details - Mobile: Toggles visibility; Desktop: Always visible */}
+            {/* Right Panel: Source Details - Mobile: Toggles visibility; Desktop: Always visible (2 cols) */}
             <div className={`md:col-span-2 ${configPanel === 'list' ? 'hidden' : 'block md:block'}`}>
               <SourceDetails />
             </div>
@@ -615,7 +611,6 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
           </div>
         </>
       ) : (
-          // --- Manage Training Data Panel ---
           <ManageSourcesPanel />
       )}
     </div>

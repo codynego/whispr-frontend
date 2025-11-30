@@ -288,7 +288,7 @@ export default function PublicChatShell({ params }: { params: { handle: string }
           )}
         </div>
         <div>
-          <h1 className="text-lg font-bold text-gray-900 leading-tight">{profile.name}'s AI</h1>
+          <h1 className="text-lg font-bold text-gray-900 leading-tight">{profile.name}&apos;s AI</h1>
           <p className="text-xs text-gray-500">Public Chat | @{profile.handle}</p>
         </div>
       </header>

@@ -189,7 +189,7 @@ export default function VaultDetailPage() {
                     </div>
                     <p className="text-xl sm:text-2xl font-medium mb-2">Ask me anything about this file</p>
                     <p className="text-sm sm:text-base max-w-md">
-                      Summarize it, find key points, extract data, or just chat — I've read every word.
+                      Summarize it, find key points, extract data, or just chat — I&apos;ve read every word.
                     </p>
                   </div>
                 ) : (

@@ -483,7 +483,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
                   Existing Training Data Sources
               </div>
               <p className="text-sm text-gray-600">
-                  These are the data sources currently linked to your Avatar. Deleting a source will remove its data from the Avatar's training memory.
+                  These are the data sources currently linked to your Avatar. Deleting a source will remove its data from the Avatar&apos;s training memory.
               </p>
               
               {loading && backendSources.length === 0 ? (

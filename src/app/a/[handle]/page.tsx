@@ -8,8 +8,8 @@ import toast from "react-hot-toast";
 
 // NOTE: Ensure these components are imported/defined as required
 import { ChatMessageBubble } from "@/components/avatars/ChatMessageBubble"; 
-// Assuming PublicMessageInput is either defined below or imported
-// import { PublicMessageInput } from "@/components/avatars/PublicMessageInput"; 
+
+
 
 
 // --- Types ---
@@ -127,6 +127,7 @@ export default function PublicChatShell({ params }: { params: { handle: string }
             if (!historyRes.ok) throw new Error("Failed to load conversation history.");
             
             const historyData: Message[] = await historyRes.json();
+            console.log("Fetched History:", historyData);
             
             setMessages(historyData.length > 0 ? historyData : [
                 {

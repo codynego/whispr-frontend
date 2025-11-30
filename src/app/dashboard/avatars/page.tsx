@@ -17,6 +17,8 @@ interface AvatarData {
   handle: string;
   photo_url?: string | null;
   trained: boolean;
+  total_conversations: number;
+  total_messages: number;
   analytics: {
     total_conversations: number;
     total_messages: number;
@@ -65,8 +67,8 @@ export default function AvatarDashboardPage() {
     fetchAvatars();
   }, [fetchAvatars]); // Use fetchAvatars dependency
 
-  const totalConversations = avatars.reduce((sum, a) => sum + (a.analytics?.total_conversations || 0), 0);
-  const totalMessages = avatars.reduce((sum, a) => sum + (a.analytics?.total_messages || 0), 0);
+  const totalConversations = avatars.reduce((sum, a) => sum + (a.analytics?.total_conversations || a.total_conversations || 0), 0);
+  const totalMessages = avatars.reduce((sum, a) => sum + (a.analytics?.total_messages || a.total_messages || 0), 0);
 
   // --- Utility Components for Dashboard UI ---
 

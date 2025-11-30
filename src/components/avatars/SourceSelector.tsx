@@ -451,7 +451,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
                 <div className="text-center py-16 text-gray-400 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
                   <Settings className="w-16 h-16 mx-auto mb-4 opacity-50" />
                   <p className="text-lg font-medium">Select a source to configure its usage</p>
-                  <p className="text-sm">Choose which data sources feed your AI's knowledge and personality.</p>
+                  <p className="text-sm">Choose which data sources feed your AI&apos;s knowledge and personality.</p>
                 </div>
               ) : (
                 <SourceDetail 
@@ -480,7 +480,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
               <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
                 <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                 <p className="text-gray-600 font-medium">No active sources added yet</p>
-                <p className="text-sm text-gray-500 mt-1">Switch to "Add Sources" to begin training your avatar.</p>
+                <p className="text-sm text-gray-500 mt-1">Switch to &quot;Add Sources&quot; to begin training your avatar.</p>
               </div>
             ) : (
               <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">

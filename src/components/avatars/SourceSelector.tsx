@@ -19,7 +19,6 @@ import {
   List,
   Plus,
   Type,
-  X,
   FileText,
 } from "lucide-react";
 import toast from "react-hot-toast";

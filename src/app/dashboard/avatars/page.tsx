@@ -50,6 +50,7 @@ export default function AvatarDashboardPage() {
         throw new Error("Failed to fetch avatars.");
       }
       const data = await response.json();
+      console.log(data);
       // Ensure data.results is an array
       setAvatars(Array.isArray(data.results) ? data.results : data); 
       toast.success("Avatar list refreshed!");

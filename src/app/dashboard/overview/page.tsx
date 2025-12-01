@@ -4,12 +4,20 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
-  Brain, Search, Settings, Clock, CheckCircle2, Calendar,
-  FileText, Lightbulb, AlertCircle, Sparkles
+  Brain,
+  Search,
+  Settings,
+  Clock,
+  CheckCircle2,
+  Calendar,
+  FileText,
+  Lightbulb,
+  AlertCircle,
+  Sparkles,
+  ChevronRight,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
-// === Types ===
 interface DailySummary {
   id: number;
   summary_text: string;
@@ -27,16 +35,9 @@ interface OverviewResponse {
   recent_notes: Note[];
 }
 
-// === Safe Helpers ===
-const safeArray = (data: any): any[] => {
-  if (Array.isArray(data)) return data;
-  if (data?.results && Array.isArray(data.results)) return data.results;
-  return [];
-};
-
-const safeContent = (content: string | null | undefined): string => {
-  return content ? content.replace(/\n/g, "<br />") : "";
-};
+const safeArray = (data: any): any[] => Array.isArray(data) ? data : data?.results || [];
+const safeContent = (content: string | null | undefined): string =>
+  content ? content.replace(/\n/g, "<br />") : "";
 
 export default function WhisoneDashboard() {
   const router = useRouter();
@@ -75,7 +76,7 @@ export default function WhisoneDashboard() {
         if (remRes.ok) setReminders(safeArray(await remRes.json()));
         if (todoRes.ok) setTodos(safeArray(await todoRes.json()));
       } catch (err) {
-        console.error("Dashboard failed to load:", err);
+        console.error("Dashboard load error:", err);
       } finally {
         setLoading(false);
       }
@@ -86,7 +87,7 @@ export default function WhisoneDashboard() {
 
   const todayReminders = reminders.filter(r => !r.completed && new Date(r.remind_at).toDateString() === today);
   const overdueTodos = todos.filter(t => !t.done);
-  const recentTwoNotes = notes.slice(0, 2); // Only top 2
+  const recentTwoNotes = notes.slice(0, 2);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,10 +98,10 @@ export default function WhisoneDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center">
         <div className="text-center">
-          <Brain className="w-16 h-16 text-emerald-600 animate-pulse mb-6" />
-          <p className="text-lg text-gray-600">Waking up your second brain...</p>
+          <Brain className="w-20 h-20 text-emerald-600 animate-pulse mb-6" />
+          <p className="text-xl font-medium text-gray-700">Waking up your second brain...</p>
         </div>
       </div>
     );
@@ -109,134 +110,183 @@ export default function WhisoneDashboard() {
   return (
     <>
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
-              <Brain className="w-6 h-6 text-white" />
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <Brain className="w-7 h-7 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Whisone</h1>
+            <h1 className="text-3xl font-extrabold text-gray-900">Whisone</h1>
           </div>
 
-          <nav className="hidden lg:flex items-center gap-6">
-            <form onSubmit={handleSearch} className="flex items-center bg-gray-100 rounded-xl px-4 py-2.5 w-80">
+          <div className="flex items-center gap-4">
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="hidden md:flex items-center bg-gray-100 rounded-2xl px-5 py-3.5 w-96 shadow-sm">
               <Search className="w-5 h-5 text-gray-500 mr-3" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search your memory..."
-                className="bg-transparent outline-none flex-1 text-gray-700 placeholder-gray-500"
+                className="bg-transparent outline-none flex-1 text-gray-800 placeholder-gray-500"
               />
             </form>
-            <button className="p-2 hover:bg-gray-100 rounded-xl"><Settings className="w-6 h-6" /></button>
-            <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center text-white font-bold">
+
+            {/* Mobile Search Button */}
+            <button
+              onClick={() => router.push("/dashboard/search")}
+              className="md:hidden p-3 bg-gray-100 rounded-xl"
+            >
+              <Search className="w-5 h-5 text-gray-600" />
+            </button>
+            <button className="p-3 hover:bg-gray-100 rounded-xl transition">
+              <Settings className="w-6 h-6 text-gray-700" />
+            </button>
+
+            <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
               {user?.first_name?.[0]?.toUpperCase() || "U"}
             </div>
-          </nav>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-10 space-y-12">
-        {/* Greeting */}
+      <main className="max-w-7xl mx-auto px-6 py-12 space-y-16">
+        {/* Greeting & Status */}
         <section className="text-center lg:text-left">
-          <h2 className="text-4xl font-bold text-gray-900 mb-3">
-            {greeting}, {user?.first_name || "there"}
+          <h2 className="text-5xl font-extrabold text-gray-900 mb-4">
+            {greeting}, {user?.first_name || "friend"}
           </h2>
-          <p className="text-lg text-gray-600">
-            You have <strong>{todayReminders.length} reminder{todayReminders.length !== 1 && "s"}</strong> today
-            {overdueTodos.length > 0 && (
-              <> and <strong className="text-red-600">{overdueTodos.length} overdue</strong></>
+          <p className="text-xl text-gray-600">
+            {todayReminders.length > 0 && (
+              <>You have <span className="font-bold text-emerald-600">{todayReminders.length}</span> reminder{todayReminders.length !== 1 && "s"} today</>
             )}
+            {todayReminders.length > 0 && overdueTodos.length > 0 && " • "}
+            {overdueTodos.length > 0 && (
+              <span className="text-red-600 font-bold">{overdueTodos.length} overdue task{overdueTodos.length !== 1 && "s"}</span>
+            )}
+            {!todayReminders.length && !overdueTodos.length && "You’re all clear today — enjoy the calm"}
           </p>
         </section>
 
         {/* Quick Actions */}
-        <section className="overflow-x-auto scrollbar-hide">
-          <div className="flex gap-6 pb-4">
+        <section>
+          <h3 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {[
-              { label: "Create Note", icon: FileText, path: "/dashboard/notes" },
+              { label: "New Note", icon: FileText, path: "/dashboard/notes" },
               { label: "Add Reminder", icon: Clock, path: "/dashboard/reminders" },
-              { label: "New Todo", icon: CheckCircle2, path: "/dashboard/todos" },
-              { label: "Add Event", icon: Calendar, path: "/dashboard/calendar" },
-              { label: "Ask Whisone", icon: Sparkles, path: "/dashboard/assistant" },
+              { label: "Create Todo", icon: CheckCircle2, path: "/dashboard/todos" },
+              { label: "Schedule Event", icon: Calendar, path: "/dashboard/calendar" },
+              { label: "Ask Whisone", icon: Sparkles, path: "/dashboard/assistant", highlight: true },
             ].map((action) => (
               <button
                 key={action.label}
                 onClick={() => router.push(action.path)}
-                className="flex flex-col items-center gap-3 min-w-[130px] p-6 bg-white rounded-2xl shadow-md hover:shadow-xl border border-gray-100 hover:border-emerald-300 transition-all hover:-translate-y-1"
+                className={`group relative p-8 rounded-3xl border-2 transition-all hover:shadow-2xl ${
+                  action.highlight
+                    ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-transparent shadow-xl hover:shadow-emerald-600/30"
+                    : "bg-white border-gray-100 hover:border-emerald-400"
+                }`}
               >
-                <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center">
-                  <action.icon className="w-8 h-8 text-emerald-600" />
+                <div className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4 transition ${
+                  action.highlight ? "bg-white/20" : "bg-emerald-100 group-hover:bg-emerald-200"
+                }`}>
+                  <action.icon className={`w-9 h-9 ${action.highlight ? "text-white" : "text-emerald-600"}`} />
                 </div>
-                <span className="text-sm font-medium text-gray-800">{action.label}</span>
+                <p className="font-semibold text-lg">{action.label}</p>
+                {action.highlight && (
+                  <Sparkles className="absolute -top-2 -right-2 w-8 h-8 text-yellow-300 animate-pulse" />
+                )}
               </button>
             ))}
           </div>
         </section>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-8">
+        {/* Main Grid */}
+        <div className="grid lg:grid-cols-3 gap-10">
+          {/* Left: Briefing + Today */}
+          <div className="lg:col-span-2 space-y-10">
             {/* Morning Briefing */}
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl p-8 shadow-xl">
-              <h3 className="text-2xl font-bold mb-6">Morning Briefing</h3>
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-10 text-white shadow-2xl">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-3xl font-bold">Morning Briefing</h3>
+                <Lightbulb className="w-10 h-10 text-yellow-300 opacity-80" />
+              </div>
+
               {overview?.daily_summary?.summary_text ? (
                 <div
-                  className="text-white/90 text-base leading-relaxed space-y-4"
+                  className="prose prose-invert max-w-none text-white/95 text-lg leading-relaxed space-y-4"
                   dangerouslySetInnerHTML={{ __html: safeContent(overview.daily_summary.summary_text) }}
                 />
               ) : (
-                <p className="text-white/90 text-base">
-                  Your AI is watching everything. Briefing arrives tonight.
-                </p>
+                <div className="text-white/90 text-lg">
+                  <p>Your AI is quietly learning from everything you do.</p>
+                  <p className="mt-4 font-medium">Your personalized briefing arrives tonight</p>
+                </div>
               )}
             </div>
 
             {/* Today at a Glance */}
-            <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
-              <h3 className="text-xl font-bold text-gray-900 mb-5">Today at a Glance</h3>
+            <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Today at a Glance</h3>
               <div className="space-y-4">
-                {todayReminders.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-200">
-                    <div className="flex items-center gap-4">
-                      <Clock className="w-5 h-5 text-amber-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">{r.text}</p>
-                        <p className="text-sm text-gray-600">{format(new Date(r.remind_at), "h:mm a")}</p>
+                {todayReminders.length === 0 && overdueTodos.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <CheckCircle2 className="w-16 h-16 mx-auto mb-4 text-emerald-500" />
+                    <p className="text-xl font-medium">All clear — enjoy your day!</p>
+                  </div>
+                ) : (
+                  <>
+                    {todayReminders.map((r) => (
+                      <div key={r.id} className="flex items-center justify-between p-5 bg-amber-50 rounded-2xl border border-amber-200">
+                        <div className="flex items-center gap-4">
+                          <Clock className="w-6 h-6 text-amber-700" />
+                          <div>
+                            <p className="font-semibold text-gray-900">{r.text}</p>
+                            <p className="text-sm text-amber-700">{format(new Date(r.remind_at), "h:mm a")}</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-amber-600" />
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    ))}
 
-                {overdueTodos.slice(0, 3).map((t) => (
-                  <div key={t.id} className="flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-200">
-                    <div className="flex items-center gap-4">
-                      <AlertCircle className="w-5 h-5 text-red-600" />
-                      <p className="font-medium text-gray-900">{t.task}</p>
-                    </div>
-                  </div>
-                ))}
-
-                {todayReminders.length === 0 && overdueTodos.length === 0 && (
-                  <p className="text-center text-gray-500 py-8">All clear today</p>
+                    {overdueTodos.slice(0, 4).map((t) => (
+                      <div key={t.id} className="flex items-center justify-between p-5 bg-red-50 rounded-2xl border-2 border-red-200">
+                        <div className="flex items-center gap-4">
+                          <AlertCircle className="w-6 h-6 text-red-600" />
+                          <p className="font-semibold text-gray-900">{t.task}</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-red-600" />
+                      </div>
+                    ))}
+                  </>
                 )}
               </div>
             </div>
 
-            {/* Recent Memories — Only 2 */}
+            {/* Recent Memories */}
             {recentTwoNotes.length > 0 && (
               <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Recent Memories</h3>
-                <div className="grid md:grid-cols-2 gap-5">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900">Recent Memories</h3>
+                  <button
+                    onClick={() => router.push("/dashboard/notes")}
+                    className="text-emerald-600 font-medium hover:underline flex items-center gap-2"
+                  >
+                    View all <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
                   {recentTwoNotes.map((note) => (
                     <div
                       key={note.id}
                       onClick={() => router.push(`/dashboard/notes/${note.id}`)}
-                      className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer"
+                      className="bg-white p-7 rounded-2xl shadow-md border border-gray-100 hover:shadow-xl hover:border-emerald-300 transition cursor-pointer group"
                     >
-                      <p className="text-gray-800 text-sm line-clamp-3 leading-relaxed">{note.content}</p>
-                      <p className="text-xs text-gray-500 mt-3">
+                      <p className="text-gray-800 leading-relaxed line-clamp-4 group-hover:line-clamp-none transition">
+                        {note.content}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-5">
                         {format(new Date(note.created_at), "MMM d, h:mm a")}
                       </p>
                     </div>
@@ -246,52 +296,49 @@ export default function WhisoneDashboard() {
             )}
           </div>
 
-          {/* Right Column */}
+          {/* Right Sidebar */}
           <div className="space-y-8">
             {/* Stats */}
-            <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
-              <h3 className="text-xl font-bold text-gray-900 mb-5">Your Second Brain</h3>
-              <div className="grid grid-cols-2 gap-5 text-center">
-                <div>
-                  <FileText className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">{notes.length}+</p>
-                  <p className="text-sm text-gray-600">Notes</p>
-                </div>
-                <div>
-                  <Clock className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">{overview?.stats.total_reminders || 0}</p>
-                  <p className="text-sm text-gray-600">Reminders</p>
-                </div>
-                <div>
-                  <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">{overview?.stats.completed_todos || 0}</p>
-                  <p className="text-sm text-gray-600">Done</p>
-                </div>
-                <div>
-                  <Sparkles className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">{overview?.has_summary ? "1" : "0"}</p>
-                  <p className="text-sm text-gray-600">Summary</p>
-                </div>
+            <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+              <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Your Second Brain</h3>
+              <div className="grid grid-cols-2 gap-8">
+                {[
+                  { icon: FileText, label: "Notes", value: notes.length },
+                  { icon: Clock, label: "Reminders", value: overview?.stats.total_reminders || 0 },
+                  { icon: CheckCircle2, label: "Completed", value: overview?.stats.completed_todos || 0 },
+                  { icon: Sparkles, label: "Summaries", value: overview?.has_summary ? 1 : 0 },
+                ].map(({ icon: Icon, label, value }) => (
+                  <div key={label} className="text-center">
+                    <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-3xl flex items-center justify-center mb-4">
+                    <Icon className="w-10 h-10 text-emerald-600" />
+                    </div>
+                    <p className="text-3xl font-extrabold text-gray-900">{value}+</p>
+                    <p className="text-sm text-gray-600 mt-1">{label}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* Smart Suggestion */}
             {(overdueTodos.length > 0 || todayReminders.length > 0) && (
-              <div className="bg-red-50 rounded-2xl p-6 border-2 border-red-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <Lightbulb className="w-6 h-6 text-red-600" />
-                  <h4 className="text-lg font-bold text-gray-900">Smart Suggestion</h4>
+              <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-3xl p-8 border-2 border-red-200 shadow-xl">
+                <div className="flex items-center gap-4 mb-6">
+                  <Lightbulb className="w-10 h-10 text-red-600" />
+                  <div>
+                    <h4 className="text-2xl font-bold text-gray-900">Smart Suggestion</h4>
+                    <p className="text-red-700">Don’t fall behind</p>
+                  </div>
                 </div>
-                <p className="text-gray-800 mb-5">
+                <p className="text-gray-800 mb-8">
                   {overdueTodos.length > 0
                     ? `You have ${overdueTodos.length} overdue task${overdueTodos.length > 1 ? "s" : ""}`
                     : "You have tasks due today"}
                 </p>
                 <button
                   onClick={() => router.push("/dashboard/todos")}
-                  className="w-full bg-red-600 text-white py-3 rounded-xl font-medium hover:bg-red-700 transition"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-2xl transition shadow-lg"
                 >
-                  Tackle Now
+                  Tackle Them Now
                 </button>
               </div>
             )}

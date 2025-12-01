@@ -58,6 +58,7 @@ const formatBytes = (bytes: number) => {
 };
 
 // --- VaultChatView Component ---
+// (No changes to internal logic, just responsive classes)
 
 function VaultChatView({
   fileId,
@@ -85,15 +86,14 @@ function VaultChatView({
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/files/${fileId}/`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
-      .then((r) => (r.ok ? r.json() : (onClose(), null))) // Close if fetch fails
+      .then((r) => (r.ok ? r.json() : (onClose(), null)))
       .then((data) => {
         if (data) {
           setFile(data);
-          // For now, starting with a clean slate
           setMessages([]);
         }
       })
-      .catch(() => onClose()); // Close on error
+      .catch(() => onClose());
   }, [fileId, accessToken, onClose]);
 
   // Auto-scroll chat window
@@ -159,7 +159,6 @@ function VaultChatView({
     }
   };
 
-  // Only render when a file is selected (handled by parent)
   if (!fileId) return null;
 
   if (!file) {
@@ -172,11 +171,10 @@ function VaultChatView({
   }
 
   return (
-    // Responsive: h-[85vh] on mobile/tablet, h-full on desktop (set by grid)
-    // col-span-full on mobile, lg:col-span-2 on desktop
-    <div className="bg-white rounded-3xl shadow-xl border border-gray-100 flex flex-col h-[85vh] lg:h-full col-span-full lg:col-span-2 xl:col-span-3">
+    // Col-span-full for mobile/tablet, flex-1 to take up remaining width on desktop
+    <div className="bg-white rounded-3xl shadow-xl border border-gray-100 flex flex-col h-[85vh] lg:h-full col-span-full flex-1">
       {/* File Header */}
-      <div className="p-6 md:p-8 border-b border-gray-100 flex items-start justify-between">
+      <div className="p-6 md:p-8 border-b border-gray-100 flex items-start justify-between flex-shrink-0">
         <div className="flex items-center gap-4 min-w-0 flex-1">
           <button
             onClick={onClose}
@@ -211,7 +209,6 @@ function VaultChatView({
       </div>
 
       {/* Chat Area */}
-      {/* IMPORTANT: flex-1 on the container, overflow-y-auto on the message wrapper */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
           {!file.processed ? (
@@ -243,7 +240,6 @@ function VaultChatView({
                   }`}
                 >
                   <div
-                    // max-w-full to prevent overflow on small screens
                     className={`max-w-full sm:max-w-2xl px-6 py-4 rounded-3xl shadow-sm ${
                       msg.role === "user"
                         ? "bg-emerald-600 text-white"
@@ -306,7 +302,7 @@ function VaultChatView({
   );
 }
 
-// --- VaultList Component (Extracted File List) ---
+// --- VaultList Component (Permanent Sidebar for Desktop) ---
 
 function VaultList({
   files,
@@ -338,47 +334,44 @@ function VaultList({
         <div
           key={file.id}
           onClick={() => setSelectedFileId(file.id)}
-          className={`group bg-white rounded-2xl p-4 shadow-sm border ${
+          className={`group bg-white rounded-2xl p-4 shadow-sm border flex items-center justify-between min-w-[200px] ${
             selectedFileId === file.id
               ? "border-emerald-400 ring-4 ring-emerald-100"
               : "border-gray-100 hover:shadow-lg hover:border-emerald-300"
           } transition cursor-pointer`}
         >
-          <div className="flex items-center justify-between min-w-0">
-            <div className="flex items-center min-w-0 flex-1">
-              <div className="p-2 bg-gray-50 rounded-xl mr-3 group-hover:bg-emerald-50 transition flex-shrink-0">
-                {getIcon(file.file_type)}
-              </div>
-              <div className="min-w-0">
-                <h3 className="font-medium text-gray-900 truncate">
-                  {file.original_filename}
-                </h3>
-                <p className="text-xs text-gray-500 mt-0.5 flex items-center">
-                  {formatBytes(file.size)} •{" "}
-                  {format(new Date(file.uploaded_at), "MMM d, yyyy")}
-                </p>
-              </div>
+          <div className="flex items-center min-w-0 flex-1">
+            <div className="p-2 bg-gray-50 rounded-xl mr-3 group-hover:bg-emerald-50 transition flex-shrink-0">
+              {getIcon(file.file_type)}
             </div>
+            <div className="min-w-0">
+              <h3 className="font-medium text-gray-900 truncate">
+                {file.original_filename}
+              </h3>
+              <p className="text-xs text-gray-500 mt-0.5 flex items-center">
+                {formatBytes(file.size)} • {format(new Date(file.uploaded_at), "MMM d")}
+              </p>
+            </div>
+          </div>
 
-            <div className="flex items-center ml-4 flex-shrink-0">
-              <div className="flex items-center gap-2 mr-4">
-                {file.processed ? (
-                  <CheckCircle className="w-4 h-4 text-emerald-600" />
-                ) : (
-                  <Clock className="w-4 h-4 text-yellow-600 animate-spin" />
-                )}
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteFile(file.id);
-                }}
-                className="p-2 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded-xl transition"
-                title="Delete File"
-              >
-                <Trash2 className="w-5 h-5 text-red-600" />
-              </button>
+          <div className="flex items-center ml-4 flex-shrink-0">
+            <div className="flex items-center gap-2 mr-4">
+              {file.processed ? (
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <Clock className="w-4 h-4 text-yellow-600 animate-spin" />
+              )}
             </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteFile(file.id);
+              }}
+              className="p-2 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded-xl transition"
+              title="Delete File"
+            >
+              <Trash2 className="w-5 h-5 text-red-600" />
+            </button>
           </div>
         </div>
       ))}
@@ -386,12 +379,20 @@ function VaultList({
   );
 
   return (
-    // Only show file list in its grid column on large screens
-    // On small screens, it takes the full width when selectedFileId is null
-    <div className={`col-span-full lg:col-span-1 xl:col-span-1 ${selectedFileId ? 'hidden lg:block' : ''}`}>
-      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-8 h-full">
-        {fileListContent}
-      </div>
+    // On Desktop (lg): Fixed width, overflow-y-auto to allow scrolling list.
+    // On Mobile (hidden): Only show if no file is selected.
+    <div 
+        className={`
+            bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-8 
+            h-full overflow-y-auto flex-shrink-0 
+            lg:w-80 lg:block
+            ${selectedFileId ? 'hidden' : 'block col-span-full'}
+        `}
+    >
+      <h2 className="text-2xl font-bold text-gray-900 mb-6 sticky top-0 bg-white pb-3 border-b border-gray-100 z-[5]">
+        Your Files ({files.length})
+      </h2>
+      {fileListContent}
     </div>
   );
 }
@@ -414,7 +415,6 @@ export default function VaultListPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        // Ensure data is sorted by uploaded_at descending
         const sortedFiles = Array.isArray(data) ? data : data.results || [];
         setFiles(
           sortedFiles.sort(
@@ -438,11 +438,9 @@ export default function VaultListPage() {
     const formData = new FormData();
     formData.append("file", file);
 
-    const fileType = file.type.split('/')[1] || 'other';
     const temp: UploadedFile = {
       id: Date.now(),
       original_filename: file.name,
-      // Simple logic to set file_type, expanded for common types
       file_type: file.type.includes('pdf') ? 'pdf' : file.type.includes('image') ? 'image' : file.name.endsWith('.csv') ? 'csv' : file.name.endsWith('.txt') ? 'txt' : 'other',
       size: file.size,
       uploaded_at: new Date().toISOString(),
@@ -498,7 +496,7 @@ export default function VaultListPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-lg border-b border-gray-100 flex-shrink-0">
+      <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-lg border-b border-gray-100 flex-shrink-0">
         <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
@@ -506,7 +504,7 @@ export default function VaultListPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Vault</h1>
-              <p className="text-gray-600">{files.length} files</p>
+              <p className="text-gray-600">Document Intelligence</p>
             </div>
           </div>
 
@@ -531,10 +529,11 @@ export default function VaultListPage() {
       </header>
 
       {/* Main Content Area */}
-      {/* Use Grid to manage the list and chat view. min-h-0 is essential for flex-1/h-full on children */}
+      {/* Use flex for the main content to support the sidebar-like file list */}
       <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1 min-h-0">
-        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-8 h-full">
-          {/* File List / Master View */}
+        <div className="flex flex-row gap-8 h-full">
+          
+          {/* File List / Sidebar */}
           <VaultList
             files={files}
             loading={loading}
@@ -543,13 +542,20 @@ export default function VaultListPage() {
             deleteFile={deleteFile}
           />
 
-          {/* Chat View / Detail View */}
-          {selectedFileId && (
+          {/* Chat View / Main Panel */}
+          {selectedFileId ? (
             <VaultChatView
               fileId={selectedFileId}
               accessToken={accessToken}
               onClose={() => setSelectedFileId(null)}
             />
+          ) : (
+            // Default view when no file is selected (only shown on desktop if list is short)
+            <div className="hidden lg:flex flex-1 flex-col items-center justify-center bg-white/50 border border-gray-100 rounded-3xl p-10 text-gray-500">
+                <MessageSquare className="w-24 h-24 mb-6 text-emerald-300" />
+                <p className="text-2xl font-medium">Select a file to start chatting</p>
+                <p className="mt-2 text-lg">Your AI assistant is ready to help you analyze your documents.</p>
+            </div>
           )}
         </div>
       </main>

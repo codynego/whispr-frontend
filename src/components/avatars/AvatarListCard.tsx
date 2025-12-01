@@ -28,13 +28,13 @@ export const AvatarListCard = ({
   lastTrainedDate,
 }: AvatarListCardProps) => {
   const publicPageUrl = `/a/${handle}`; 
-  const dashboardConfigUrl = `/dashboard/avatars/${handle}/`; 
+  const dashboardConfigUrl = `/dashboard/avatars/${handle}`; // Removed trailing slash for cleaner URL structure
 
   // Function to format the date robustly
   const formatLastTrainedDate = (dateString: string | null | undefined) => {
     if (!dateString) return "Never";
     try {
-      // Attempt to parse the date and show a relative/short format
+      // Attempt to parse the date and show a short format (e.g., Dec 1, 2025)
       const date = new Date(dateString);
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     } catch {
@@ -43,41 +43,44 @@ export const AvatarListCard = ({
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 flex flex-col gap-6 transition-all hover:shadow-2xl hover:border-indigo-300">
+    // Use shadow-md for minimalistic look, hover:shadow-lg for interactivity
+    <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5 flex flex-col gap-5 transition-all duration-200 hover:shadow-lg hover:border-emerald-300">
       
       {/* --- Profile Header --- */}
       <div className="flex items-start gap-4">
         {/* Avatar Image / Placeholder */}
         {photoUrl ? (
+          // Adjusted size and border color to match the dashboard's emerald theme
           <Image
             src={photoUrl}
             alt={`${name}'s photo`}
-            width={64}
-            height={64}
-            className="rounded-full object-cover w-16 h-16 border-4 border-indigo-400 shadow-md"
+            width={56}
+            height={56}
+            className="rounded-full object-cover w-14 h-14 border-3 border-emerald-400 shadow-sm"
           />
         ) : (
-          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center border-4 border-indigo-400 shadow-md">
-            <Cpu className="w-8 h-8 text-indigo-600" />
+          <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center border-3 border-emerald-400 shadow-sm">
+            <Cpu className="w-7 h-7 text-emerald-600" />
           </div>
         )}
         
         {/* Name and Handle */}
         <div className="flex-1 min-w-0">
           <h3 className="text-xl font-bold text-gray-900 truncate">{name}</h3>
+          {/* Ensure handle doesn't overflow */}
           <p className="text-sm text-gray-500 truncate">@{handle}</p>
         </div>
       </div>
 
       {/* --- Status Badges --- */}
-      <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+      <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
           
         {/* Training Status Badge */}
         <span
-            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap 
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap 
               ${trained 
                 ? "bg-green-100 text-green-700" 
-                : "bg-yellow-100 text-yellow-700 animate-pulse"
+                : "bg-yellow-100 text-yellow-700" // Removed animate-pulse for a cleaner look
               }`}
         >
             <TrendingUp className="w-3 h-3 mr-1" />
@@ -86,64 +89,64 @@ export const AvatarListCard = ({
 
         {/* Visibility Status Badge */}
         <span
-            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap 
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap 
               ${isPublic 
                 ? "bg-blue-100 text-blue-700" 
                 : "bg-gray-100 text-gray-600"
               }`}
         >
             {isPublic ? <Globe className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
-            {isPublic ? "Public Access" : "Private"}
+            {isPublic ? "Public" : "Private"}
         </span>
       </div>
 
       {/* --- Performance Metrics Grid --- */}
-      <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
+      <div className="grid grid-cols-2 gap-3 text-sm text-gray-700">
         
         {/* Conversations */}
-        <div className="flex flex-col gap-1 p-2 bg-gray-50 rounded-lg">
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-indigo-500" />
+        <div className="flex flex-col gap-0.5 p-3 bg-gray-50 rounded-lg border border-gray-100">
+          <div className="flex items-center gap-1.5">
+            <Users className="w-4 h-4 text-emerald-500" />
             <span className="text-xs text-gray-500 font-medium">Conversations</span>
           </div>
-          <span className="text-lg font-bold text-gray-900">{totalConversations.toLocaleString()}</span>
+          <span className="text-xl font-extrabold text-gray-900">{totalConversations.toLocaleString()}</span>
         </div>
         
         {/* Messages */}
-        <div className="flex flex-col gap-1 p-2 bg-gray-50 rounded-lg">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-indigo-500" />
+        <div className="flex flex-col gap-0.5 p-3 bg-gray-50 rounded-lg border border-gray-100">
+          <div className="flex items-center gap-1.5">
+            <MessageSquare className="w-4 h-4 text-emerald-500" />
             <span className="text-xs text-gray-500 font-medium">Messages</span>
           </div>
-          <span className="text-lg font-bold text-gray-900">{totalMessages.toLocaleString()}</span>
+          <span className="text-xl font-extrabold text-gray-900">{totalMessages.toLocaleString()}</span>
         </div>
         
       </div>
       
       {/* Last Trained Date */}
-      <div className="text-xs text-gray-500 mt-0 pt-2 border-t border-gray-100">
-          <span className="font-medium">Last Trained:</span> {formatLastTrainedDate(lastTrainedDate)}
+      <div className="text-xs text-gray-500 pt-2 border-t border-gray-100">
+          <span className="font-semibold text-gray-600">Last Trained:</span> {formatLastTrainedDate(lastTrainedDate)}
       </div>
 
 
-      {/* --- Actions --- */}
-      <div className="flex flex-col gap-2 mt-auto">
-        {/* Primary Action */}
+      {/* --- Actions (Pushed to bottom using mt-auto) --- */}
+      <div className="flex flex-col gap-2 **mt-auto** pt-2">
+        {/* Primary Action (Emerald theme) */}
         <Link
           href={dashboardConfigUrl}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-base font-semibold hover:bg-indigo-700 transition shadow-lg"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-base font-semibold hover:bg-emerald-700 transition shadow-md"
         >
-          <Settings className="w-5 h-5" />
+          <Settings className="w-4 h-4" />
           Configure Avatar
         </Link>
         
         {/* Secondary Action */}
         <Link
           href={publicPageUrl}
-          className={`flex items-center justify-center px-4 py-2 bg-indigo-50 rounded-xl text-sm font-medium transition disabled:opacity-50 
+          className={`flex items-center justify-center px-4 py-1.5 rounded-lg text-sm font-medium transition disabled:opacity-50 border 
             ${isPublic 
-              ? "text-indigo-700 hover:bg-indigo-100" 
-              : "text-gray-500 cursor-not-allowed pointer-events-none opacity-70"
+              ? "text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100" 
+              : "text-gray-500 bg-gray-100 border-gray-200 cursor-not-allowed pointer-events-none opacity-80"
             }`}
           aria-disabled={!isPublic}
         >

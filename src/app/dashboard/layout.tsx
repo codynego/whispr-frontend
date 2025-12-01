@@ -47,7 +47,7 @@ export default function DashboardLayout({
 
   // Calculate the correct margin for the main content area
   const marginClass = isMobile 
-    ? "pt-16" 
+    ? "pt-0" 
     : sidebarOpen 
       ? "lg:ml-72" // Corresponds to w-72
       : "lg:ml-20"; // Corresponds to w-20 (collapsed)

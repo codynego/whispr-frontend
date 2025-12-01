@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Brain, Settings, BarChart3, Loader2, Lock, Globe, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 
+// Assuming these paths are correct
 import { SourceSelector } from "@/components/avatars/SourceSelector";
 import { TrainingTriggerButton } from "@/components/avatars/TrainingTriggerButton";
 import { TrainingStatusMonitor } from "@/components/avatars/TrainingStatusMonitor";
@@ -88,29 +89,31 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
-      <div className="max-w-7xl mx-auto px-6 py-10">
+      {/* Reduced max-width for less "zoomed-in" look, but still wide enough */}
+      <div className="max-w-screen-xl mx-auto px-8 py-12">
 
         {/* Header */}
-        <header className="mb-12">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8">
-            <div className="flex items-center gap-6">
-              <div className="w-24 h-24 bg-indigo-100 rounded-3xl flex items-center justify-center shadow-xl">
-                <Brain className="w-12 h-12 text-indigo-600" />
+        <header className="mb-16">
+          <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-8">
+            <div className="flex items-start gap-8">
+              <div className="w-28 h-28 bg-indigo-100 rounded-3xl flex items-center justify-center shadow-2xl shrink-0">
+                <Brain className="w-14 h-14 text-indigo-600" />
               </div>
               <div>
-                <h1 className="text-4xl font-extrabold text-gray-900">{fullAvatarData.name}</h1>
+                <h1 className="text-5xl font-extrabold text-gray-900 leading-tight">{fullAvatarData.name}</h1>
                 <div className="flex items-center gap-4 mt-3">
                   <span className="text-xl text-gray-500">@{fullAvatarData.handle}</span>
                   <span className={`px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2
-                    ${isPublic ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-700"}`}>
+                    ${isPublic ? "bg-blue-100 text-blue-800" : "bg-gray-200 text-gray-700"}`}>
                     {isPublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                    {isPublic ? "Public" : "Private"}
+                    {isPublic ? "Public Avatar" : "Private Avatar"}
                   </span>
                 </div>
               </div>
             </div>
 
-            <nav className="flex gap-2 bg-gray-100 p-2 rounded-2xl shadow-inner">
+            {/* Navigation Tabs */}
+            <nav className="flex gap-1 bg-white p-1 rounded-2xl shadow-xl border border-gray-100 shrink-0">
               {[
                 { id: "training", icon: Brain, label: "Training" },
                 { id: "settings", icon: Settings, label: "Settings" },
@@ -119,8 +122,8 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                 <button
                   key={id}
                   onClick={() => setActiveTab(id as Tab)}
-                  className={`flex items-center gap-3 px-8 py-4 rounded-xl font-semibold transition
-                    ${activeTab === id ? "bg-indigo-600 text-white shadow-lg" : "text-gray-600 hover:bg-gray-200"}`}
+                  className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold transition text-lg
+                    ${activeTab === id ? "bg-indigo-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-50"}`}
                 >
                   <Icon className="w-5 h-5" />
                   {label}
@@ -130,6 +133,8 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
           </div>
         </header>
 
+        {/* --- Tab Content --- */}
+        
         {/* TRAINING TAB */}
         {activeTab === "training" && (
           <div className="space-y-12">
@@ -142,7 +147,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                   Training Data Sources
                 </h2>
                 <p className="text-lg text-gray-600 mt-3">
-                  Select the knowledge and tone your AI will learn from.
+                  Select the knowledge and tone your AI will learn from. This section utilizes **100%** of the available content width.
                 </p>
               </div>
 
@@ -150,6 +155,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                 <SourceSelector
                   avatarHandle={avatarHandle}
                   onSaveSuccess={handleConfigSave}
+                  // SourceSelector will naturally take 100% width of this parent div
                 />
               </div>
             </div>
@@ -160,7 +166,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
               <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
                 <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                   <BarChart3 className="w-8 h-8 text-indigo-600" />
-                  Training Status
+                  Training Status & Action
                 </h3>
 
                 <div className="space-y-6">
@@ -202,13 +208,14 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
           </div>
         )}
 
-        {/* Settings & Analytics Tabs */}
+        {/* Settings Tab - Centered and constrained for forms */}
         {activeTab === "settings" && (
           <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100 p-12">
             <SettingsForm avatarHandle={avatarHandle} />
           </div>
         )}
 
+        {/* Analytics Tab - Full width (max-w-screen-xl) for charts/data */}
         {activeTab === "analytics" && (
           <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-12">
             <AnalyticsDisplay avatarHandle={avatarHandle} />

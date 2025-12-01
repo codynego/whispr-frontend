@@ -2,257 +2,242 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Brain, Settings, BarChart3, Loader2, Lock, Globe } from "lucide-react";
+import { Brain, Settings, BarChart3, Loader2, Lock, Globe, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 
-// --- Import Developed Components (Assumed) ---
-import { SourceSelector } from "@/components/avatars/SourceSelector"; 
-import { TrainingTriggerButton } from "@/components/avatars/TrainingTriggerButton"; 
-import { TrainingStatusMonitor } from "@/components/avatars/TrainingStatusMonitor"; 
-import { SettingsForm } from "@/components/avatars/SettingsForm"; 
-import { AnalyticsDisplay } from "@/components/avatars/AnalyticsDisplay"; 
-import { DeleteAvatarButton } from "@/components/avatars/DeleteAvatarButton"; 
-// -----------------------------------
+import { SourceSelector } from "@/components/avatars/SourceSelector";
+import { TrainingTriggerButton } from "@/components/avatars/TrainingTriggerButton";
+import { TrainingStatusMonitor } from "@/components/avatars/TrainingStatusMonitor";
+import { SettingsForm } from "@/components/avatars/SettingsForm";
+import { AnalyticsDisplay } from "@/components/avatars/AnalyticsDisplay";
+import { DeleteAvatarButton } from "@/components/avatars/DeleteAvatarButton";
 
-type Tab = 'training' | 'settings' | 'analytics';
+type Tab = "training" | "settings" | "analytics";
 
-// Interface matching the expected API response fields (including nested settings)
 interface FullAvatarData {
-    id: string;
-    name: string;
-    handle: string;
-    photo: string | null; 
-    last_training_job_id: string | null;
-    settings: {
-        is_public: boolean;
-    };
+  id: string;
+  name: string;
+  handle: string;
+  photo: string | null;
+  last_training_job_id: string | null;
+  settings: {
+    is_public: boolean;
+  };
 }
 
-// Define the type for the manual status check function (exposed by the Monitor)
 type ManualCheckFunction = (jobId: string) => Promise<void>;
 
-
 export default function AvatarConfigurationPage({ params }: { params: { handle: string } }) {
-    const { accessToken } = useAuth();
-    const avatarHandle = params.handle;
-    
-    // --- State Management ---
-    const [fullAvatarData, setFullAvatarData] = useState<FullAvatarData | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<Tab>('training');
-    const [isConfigSaved, setIsConfigSaved] = useState(true); 
-    
-    // Store the job ID returned from the API, which serves as the trigger for the Monitor.
-    const [apiJobId, setApiJobId] = useState<string | null>(null); 
+  const { accessToken } = useAuth();
+  const avatarHandle = params.handle;
 
-    // State to hold the function provided by TrainingStatusMonitor for manual status checks
-    const [manualCheckFunction, setManualCheckFunction] = useState<ManualCheckFunction | null>(null);
+  const [fullAvatarData, setFullAvatarData] = useState<FullAvatarData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<Tab>("training");
+  const [isConfigSaved, setIsConfigSaved] = useState(true);
+  const [apiJobId, setApiJobId] = useState<string | null>(null);
+  const [manualCheckFunction, setManualCheckFunction] = useState<ManualCheckFunction | null>(null);
 
-    // --- Data Fetching ---
-    const fetchAvatarDetails = useCallback(async () => {
-        if (!accessToken) return;
-        setLoading(true);
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/`, {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            });
-            
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({ detail: "Non-JSON response received." }));
-                console.error("Avatar Details Fetch Failed:", res.status, errorData); 
-                throw new Error(errorData.detail || `Server Error (${res.status})`);
-            }
-            
-            const data: FullAvatarData = await res.json();
-            setFullAvatarData(data);
-            
-            // Set the job ID from the API. This will be the ID the monitor uses.
-            setApiJobId(data.last_training_job_id); 
-            
-            setIsConfigSaved(true); 
+  const fetchAvatarDetails = useCallback(async () => {
+    if (!accessToken) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
 
-        } catch (error: any) {
-            toast.error(error.message || "Failed to load Avatar details.");
-            setFullAvatarData(null);
-        } finally {
-            setLoading(false);
-        }
-    }, [accessToken, avatarHandle]);
-    
-    useEffect(() => {
-        fetchAvatarDetails();
-    }, [fetchAvatarDetails]);
+      if (!res.ok) throw new Error("Failed to load avatar");
 
-
-    const handleConfigSave = () => {
-        setIsConfigSaved(true);
-    };
-    
-    const handleJobComplete = () => {
-        // When a job finishes (success/failure), clear the current job ID 
-        // and fetch the details to update the Avatar's overall status (e.g., trained: true)
-        setApiJobId(null);
-        fetchAvatarDetails();
-    };
-
-    const handleTrainingStart = (jobId: string) => {
-        // When the button is clicked, immediately update the state to the new job ID, 
-        // which triggers the Monitor to initialize.
-        setApiJobId(jobId);
+      const data: FullAvatarData = await res.json();
+      setFullAvatarData(data);
+      setApiJobId(data.last_training_job_id);
+      setIsConfigSaved(true);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to load avatar");
+      setFullAvatarData(null);
+    } finally {
+      setLoading(false);
     }
-    
-    const handleManualCheckSetup = useCallback((func: ManualCheckFunction) => {
-        // This callback receives the fetch function from the Monitor component
-        setManualCheckFunction(() => func);
-    }, []);
+  }, [accessToken, avatarHandle]);
 
-    // --- Tab Navigation Component (Unchanged) ---
-    const TabButton = ({ tab, icon: Icon, label }: { tab: Tab, icon: React.ElementType, label: string }) => (
-        <button
-            onClick={() => setActiveTab(tab)}
-            className={`flex items-center justify-center flex-1 gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-                ${
-                    activeTab === tab
-                        ? 'bg-indigo-600 text-white shadow-md'
-                        : 'text-gray-600 hover:bg-gray-100'
-                }`}
-        >
-            <Icon className="w-5 h-5" />
-            <span className="hidden sm:inline">{label}</span>
-        </button>
-    );
+  useEffect(() => {
+    fetchAvatarDetails();
+  }, [fetchAvatarDetails]);
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-screen">
-                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-                <p className="ml-3 text-lg text-gray-700">Loading Configuration...</p>
-            </div>
-        );
-    }
+  const handleConfigSave = () => setIsConfigSaved(true);
+  const handleJobComplete = () => {
+    setApiJobId(null);
+    fetchAvatarDetails();
+  };
+  const handleTrainingStart = (jobId: string) => setApiJobId(jobId);
+  const handleManualCheckSetup = useCallback((func: ManualCheckFunction) => {
+    setManualCheckFunction(() => func);
+  }, []);
 
-    if (!fullAvatarData) {
-        return (
-            <div className="max-w-4xl mx-auto py-10 text-center">
-                <h2 className="text-2xl text-red-600">Avatar Not Found</h2>
-                <p className="text-gray-600">Could not retrieve configuration for @{avatarHandle}.</p>
-            </div>
-        );
-    }
-
-    const isPublic = fullAvatarData.settings?.is_public ?? false;
-
-    // --- Render Component ---
+  if (loading) {
     return (
-        <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-4 sm:px-6 py-10 space-y-8">
-            
-            <div className="space-y-6">
-                
-                {/* --- Header & Avatar Info (Unchanged) --- */}
-                <header className="flex flex-col md:flex-row md:items-center md:justify-between pb-5 border-b border-gray-200">
-                    <div className="flex items-center gap-4">
-                        {/* Avatar Photo/Icon */}
-                        <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center shadow-md">
-                            <Brain className="w-8 h-8 text-indigo-600" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-extrabold text-gray-900">{fullAvatarData.name}</h1>
-                            <div className="flex items-center gap-2 mt-1">
-                                <p className="text-sm font-medium text-gray-500">
-                                    @{fullAvatarData.handle}
-                                </p>
-                                <span className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-medium 
-                                    ${isPublic ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}
-                                >
-                                    {isPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                                    {isPublic ? 'Public' : 'Private'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Tab Buttons (Responsive) */}
-                    <nav className="mt-6 md:mt-0 w-full md:w-auto">
-                        <div className="flex gap-1 bg-gray-50 p-1.5 rounded-xl border border-gray-200 shadow-inner">
-                            <TabButton tab="training" icon={Brain} label="Training & Sources" />
-                            <TabButton tab="settings" icon={Settings} label="Settings" />
-                            <TabButton tab="analytics" icon={BarChart3} label="Analytics" />
-                        </div>
-                    </nav>
-                </header>
-                
-                <hr className="my-4 hidden" /> {/* Hidden on mobile, unnecessary separator */}
-
-                {/* --- Content Area --- */}
-                <main>
-                    {activeTab === 'training' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            
-                            {/* Left Column: Source Selector (Takes 2/3 width on desktop, full width on mobile) */}
-                            <div className="lg:col-span-2">
-                                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-4 sm:p-6">
-                                    <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
-                                        <Globe className="w-5 h-5 text-indigo-500" />
-                                        Knowledge & Tone Sources
-                                    </h2>
-                                    <SourceSelector 
-                                        avatarHandle={avatarHandle} 
-                                        onSaveSuccess={() => handleConfigSave()} 
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Right Column: Status and Actions (Takes 1/3 width on desktop, full width on mobile) */}
-                            <div className="lg:col-span-1 space-y-6">
-                                
-                                {/* Training Status Card */}
-                                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 space-y-4">
-                                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                                        <BarChart3 className="w-5 h-5 text-indigo-500" />
-                                        Job Status
-                                    </h2>
-                                    <TrainingStatusMonitor 
-                                        jobId={apiJobId} 
-                                        avatarHandle={avatarHandle} 
-                                        onJobComplete={handleJobComplete} 
-                                        onManualCheck={handleManualCheckSetup} // Pass the setup function
-                                    />
-                                    
-                                    <hr className="my-4" />
-
-                                    <TrainingTriggerButton 
-                                        avatarHandle={avatarHandle} 
-                                        isConfigSaved={isConfigSaved} 
-                                        onTrainingStart={handleTrainingStart} // Changed callback
-                                    />
-                                </div>
-                                
-                                {/* Danger Zone / Delete Card */}
-                                <div className="bg-red-50 border border-red-200 rounded-2xl shadow-lg p-6">
-                                    <h3 className="text-lg font-bold text-red-800 mb-3">Danger Zone</h3>
-                                    <DeleteAvatarButton 
-                                        avatarId={fullAvatarData.id}
-                                        avatarHandle={avatarHandle}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    
-                    {activeTab === 'settings' && (
-                        <div className="max-w-3xl mx-auto">
-                            <SettingsForm avatarHandle={avatarHandle} />
-                        </div>
-                    )}
-                    
-                    {activeTab === 'analytics' && (
-                        <div className="max-w-7xl mx-auto">
-                            <AnalyticsDisplay avatarHandle={avatarHandle} />
-                        </div>
-                    )}
-                </main>
-
-            </div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
+        <span className="ml-4 text-xl text-gray-700">Loading avatar...</span>
+      </div>
     );
+  }
+
+  if (!fullAvatarData) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-20">
+        <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-6" />
+        <h2 className="text-2xl font-bold text-red-600">Avatar Not Found</h2>
+        <p className="text-gray-600 mt-2">@{avatarHandle} could not be loaded.</p>
+      </div>
+    );
+  }
+
+  const isPublic = fullAvatarData.settings?.is_public ?? false;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
+      <div className="max-w-7xl mx-auto px-6 py-10">
+
+        {/* Header */}
+        <header className="mb-10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className="w-20 h-20 bg-indigo-100 rounded-3xl flex items-center justify-center shadow-lg">
+                <Brain className="w-10 h-10 text-indigo-600" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-extrabold text-gray-900">{fullAvatarData.name}</h1>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="text-lg text-gray-500">@{fullAvatarData.handle}</span>
+                  <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium ${
+                    isPublic 
+                      ? "bg-blue-100 text-blue-800" 
+                      : "bg-gray-100 text-gray-700"
+                  }`}>
+                    {isPublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                    {isPublic ? "Public" : "Private"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tab Navigation */}
+            <nav className="flex gap-2 bg-gray-100 p-1.5 rounded-2xl shadow-inner">
+              <button
+                onClick={() => setActiveTab("training")}
+                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition ${
+                  activeTab === "training"
+                    ? "bg-indigo-600 text-white shadow-md"
+                    : "text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <Brain className="w-5 h-5" />
+                Training
+              </button>
+              <button
+                onClick={() => setActiveTab("settings")}
+                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition ${
+                  activeTab === "settings"
+                    ? "bg-indigo-600 text-white shadow-md"
+                    : "text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <Settings className="w-5 h-5" />
+                Settings
+              </button>
+              <button
+                onClick={() => setActiveTab("analytics")}
+                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition ${
+                  activeTab === "analytics"
+                    ? "bg-indigo-600 text-white shadow-md"
+                    : "text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <BarChart3 className="w-5 h-5" />
+                Analytics
+              </button>
+            </nav>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        {activeTab === "training" && (
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
+            {/* Left: Full Source Selector (Fixed Width, Never Shrinks) */}
+            <div className="xl:col-span-2">
+              <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+                <div className="p-8 border-b border-gray-100">
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <Brain className="w-8 h-8 text-indigo-600" />
+                    Training Data Sources
+                  </h2>
+                  <p className="text-gray-600 mt-2">
+                    Configure what your AI knows and how it speaks.
+                  </p>
+                </div>
+                <div className="p-8">
+                  <SourceSelector
+                    avatarHandle={avatarHandle}
+                    onSaveSuccess={handleConfigSave}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Right Sidebar: Actions & Status */}
+            <div className="xl:col-span-1 space-y-6">
+              {/* Training Status */}
+              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Training Status</h3>
+                <TrainingStatusMonitor
+                  jobId={apiJobId}
+                  avatarHandle={avatarHandle}
+                  onJobComplete={handleJobComplete}
+                  onManualCheck={handleManualCheckSetup}
+                />
+
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <TrainingTriggerButton
+                    avatarHandle={avatarHandle}
+                    isConfigSaved={isConfigSaved}
+                    onTrainingStart={handleTrainingStart}
+                  />
+                </div>
+              </div>
+
+              {/* Danger Zone */}
+              <div className="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-3xl p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <AlertTriangle className="w-7 h-7 text-red-600" />
+                  <h3 className="text-xl font-bold text-red-900">Danger Zone</h3>
+                </div>
+                <p className="text-sm text-red-700 mb-6">
+                  Permanently delete this avatar and all its training data.
+                </p>
+                <DeleteAvatarButton
+                  avatarId={fullAvatarData.id}
+                  avatarHandle={avatarHandle}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "settings" && (
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-10">
+              <SettingsForm avatarHandle={avatarHandle} />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "analytics" && (
+          <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-10">
+            <AnalyticsDisplay avatarHandle={avatarHandle} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

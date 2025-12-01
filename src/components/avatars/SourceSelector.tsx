@@ -266,7 +266,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: { avatarHandle: 
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Avatar Training Data</h1>
-                <p className="text-gray-600">Shape your AI's knowledge and personality</p>
+                <p className="text-gray-600">Shape your AI&apos;s knowledge and personality</p>
               </div>
             </div>
             <button

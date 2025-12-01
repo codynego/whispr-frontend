@@ -87,7 +87,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
   const isPublic = fullAvatarData.settings?.is_public ?? false;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
       <div className="max-w-7xl mx-auto px-6 py-10">
 
         {/* Header */}
@@ -110,7 +110,6 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
               </div>
             </div>
 
-            {/* Tabs */}
             <nav className="flex gap-2 bg-gray-100 p-2 rounded-2xl shadow-inner">
               {[
                 { id: "training", icon: Brain, label: "Training" },
@@ -131,20 +130,22 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
           </div>
         </header>
 
-        {/* === TRAINING TAB – 100% WIDTH SOURCE SELECTOR === */}
+        {/* TRAINING TAB */}
         {activeTab === "training" && (
-          <>
-            {/* Full-Width Source Selector */}
-            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden mb-8">
+          <div className="space-y-12">
+
+            {/* 1. Full-Width Source Selector */}
+            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
               <div className="p-10 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
                 <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-4">
                   <Brain className="w-10 h-10 text-indigo-600" />
                   Training Data Sources
                 </h2>
                 <p className="text-lg text-gray-600 mt-3">
-                  Choose everything your AI should know and how it should sound.
+                  Select the knowledge and tone your AI will learn from.
                 </p>
               </div>
+
               <div className="p-10">
                 <SourceSelector
                   avatarHandle={avatarHandle}
@@ -153,41 +154,52 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
               </div>
             </div>
 
-            {/* Floating Action Panel – Sticky on Desktop, Bottom on Mobile */}
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 
-                            md:left-auto md:right-8 md:bottom-8 md:translate-x-0 
-                            w-full max-w-lg md:max-w-sm">
-              <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 p-8 space-y-8">
-                {/* Training Status */}
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-5">Training Status</h3>
+            {/* 2. 2-Column Action Section BELOW Sources */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left: Training Status + Train Button */}
+              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                  <BarChart3 className="w-8 h-8 text-indigo-600" />
+                  Training Status
+                </h3>
+
+                <div className="space-y-6">
                   <TrainingStatusMonitor
                     jobId={apiJobId}
                     avatarHandle={avatarHandle}
                     onJobComplete={handleJobComplete}
                     onManualCheck={handleManualCheckSetup}
                   />
-                </div>
 
-                <TrainingTriggerButton
-                  avatarHandle={avatarHandle}
-                  isConfigSaved={isConfigSaved}
-                  onTrainingStart={handleTrainingStart}
-                />
-
-                <div className="pt-6 border-t border-gray-200">
-                  <div className="flex items-center gap-3 mb-4">
-                    <AlertTriangle className="w-6 h-6 text-red-600" />
-                    <h4 className="font-bold text-red-900">Danger Zone</h4>
+                  <div className="pt-6 border-t border-gray-200">
+                    <TrainingTriggerButton
+                      avatarHandle={avatarHandle}
+                      isConfigSaved={isConfigSaved}
+                      onTrainingStart={handleTrainingStart}
+                    />
                   </div>
-                  <DeleteAvatarButton
-                    avatarId={fullAvatarData.id}
-                    avatarHandle={avatarHandle}
-                  />
                 </div>
               </div>
+
+              {/* Right: Danger Zone – Delete Avatar */}
+              <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-3xl border-2 border-red-200 p-8 shadow-xl">
+                <div className="flex items-center gap-4 mb-6">
+                  <AlertTriangle className="w-10 h-10 text-red-600" />
+                  <div>
+                    <h3 className="text-2xl font-bold text-red-900">Danger Zone</h3>
+                    <p className="text-red-700 mt-1">Irreversible action</p>
+                  </div>
+                </div>
+                <p className="text-sm text-red-800 mb-8">
+                  Deleting this avatar will permanently remove it and all its training data. This cannot be undone.
+                </p>
+                <DeleteAvatarButton
+                  avatarId={fullAvatarData.id}
+                  avatarHandle={avatarHandle}
+                />
+              </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* Settings & Analytics Tabs */}

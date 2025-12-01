@@ -80,7 +80,7 @@ const ENDPOINTS: Record<string, string> = {
   uploads: "files/",
 };
 
-// --- HELPER COMPONENTS ---
+// --- HELPER COMPONENTS (Adapted for better layout/style) ---
 
 const Icon = ({ type, className }: { type: SourceType; className?: string }) => {
   const cfg = CONFIG.find((c) => c.type === type);
@@ -128,7 +128,8 @@ const SourceDetail = ({
     const isEnabled = active.useForTone || active.useForKnowledge;
 
     return (
-        <div className="space-y-6 md:col-span-7 bg-white p-6 md:p-8 rounded-3xl shadow-xl border border-gray-100 min-h-[500px]">
+        // Adjusted padding and removed md:col-span-7 as this is handled by parent grid
+        <div className="space-y-6 bg-white p-6 md:p-8 rounded-3xl shadow-xl border border-gray-100 min-h-[500px]">
             <div className="flex items-start justify-between border-b border-gray-100 pb-4 mb-4">
                 <h3 className={`text-2xl font-extrabold flex items-center gap-4`}>
                     <Icon type={active.type} className="w-7 h-7 text-emerald-600" />
@@ -136,7 +137,7 @@ const SourceDetail = ({
                 </h3>
                 <button
                     onClick={() => setActiveType(null)}
-                    className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition"
+                    className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition hidden md:block" // Hide on mobile detail view
                 >
                     <X className="w-6 h-6" />
                 </button>
@@ -155,7 +156,7 @@ const SourceDetail = ({
                             />
                             <div>
                                 <div className="font-medium text-gray-900 flex items-center gap-2">
-                                  <Book className="w-4 h-4 text-emerald-600" /> Tone & Style
+                                    <Book className="w-4 h-4 text-emerald-600" /> Tone & Style
                                 </div>
                                 <div className="text-xs text-gray-600 mt-1">
                                     Inference on how the AI writes (e.g., casual, professional).
@@ -240,7 +241,7 @@ const SourceDetail = ({
                 )}
             </div>
 
-            {/* Save Button for Detail Panel on Mobile Only */}
+            {/* Back Button for Detail Panel on Mobile Only */}
             <div className="mt-6 md:hidden">
                  <button
                     onClick={() => { setActiveType(null); }}
@@ -440,11 +441,11 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
   const isDetailView = mainPanel === "config" && activeType !== null;
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8 md:py-12 relative">
+    <div className="bg-gray-50 min-h-screen relative pb-24"> {/* Added pb-24 for fixed footer */}
       <style>{customScrollbarStyle}</style>
 
       {/* Header */}
-      <div className="max-w-5xl mx-auto px-4 mb-8">
+      <div className="max-w-5xl mx-auto px-4 pt-8 mb-8">
         <div className="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white p-6 md:p-8 rounded-3xl shadow-2xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -477,8 +478,9 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
           <div className={`grid md:grid-cols-12 gap-6 relative`}>
             
             {/* Source List Panel */}
-            <div className={`md:col-span-5 transition-all duration-300 ${isDetailView ? "hidden md:block" : "block"}`}>
-              <div className="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 h-full">
+            {/* List is now sticky on desktop */}
+            <div className={`md:col-span-5 transition-all duration-300 ${isDetailView ? "hidden md:block" : "block"} md:sticky md:top-6 self-start`}>
+              <div className="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 h-full max-h-[70vh]">
                 <h3 className="font-extrabold text-2xl text-gray-800 mb-6 flex items-center gap-2">
                   <List className="w-6 h-6 text-emerald-600"/> Available Data Sources
                 </h3>
@@ -520,7 +522,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
             </div>
 
             {/* Details Panel - Mobile: Absolute overlay, Desktop: Part of grid */}
-            <div className={`${isDetailView ? "fixed inset-0 z-20 bg-gray-50 overflow-y-auto p-4 md:static md:p-0 md:bg-transparent" : "hidden md:block"} md:col-span-7`}>
+            <div className={`md:col-span-7 ${isDetailView ? "fixed inset-0 z-20 bg-gray-50 overflow-y-auto p-4 md:static md:p-0 md:bg-transparent" : "hidden md:block"}`}>
               {!active ? (
                 <div className="text-center py-24 px-6 text-gray-400 bg-white rounded-3xl border border-dashed border-gray-300 h-full">
                   <Settings className="w-16 h-16 mx-auto mb-4 opacity-50" />
@@ -539,29 +541,6 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
               )}
             </div>
             
-            {/* Save Button for Config Panel (Desktop & Mobile List View) */}
-            <div className={`md:col-span-12 mt-4 ${isDetailView ? "hidden" : "block"}`}>
-              <div className="pt-6 border-t border-gray-200 flex justify-end">
-                <button
-                  onClick={save}
-                  disabled={saving || loading}
-                  className="px-8 py-3 md:px-10 md:py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl flex items-center gap-3 shadow-xl hover:shadow-2xl transition disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-6 h-6" />
-                      Save & Re-Train Avatar
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-            
           </div>
         ) : (
           /* MANAGE SOURCES VIEW */
@@ -573,9 +552,9 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
             <p className="text-gray-600 border-b pb-4 text-sm">Below are the sources currently contributing to your AI&apos;s knowledge base and persona. Removing a source will delete its data from training.</p>
             
             {loading ? (
-                  <div className="flex justify-center py-16">
-                     <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-                  </div>
+                <div className="flex justify-center py-16">
+                   <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                 </div>
             ) : backendSources.length === 0 ? (
               <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
                 <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
@@ -620,6 +599,32 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
           </div>
         )}
       </div>
+      
+      {/* --- Fixed Save Button Footer (Fixes the "hiding" issue) --- */}
+      {mainPanel === "config" && (
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
+            <div className="max-w-5xl mx-auto px-4 py-4 flex justify-end">
+                <button
+                    onClick={save}
+                    disabled={saving || loading}
+                    className="px-8 py-3 md:px-10 md:py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl flex items-center gap-3 shadow-xl hover:shadow-2xl transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                    {saving ? (
+                        <>
+                            <Loader2 className="w-6 h-6 animate-spin" />
+                            Saving...
+                        </>
+                    ) : (
+                        <>
+                            <Save className="w-6 h-6" />
+                            Save & Re-Train Avatar
+                        </>
+                    )}
+                </button>
+            </div>
+        </div>
+      )}
+
     </div>
   );
 };

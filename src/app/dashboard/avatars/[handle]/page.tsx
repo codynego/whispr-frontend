@@ -20,9 +20,7 @@ interface FullAvatarData {
   handle: string;
   photo: string | null;
   last_training_job_id: string | null;
-  settings: {
-    is_public: boolean;
-  };
+  settings: { is_public: boolean };
 }
 
 type ManualCheckFunction = (jobId: string) => Promise<void>;
@@ -45,30 +43,23 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-
       if (!res.ok) throw new Error("Failed to load avatar");
-
       const data: FullAvatarData = await res.json();
       setFullAvatarData(data);
       setApiJobId(data.last_training_job_id);
       setIsConfigSaved(true);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to load avatar");
+    } catch {
+      toast.error("Failed to load avatar");
       setFullAvatarData(null);
     } finally {
       setLoading(false);
     }
   }, [accessToken, avatarHandle]);
 
-  useEffect(() => {
-    fetchAvatarDetails();
-  }, [fetchAvatarDetails]);
+  useEffect(() => { fetchAvatarDetails(); }, [fetchAvatarDetails]);
 
   const handleConfigSave = () => setIsConfigSaved(true);
-  const handleJobComplete = () => {
-    setApiJobId(null);
-    fetchAvatarDetails();
-  };
+  const handleJobComplete = () => { setApiJobId(null); fetchAvatarDetails(); };
   const handleTrainingStart = (jobId: string) => setApiJobId(jobId);
   const handleManualCheckSetup = useCallback((func: ManualCheckFunction) => {
     setManualCheckFunction(() => func);
@@ -78,17 +69,17 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
-        <span className="ml-4 text-xl text-gray-700">Loading avatar...</span>
+        <span className="ml-4 text-xl">Loading avatar...</span>
       </div>
     );
   }
 
   if (!fullAvatarData) {
     return (
-      <div className="max-w-2xl mx-auto text-center py-20">
-        <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-6" />
-        <h2 className="text-2xl font-bold text-red-600">Avatar Not Found</h2>
-        <p className="text-gray-600 mt-2">@{avatarHandle} could not be loaded.</p>
+      <div className="text-center py-32">
+        <AlertTriangle className="w-20 h-20 text-red-500 mx-auto mb-6" />
+        <h2 className="text-3xl font-bold text-red-600">Avatar Not Found</h2>
+        <p className="text-gray-600 mt-2">@{avatarHandle}</p>
       </div>
     );
   }
@@ -96,25 +87,22 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
   const isPublic = fullAvatarData.settings?.is_public ?? false;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white pb-20">
       <div className="max-w-7xl mx-auto px-6 py-10">
 
         {/* Header */}
-        <header className="mb-10">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            <div className="flex items-center gap-5">
-              <div className="w-20 h-20 bg-indigo-100 rounded-3xl flex items-center justify-center shadow-lg">
-                <Brain className="w-10 h-10 text-indigo-600" />
+        <header className="mb-12">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8">
+            <div className="flex items-center gap-6">
+              <div className="w-24 h-24 bg-indigo-100 rounded-3xl flex items-center justify-center shadow-xl">
+                <Brain className="w-12 h-12 text-indigo-600" />
               </div>
               <div>
                 <h1 className="text-4xl font-extrabold text-gray-900">{fullAvatarData.name}</h1>
-                <div className="flex items-center gap-3 mt-2">
-                  <span className="text-lg text-gray-500">@{fullAvatarData.handle}</span>
-                  <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium ${
-                    isPublic 
-                      ? "bg-blue-100 text-blue-800" 
-                      : "bg-gray-100 text-gray-700"
-                  }`}>
+                <div className="flex items-center gap-4 mt-3">
+                  <span className="text-xl text-gray-500">@{fullAvatarData.handle}</span>
+                  <span className={`px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2
+                    ${isPublic ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-700"}`}>
                     {isPublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                     {isPublic ? "Public" : "Private"}
                   </span>
@@ -122,118 +110,95 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
               </div>
             </div>
 
-            {/* Tab Navigation */}
-            <nav className="flex gap-2 bg-gray-100 p-1.5 rounded-2xl shadow-inner">
-              <button
-                onClick={() => setActiveTab("training")}
-                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition ${
-                  activeTab === "training"
-                    ? "bg-indigo-600 text-white shadow-md"
-                    : "text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                <Brain className="w-5 h-5" />
-                Training
-              </button>
-              <button
-                onClick={() => setActiveTab("settings")}
-                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition ${
-                  activeTab === "settings"
-                    ? "bg-indigo-600 text-white shadow-md"
-                    : "text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                <Settings className="w-5 h-5" />
-                Settings
-              </button>
-              <button
-                onClick={() => setActiveTab("analytics")}
-                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition ${
-                  activeTab === "analytics"
-                    ? "bg-indigo-600 text-white shadow-md"
-                    : "text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                <BarChart3 className="w-5 h-5" />
-                Analytics
-              </button>
+            {/* Tabs */}
+            <nav className="flex gap-2 bg-gray-100 p-2 rounded-2xl shadow-inner">
+              {[
+                { id: "training", icon: Brain, label: "Training" },
+                { id: "settings", icon: Settings, label: "Settings" },
+                { id: "analytics", icon: BarChart3, label: "Analytics" },
+              ].map(({ id, icon: Icon, label }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as Tab)}
+                  className={`flex items-center gap-3 px-8 py-4 rounded-xl font-semibold transition
+                    ${activeTab === id ? "bg-indigo-600 text-white shadow-lg" : "text-gray-600 hover:bg-gray-200"}`}
+                >
+                  <Icon className="w-5 h-5" />
+                  {label}
+                </button>
+              ))}
             </nav>
           </div>
         </header>
 
-        {/* Main Content */}
+        {/* === TRAINING TAB – 100% WIDTH SOURCE SELECTOR === */}
         {activeTab === "training" && (
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-            {/* Left: Full Source Selector (Fixed Width, Never Shrinks) */}
-            <div className="xl:col-span-2">
-              <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
-                <div className="p-8 border-b border-gray-100">
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <Brain className="w-8 h-8 text-indigo-600" />
-                    Training Data Sources
-                  </h2>
-                  <p className="text-gray-600 mt-2">
-                    Configure what your AI knows and how it speaks.
-                  </p>
-                </div>
-                <div className="p-8">
-                  <SourceSelector
-                    avatarHandle={avatarHandle}
-                    onSaveSuccess={handleConfigSave}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Right Sidebar: Actions & Status */}
-            <div className="xl:col-span-1 space-y-6">
-              {/* Training Status */}
-              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Training Status</h3>
-                <TrainingStatusMonitor
-                  jobId={apiJobId}
-                  avatarHandle={avatarHandle}
-                  onJobComplete={handleJobComplete}
-                  onManualCheck={handleManualCheckSetup}
-                />
-
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <TrainingTriggerButton
-                    avatarHandle={avatarHandle}
-                    isConfigSaved={isConfigSaved}
-                    onTrainingStart={handleTrainingStart}
-                  />
-                </div>
-              </div>
-
-              {/* Danger Zone */}
-              <div className="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-3xl p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <AlertTriangle className="w-7 h-7 text-red-600" />
-                  <h3 className="text-xl font-bold text-red-900">Danger Zone</h3>
-                </div>
-                <p className="text-sm text-red-700 mb-6">
-                  Permanently delete this avatar and all its training data.
+          <>
+            {/* Full-Width Source Selector */}
+            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden mb-8">
+              <div className="p-10 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
+                <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-4">
+                  <Brain className="w-10 h-10 text-indigo-600" />
+                  Training Data Sources
+                </h2>
+                <p className="text-lg text-gray-600 mt-3">
+                  Choose everything your AI should know and how it should sound.
                 </p>
-                <DeleteAvatarButton
-                  avatarId={fullAvatarData.id}
+              </div>
+              <div className="p-10">
+                <SourceSelector
                   avatarHandle={avatarHandle}
+                  onSaveSuccess={handleConfigSave}
                 />
               </div>
             </div>
-          </div>
+
+            {/* Floating Action Panel – Sticky on Desktop, Bottom on Mobile */}
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 
+                            md:left-auto md:right-8 md:bottom-8 md:translate-x-0 
+                            w-full max-w-lg md:max-w-sm">
+              <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 p-8 space-y-8">
+                {/* Training Status */}
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-5">Training Status</h3>
+                  <TrainingStatusMonitor
+                    jobId={apiJobId}
+                    avatarHandle={avatarHandle}
+                    onJobComplete={handleJobComplete}
+                    onManualCheck={handleManualCheckSetup}
+                  />
+                </div>
+
+                <TrainingTriggerButton
+                  avatarHandle={avatarHandle}
+                  isConfigSaved={isConfigSaved}
+                  onTrainingStart={handleTrainingStart}
+                />
+
+                <div className="pt-6 border-t border-gray-200">
+                  <div className="flex items-center gap-3 mb-4">
+                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                    <h4 className="font-bold text-red-900">Danger Zone</h4>
+                  </div>
+                  <DeleteAvatarButton
+                    avatarId={fullAvatarData.id}
+                    avatarHandle={avatarHandle}
+                  />
+                </div>
+              </div>
+            </div>
+          </>
         )}
 
+        {/* Settings & Analytics Tabs */}
         {activeTab === "settings" && (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-10">
-              <SettingsForm avatarHandle={avatarHandle} />
-            </div>
+          <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100 p-12">
+            <SettingsForm avatarHandle={avatarHandle} />
           </div>
         )}
 
         {activeTab === "analytics" && (
-          <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-10">
+          <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-12">
             <AnalyticsDisplay avatarHandle={avatarHandle} />
           </div>
         )}

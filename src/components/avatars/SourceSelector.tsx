@@ -451,7 +451,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
               <Brain className="w-8 h-8 md:w-10 md:h-10 text-emerald-100" />
               <div>
                 <h2 className="text-xl md:text-3xl font-extrabold tracking-tight">Avatar Training Data</h2>
-                <p className="text-emerald-200 text-sm md:text-base">Configure your AI's knowledge and persona</p>
+                <p className="text-emerald-200 text-sm md:text-base">Configure your AI&apos;s knowledge and persona</p>
               </div>
             </div>
             <button
@@ -570,7 +570,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
               <List className="w-7 h-7 text-emerald-600" />
               Active Training Sources
             </h3>
-            <p className="text-gray-600 border-b pb-4 text-sm">Below are the sources currently contributing to your AI's knowledge base and persona. Removing a source will delete its data from training.</p>
+            <p className="text-gray-600 border-b pb-4 text-sm">Below are the sources currently contributing to your AI&apos;s knowledge base and persona. Removing a source will delete its data from training.</p>
             
             {loading ? (
                   <div className="flex justify-center py-16">

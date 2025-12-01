@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Brain, Settings, BarChart3, Loader2, Lock, Globe, AlertTriangle, Menu } from "lucide-react";
+import { Brain, Settings, BarChart3, Loader2, Lock, Globe, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { SourceSelector } from "@/components/avatars/SourceSelector";

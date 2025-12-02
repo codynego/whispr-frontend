@@ -1,4 +1,4 @@
-"use client";
+"use client"; // Retained because core logic (useState, useEffect, useAuth, file upload/delete) depends on client-side features.
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -58,7 +58,7 @@ const formatBytes = (bytes: number) => {
 };
 
 // --- VaultChatView Component ---
-// (No changes to internal logic, just responsive classes)
+// RETAINED: This component contains the file-specific chat logic.
 
 function VaultChatView({
   fileId,
@@ -382,12 +382,12 @@ function VaultList({
     // On Desktop (lg): Fixed width, overflow-y-auto to allow scrolling list.
     // On Mobile (hidden): Only show if no file is selected.
     <div 
-        className={`
-            bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-8 
-            h-full overflow-y-auto flex-shrink-0 
-            lg:w-80 lg:block
-            ${selectedFileId ? 'hidden' : 'block col-span-full'}
-        `}
+      className={`
+          bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-8 
+          h-full overflow-y-auto flex-shrink-0 
+          lg:w-80 lg:block
+          ${selectedFileId ? 'hidden' : 'block col-span-full'}
+      `}
     >
       <h2 className="text-2xl font-bold text-gray-900 mb-6 sticky top-0 bg-white pb-3 border-b border-gray-100 z-[5]">
         Your Files ({files.length})
@@ -553,7 +553,7 @@ export default function VaultListPage() {
             // Default view when no file is selected (only shown on desktop if list is short)
             <div className="hidden lg:flex flex-1 flex-col items-center justify-center bg-white/50 border border-gray-100 rounded-3xl p-10 text-gray-500">
                 <MessageSquare className="w-24 h-24 mb-6 text-emerald-300" />
-                <p className="text-2xl font-medium">Select a file to start chatting</p>
+                <p className="text-2xl font-medium">Select a file to start analyzing</p>
                 <p className="mt-2 text-lg">Your AI assistant is ready to help you analyze your documents.</p>
             </div>
           )}

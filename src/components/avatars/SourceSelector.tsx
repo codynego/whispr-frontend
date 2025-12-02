@@ -344,9 +344,6 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
   const save = async () => {
     if (!accessToken) return;
     setSaving(true);
-    // ... (payload creation and API call logic remains the same)
-    
-    // Mock Save Logic
     try {
         await new Promise(resolve => setTimeout(resolve, 1000));
         const payloadCount = sources.filter(s => s.useForTone || s.useForKnowledge).length;

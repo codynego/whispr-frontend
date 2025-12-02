@@ -12,9 +12,7 @@ import {
   Trash2,
   CheckCircle,
   Clock,
-  Send,
   Download,
-  MessageSquare,
   ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,14 +29,9 @@ interface UploadedFile {
   file?: string; // Optional: file URL, only available on detail fetch
 }
 
-interface ChatMessage {
-  id: number;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: string;
-}
+// NOTE: ChatMessage interface removed.
 
-// --- Utility Functions (Adapted from both original files) ---
+// --- Utility Functions ---
 
 const getIcon = (type: string, className: string = "w-6 h-6") => {
   const icons: Record<string, React.JSX.Element> = {
@@ -57,10 +50,9 @@ const formatBytes = (bytes: number) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-// --- VaultChatView Component ---
-// RETAINED: This component contains the file-specific chat logic.
+// --- VaultDetailView Component (Replaces VaultChatView for viewing only) ---
 
-function VaultChatView({
+function VaultDetailView({
   fileId,
   accessToken,
   onClose,
@@ -70,16 +62,11 @@ function VaultChatView({
   onClose: () => void;
 }) {
   const [file, setFile] = useState<UploadedFile | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [chatting, setChatting] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch file details when fileId changes
   useEffect(() => {
     if (!fileId || !accessToken) {
       setFile(null);
-      setMessages([]);
       return;
     }
 
@@ -90,80 +77,16 @@ function VaultChatView({
       .then((data) => {
         if (data) {
           setFile(data);
-          setMessages([]);
         }
       })
       .catch(() => onClose());
   }, [fileId, accessToken, onClose]);
 
-  // Auto-scroll chat window
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const sendMessage = async () => {
-    if (!input.trim() || !file || chatting || !file.processed) return;
-
-    const query = input;
-    const userMsg: ChatMessage = {
-      id: Date.now(),
-      role: "user",
-      content: query,
-      timestamp: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
-    setChatting(true);
-
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/whisone/files/${file.id}/chat/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ query }),
-        }
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now() + 1,
-            role: "assistant",
-            content: data.answer || "I understand.",
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-      } else {
-        throw new Error();
-      }
-    } catch {
-      toast.error("Failed to get response");
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          role: "assistant",
-          content: "I'm having trouble right now. Try again in a moment.",
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-    } finally {
-      setChatting(false);
-    }
-  };
-
   if (!fileId) return null;
 
   if (!file) {
     return (
-      <div className="flex-1 min-h-full flex flex-col items-center justify-center bg-gray-50/50 rounded-2xl p-10">
+      <div className="flex-1 min-h-full flex flex-col items-center justify-center bg-gray-50/50 rounded-3xl p-10">
         <Clock className="w-16 h-16 mx-auto mb-4 animate-spin text-emerald-600" />
         <p className="text-gray-600">Loading file details...</p>
       </div>
@@ -171,7 +94,6 @@ function VaultChatView({
   }
 
   return (
-    // Col-span-full for mobile/tablet, flex-1 to take up remaining width on desktop
     <div className="bg-white rounded-3xl shadow-xl border border-gray-100 flex flex-col h-[85vh] lg:h-full col-span-full flex-1">
       {/* File Header */}
       <div className="p-6 md:p-8 border-b border-gray-100 flex items-start justify-between flex-shrink-0">
@@ -184,7 +106,7 @@ function VaultChatView({
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-            {getIcon(file.file_type, "w-6 h-6")}
+            {getIcon(file.file_type, "w-6 h-6 text-white")}
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-gray-900 truncate">
@@ -199,103 +121,38 @@ function VaultChatView({
           <a
             href={file.file}
             target="_blank"
-            className="ml-4 px-4 py-2 text-sm bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition flex items-center gap-2 flex-shrink-0"
+            className="ml-4 px-4 py-2 text-sm bg-emerald-600 text-white rounded-2xl font-medium hover:bg-emerald-700 transition flex items-center gap-2 flex-shrink-0"
             rel="noopener noreferrer"
           >
             <Download className="w-4 h-4" />
-            Open
+            Download File
           </a>
         )}
       </div>
 
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
-          {!file.processed ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-500">
-              <Clock className="w-16 h-16 mb-4 animate-spin text-emerald-600" />
-              <p className="text-xl font-medium">Preparing file for chat...</p>
-              <p className="text-sm mt-2">This usually takes a few seconds</p>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-500">
-              <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-6">
-                <MessageSquare className="w-12 h-12 text-emerald-600" />
-              </div>
-              <p className="text-2xl font-medium mb-2">
-                Ask me anything about this file
-              </p>
-              <p className="text-center max-w-md text-sm">
-                Summarize it, find key points, extract data, or just chat — I’ve
-                read every word.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${
-                    msg.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`max-w-full sm:max-w-2xl px-6 py-4 rounded-3xl shadow-sm ${
-                      msg.role === "user"
-                        ? "bg-emerald-600 text-white"
-                        : "bg-white text-gray-800 border border-gray-100"
-                    }`}
-                  >
-                    <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
-                      {msg.content}
-                    </p>
-                    <p
-                      className={`text-xs mt-3 ${
-                        msg.role === "user" ? "text-emerald-100" : "text-gray-500"
-                      }`}
-                    >
-                      {format(new Date(msg.timestamp), "h:mm a")}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-          )}
-        </div>
-
-        {/* Input */}
-        <div className="border-t border-gray-200 bg-white/90 backdrop-blur-lg flex-shrink-0">
-          <div className="p-4 md:p-5">
-            <div className="flex items-center gap-4 bg-gray-50 rounded-3xl px-5 py-4 border border-gray-200 focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-100 transition">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === "Enter" && !e.shiftKey && sendMessage()
-                }
-                placeholder={
-                  file.processed
-                    ? "Ask about this file..."
-                    : "Waiting for file to be ready..."
-                }
-                className="flex-1 bg-transparent outline-none text-gray-800 placeholder-gray-500"
-                disabled={chatting || !file.processed}
-              />
-              <button
-                onClick={sendMessage}
-                disabled={chatting || !input.trim() || !file.processed}
-                className="p-3 bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg hover:shadow-emerald-600/30 flex-shrink-0"
-              >
-                {chatting ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <Send className="w-5 h-5" />
-                )}
-              </button>
-            </div>
+      {/* File Details / Status View */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-8 text-gray-700">
+        <div className="p-8 bg-gray-50 rounded-3xl text-center max-w-lg shadow-inner border border-gray-100">
+          <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-6">
+            {file.processed ? (
+                <CheckCircle className="w-10 h-10 text-emerald-600" />
+            ) : (
+                <Clock className="w-10 h-10 text-yellow-600 animate-spin" />
+            )}
           </div>
+          <h3 className="text-2xl font-bold mb-3">
+            File {file.processed ? "Processed" : "Processing"}
+          </h3>
+          <p className="text-base text-gray-600 mb-4">
+            **File Type:** {file.file_type.toUpperCase()}
+            <br />
+            **Size:** {formatBytes(file.size)}
+          </p>
+          <p className="text-sm text-gray-500">
+            {file.processed
+              ? "This document is ready for use. You can download the file using the button above."
+              : "The file is currently being processed by our system. This may take a moment depending on the size and complexity of the document."}
+          </p>
         </div>
       </div>
     </div>
@@ -504,7 +361,7 @@ export default function VaultListPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Vault</h1>
-              <p className="text-gray-600">Document Intelligence</p>
+              <p className="text-gray-600">Document Management</p>
             </div>
           </div>
 
@@ -529,7 +386,6 @@ export default function VaultListPage() {
       </header>
 
       {/* Main Content Area */}
-      {/* Use flex for the main content to support the sidebar-like file list */}
       <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1 min-h-0">
         <div className="flex flex-row gap-8 h-full">
           
@@ -542,19 +398,19 @@ export default function VaultListPage() {
             deleteFile={deleteFile}
           />
 
-          {/* Chat View / Main Panel */}
+          {/* File Detail View / Main Panel */}
           {selectedFileId ? (
-            <VaultChatView
+            <VaultDetailView // Changed from VaultChatView
               fileId={selectedFileId}
               accessToken={accessToken}
               onClose={() => setSelectedFileId(null)}
             />
           ) : (
-            // Default view when no file is selected (only shown on desktop if list is short)
+            // Default view when no file is selected
             <div className="hidden lg:flex flex-1 flex-col items-center justify-center bg-white/50 border border-gray-100 rounded-3xl p-10 text-gray-500">
-                <MessageSquare className="w-24 h-24 mb-6 text-emerald-300" />
-                <p className="text-2xl font-medium">Select a file to start analyzing</p>
-                <p className="mt-2 text-lg">Your AI assistant is ready to help you analyze your documents.</p>
+                <FileText className="w-24 h-24 mb-6 text-emerald-300" />
+                <p className="text-2xl font-medium">Select a file to view details</p>
+                <p className="mt-2 text-lg">Click on any file in the list to see its status and download link.</p>
             </div>
           )}
         </div>

@@ -171,14 +171,14 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
 
               {/* Source Selector */}
               <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-                <div className="p-5 sm:p-7 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-100">
+                <div className=" bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-100">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-3">
                     <Brain className="w-7 h-7 text-indigo-600" />
                     Training Data Sources
                   </h2>
                   <p className="text-sm text-gray-600 mt-1">Select what your AI learns from</p>
                 </div>
-                <div className="p-5 sm:p-7">
+                <div className="">
                   <SourceSelector
                     avatarHandle={avatarHandle}
                     onSaveSuccess={handleConfigSave}

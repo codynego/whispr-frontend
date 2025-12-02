@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 type JobStatusKey = 'queued' | 'running' | 'completed' | 'error' | 'undefined';
 
 // Define the type for the function that performs the check (which is passed up to the parent)
-type ManualCheckFunction = (id: string) => Promise<void>; 
+export type ManualCheckFunction = (id: string) => Promise<void>; 
 
 const STATUS_MAP: Record<JobStatusKey, { icon: React.FC<any>, color: string, label: string }> = {
     queued: { icon: Clock, color: 'text-gray-500', label: 'Queued (Awaiting Start)' },

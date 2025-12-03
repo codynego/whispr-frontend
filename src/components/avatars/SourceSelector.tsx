@@ -408,7 +408,7 @@ export default function SourceSelector({ avatarHandle, onSaveSuccess }: Props) {
                               <h4 className="text-sm font-medium text-gray-700 mb-3">
                                 Select Items <span className="text-gray-400 font-normal">(optional)</span>
                               </h4>
-                              <div className="border border-gray-300 rounded-lg max-h-64 overflow-y-auto">
+                              <div className="border border-gray-300 rounded-lg max-h-64">
                                 {loading ? (
                                   <div className="py-12 text-center">
                                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-emerald-600 mb-2" />

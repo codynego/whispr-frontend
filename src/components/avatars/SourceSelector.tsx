@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import {
   Book, Calendar, CheckSquare, Upload, Type,
   Brain, ChevronRight, Trash2, Loader2, Sparkles,
-  BookOpen, Check, X, ArrowLeft
+  BookOpen, Check, ArrowLeft
 } from "lucide-react";
 import toast from "react-hot-toast";
 

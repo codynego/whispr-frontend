@@ -205,13 +205,13 @@ export default function SourceSelector({ avatarHandle, onSaveSuccess }: Props) {
 
   const IconComponent = ({ type }: { type: SourceType }) => {
     const C = CONFIG.find(c => c.type === type)?.icon || Book;
-    return <C className="w-5 h-5" />;
+    return <C className="w-4 h-4" />;
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-6 md:py-8">
-
+        
         {/* Header */}
         <header className="mb-6 md:mb-8">
           <div className="flex items-center justify-between gap-4 mb-4">
@@ -252,13 +252,13 @@ export default function SourceSelector({ avatarHandle, onSaveSuccess }: Props) {
 
         {/* Main Content */}
         {view === "config" ? (
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
             
-            {/* Source List */}
+            {/* Source List - Hidden on mobile when detail is open */}
             <aside className={`lg:w-80 flex-shrink-0 ${activeType ? 'hidden lg:block' : 'block'}`}>
-              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                 <div className="p-4 border-b border-gray-200">
-                  <h2 className="font-semibold text-gray-900">Data Sources</h2>
+                  <h2 className="font-medium text-gray-900">Data Sources</h2>
                 </div>
                 <nav className="divide-y divide-gray-100">
                   {sources.map(s => {
@@ -271,21 +271,24 @@ export default function SourceSelector({ avatarHandle, onSaveSuccess }: Props) {
                         key={s.type}
                         onClick={() => { setActiveType(s.type); if (s.hasItems && !s.items) fetchItems(s.type); }}
                         className={`w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${
-                          isSelected ? 'bg-emerald-50 border-l-4 border-emerald-600' : ''
+                          isSelected ? 'bg-emerald-50' : ''
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
                             isActive ? 'bg-emerald-100' : 'bg-gray-100'
                           }`}>
-                            <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-600' : 'text-gray-500'}`} />
+                            <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600' : 'text-gray-500'}`} />
                           </div>
                           <div className="text-left min-w-0 flex-1">
-                            <div className="font-medium text-sm text-gray-900">{s.label}</div>
-                            <div className="text-xs text-gray-500 mt-0.5">{s.description}</div>
+                            <div className="font-medium text-sm text-gray-900 truncate">{s.label}</div>
+                            <div className="text-xs text-gray-500 truncate">{s.description}</div>
                           </div>
                         </div>
-                        <ChevronRight className={`w-5 h-5 transition-transform ${isSelected ? 'text-emerald-600 translate-x-1' : 'text-gray-400'}`} />
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {isActive && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>}
+                          <ChevronRight className={`w-4 h-4 ${isSelected ? 'text-emerald-600' : 'text-gray-400'}`} />
+                        </div>
                       </button>
                     );
                   })}
@@ -295,133 +298,155 @@ export default function SourceSelector({ avatarHandle, onSaveSuccess }: Props) {
 
             {/* Detail Panel */}
             <main className={`flex-1 min-w-0 ${activeType ? 'block' : 'hidden lg:block'}`}>
-              <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                 {!activeType ? (
-                  <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mb-5">
-                      <Brain className="w-10 h-10 text-gray-400" />
+                  <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                    <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center mb-4">
+                      <Brain className="w-8 h-8 text-gray-400" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a Source</h3>
-                    <p className="text-gray-500">Choose a data source from the left to configure training</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">Select a Source</h3>
+                    <p className="text-sm text-gray-500">Choose a data source to configure</p>
                   </div>
                 ) : (
                   <>
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-5 md:p-7">
+                    <div className="bg-emerald-600 p-4 md:p-6">
                       <button 
                         onClick={() => setActiveType(null)} 
-                        className="lg:hidden flex items-center gap-2 text-white/90 hover:text-white mb-4 text-sm font-medium"
+                        className="lg:hidden flex items-center gap-2 text-white/90 hover:text-white mb-3 text-sm"
                       >
-                        <ArrowLeft className="w-5 h-5" />
-                        Back to sources
+                        <ArrowLeft className="w-4 h-4" />
+                        Back
                       </button>
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
-                          <IconComponent type={active?.type ?? "notes"} />
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                          {active && <IconComponent type={active.type} />}
                         </div>
-                        <div className="text-white">
-                          <h3 className="text-xl font-bold">{active?.label}</h3>
-                          <p className="text-emerald-100 text-sm mt-1">{active?.description}</p>
+                        <div className="text-white min-w-0">
+                          <h3 className="font-semibold text-lg">{active?.label}</h3>
+                          <p className="text-emerald-100 text-sm">{active?.description}</p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Scrollable Content Area (Full Page Scroll) */}
-                    <div className="p-6 md:p-8 space-y-8">
+                    {/* Content */}
+                    <div className="p-4 md:p-6 space-y-6">
                       
-                      {/* Training Type */}
+                      {/* Training Options */}
                       <div>
-                        <h4 className="text-lg font-semibold text-gray-800 mb-4">How should this source be used?</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <label className={`relative flex items-start p-5 rounded-xl border-2 cursor-pointer transition-all ${
-                            active?.useForTone ? 'bg-emerald-50 border-emerald-500 shadow-md' : 'border-gray-200 hover:border-gray-300'
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">Training Type</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          
+                          <label className={`relative flex items-start p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                            active?.useForTone ? 'bg-emerald-50 border-emerald-500' : 'border-gray-200 hover:border-gray-300'
                           }`}>
-                            <input type="checkbox" checked={active?.useForTone} onChange={e => toggle(activeType!, "useForTone", e.target.checked)} className="sr-only" />
-                            <div className="flex items-center gap-4 flex-1">
-                              <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                            <input 
+                              type="checkbox" 
+                              checked={active?.useForTone} 
+                              onChange={e => activeType && toggle(activeType, "useForTone", e.target.checked)} 
+                              className="sr-only" 
+                            />
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                                 active?.useForTone ? 'bg-emerald-100' : 'bg-gray-100'
                               }`}>
-                                <Sparkles className={`w-6 h-6 ${active?.useForTone ? 'text-emerald-600' : 'text-gray-400'}`} />
+                                <Sparkles className={`w-4 h-4 ${active?.useForTone ? 'text-emerald-600' : 'text-gray-400'}`} />
                               </div>
-                              <div>
-                                <div className="font-semibold text-gray-900">Tone & Style</div>
-                                <div className="text-sm text-gray-600 mt-1">Learn your writing voice and personality</div>
+                              <div className="min-w-0">
+                                <div className="font-medium text-sm text-gray-900">Tone & Style</div>
+                                <div className="text-xs text-gray-500">Writing personality</div>
                               </div>
                             </div>
-                            {active?.useForTone && <Check className="w-5 h-5 text-emerald-600" />}
+                            {active?.useForTone && (
+                              <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 ml-2" />
+                            )}
                           </label>
 
-                          <label className={`relative flex items-start p-5 rounded-xl border-2 cursor-pointer transition-all ${
-                            active?.useForKnowledge ? 'bg-teal-50 border-teal-500 shadow-md' : 'border-gray-200 hover:border-gray-300'
+                          <label className={`relative flex items-start p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                            active?.useForKnowledge ? 'bg-teal-50 border-teal-500' : 'border-gray-200 hover:border-gray-300'
                           }`}>
-                            <input type="checkbox" checked={active?.useForKnowledge} onChange={e => toggle(activeType!, "useForKnowledge", e.target.checked)} className="sr-only" />
-                            <div className="flex items-center gap-4 flex-1">
-                              <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                            <input 
+                              type="checkbox" 
+                              checked={active?.useForKnowledge} 
+                              onChange={e => activeType && toggle(activeType, "useForKnowledge", e.target.checked)} 
+                              className="sr-only" 
+                            />
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                                 active?.useForKnowledge ? 'bg-teal-100' : 'bg-gray-100'
                               }`}>
-                                <Brain className={`w-6 h-6 ${active?.useForKnowledge ? 'text-teal-600' : 'text-gray-400'}`} />
+                                <Brain className={`w-4 h-4 ${active?.useForKnowledge ? 'text-teal-600' : 'text-gray-400'}`} />
                               </div>
-                              <div>
-                                <div className="font-semibold text-gray-900">Knowledge</div>
-                                <div className="text-sm text-gray-600 mt-1">Teach facts, preferences, and expertise</div>
+                              <div className="min-w-0">
+                                <div className="font-medium text-sm text-gray-900">Knowledge</div>
+                                <div className="text-xs text-gray-500">Facts & information</div>
                               </div>
                             </div>
-                            {active?.useForKnowledge && <Check className="w-5 h-5 text-teal-600" />}
+                            {active?.useForKnowledge && (
+                              <Check className="w-4 h-4 text-teal-600 flex-shrink-0 ml-2" />
+                            )}
                           </label>
                         </div>
                       </div>
 
-                      {/* Content Selection - NO inner scroll! */}
+                      {/* Content Selection */}
                       {(active?.useForTone || active?.useForKnowledge) && (
-                        <div className="space-y-6">
+                        <div>
                           {active?.type === "manual" ? (
                             <div>
-                              <h4 className="text-lg font-semibold text-gray-800 mb-4">Custom Training Content</h4>
+                              <h4 className="text-sm font-medium text-gray-700 mb-3">Your Content</h4>
                               <textarea
                                 value={active?.manualContent}
-                                onChange={e => updateManual(activeType!, e.target.value)}
-                                rows={10}
-                                className="w-full p-4 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none font-mono text-gray-700"
-                                placeholder="Paste Q&A, writing samples, facts, or guidelines..."
+                                onChange={e => activeType && updateManual(activeType, e.target.value)}
+                                rows={8}
+                                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
+                                placeholder="Paste Q&A pairs, tone examples, or knowledge..."
                               />
                             </div>
-                          ) : active?.hasItems ? (
+                          ) : active.hasItems ? (
                             <div>
-                              <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                                Select Specific Items <span className="text-gray-500 font-normal">(optional)</span>
+                              <h4 className="text-sm font-medium text-gray-700 mb-3">
+                                Select Items <span className="text-gray-400 font-normal">(optional)</span>
                               </h4>
-                              <div className="space-y-1">
+                              <div className="border border-gray-300 rounded-lg">
                                 {loading ? (
-                                  <div className="py-16 text-center">
-                                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600 mb-3" />
-                                    <p className="text-gray-500">Loading your items...</p>
+                                  <div className="py-12 text-center">
+                                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-emerald-600 mb-2" />
+                                    <p className="text-sm text-gray-500">Loading...</p>
                                   </div>
-                                ) : active?.items?.length ? (
-                                  active?.items.map(item => {
-                                    const isSelected = active?.selectedIds.includes(item.id);
-                                    return (
-                                      <label 
-                                        key={item.id} 
-                                        className={`flex items-center gap-4 p-4 rounded-lg border transition-all cursor-pointer hover:bg-gray-50 ${
-                                          isSelected ? 'bg-emerald-50 border-emerald-300 shadow-sm' : 'border-gray-200'
-                                        }`}
-                                      >
-                                        <div className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                                          isSelected ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300'
-                                        }`}>
-                                          {isSelected && <Check className="w-4 h-4 text-white" />}
-                                        </div>
-                                        <span className="text-sm font-medium text-gray-700 flex-1">{item.title}</span>
-                                        <input type="checkbox" checked={isSelected} onChange={e => toggleItem(activeType!, item.id, e.target.checked)} className="sr-only" />
-                                      </label>
-                                    );
-                                  })
+                                ) : active.items?.length ? (
+                                  <div className="divide-y divide-gray-100">
+                                    {active.items.map(item => {
+                                      const isSelected = active.selectedIds.includes(item.id);
+                                      return (
+                                        <label 
+                                          key={item.id} 
+                                          className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                                            isSelected ? 'bg-emerald-50' : ''
+                                          }`}
+                                        >
+                                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                            isSelected ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300'
+                                          }`}>
+                                            {isSelected && <Check className="w-3 h-3 text-white" />}
+                                          </div>
+                                          <span className="text-sm text-gray-700 truncate flex-1">{item.title}</span>
+                                          <input 
+                                            type="checkbox" 
+                                            checked={isSelected} 
+                                            onChange={e => activeType && toggleItem(activeType, item.id, e.target.checked)} 
+                                            className="sr-only" 
+                                          />
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
                                 ) : (
-                                  <div className="py-16 text-center border-2 border-dashed border-gray-200 rounded-xl">
-                                    <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                                      <IconComponent type={activeType!} />
+                                  <div className="py-12 text-center">
+                                    <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center mx-auto mb-2">
+                                      {activeType && <IconComponent type={activeType} />}
                                     </div>
-                                    <p className="text-gray-500">No items found</p>
+                                    <p className="text-sm text-gray-500">No items found</p>
                                   </div>
                                 )}
                               </div>
@@ -436,38 +461,55 @@ export default function SourceSelector({ avatarHandle, onSaveSuccess }: Props) {
             </main>
           </div>
         ) : (
-          /* Manage View - unchanged */
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Active Training Sources</h2>
+          /* Manage View */
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h2 className="font-medium text-gray-900">Active Sources</h2>
               <span className="text-sm text-gray-500">{backendSources.length} active</span>
             </div>
             {backendSources.length === 0 ? (
-              <div className="py-20 text-center">
-                <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No active sources yet</p>
+              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center mb-4">
+                  <Sparkles className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">No Active Sources</h3>
+                <p className="text-sm text-gray-500 mb-6">Add sources to train your avatar</p>
+                <button 
+                  onClick={() => setView("config")} 
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  Add Sources
+                </button>
               </div>
             ) : (
-              <div className="p-5 grid sm:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-3 p-4">
                 {backendSources.map(src => {
                   const cfg = CONFIG.find(c => c.type === src.source_type);
                   const Icon = cfg?.icon || Book;
                   return (
                     <div key={src.id} className="flex items-center justify-between p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                          <Icon className="w-5 h-5 text-emerald-700" />
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                          <Icon className="w-4 h-4 text-emerald-700" />
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className="font-medium text-sm text-gray-900 truncate">{cfg?.label || src.source_type}</div>
-                          <div className="flex gap-2 mt-2 flex-wrap">
-                            {src.include_for_tone && <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full">Tone</span>}
-                            {src.include_for_knowledge && <span className="px-2 py-1 bg-teal-100 text-teal-700 text-xs rounded-full">Knowledge</span>}
+                          <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                            {src.include_for_tone && (
+                              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded">Tone</span>
+                            )}
+                            {src.include_for_knowledge && (
+                              <span className="px-2 py-0.5 bg-teal-100 text-teal-700 text-xs rounded">Knowledge</span>
+                            )}
                           </div>
                         </div>
                       </div>
-                      <button onClick={() => deleteSource(src.id)} className="ml-3 text-red-600 hover:text-red-700">
-                        <Trash2 className="w-5 h-5" />
+                      <button 
+                        onClick={() => deleteSource(src.id)} 
+                        disabled={saving}
+                        className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   );
@@ -477,19 +519,38 @@ export default function SourceSelector({ avatarHandle, onSaveSuccess }: Props) {
           </div>
         )}
 
-        {/* Fixed Save Button (Mobile) */}
+        {/* Save Button */}
         {view === "config" && (
           <>
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur border-t border-gray-200 z-50 lg:hidden">
+            {/* Mobile Fixed Button */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 lg:hidden z-50">
               <button
                 onClick={save}
-                disabled={saving || activeCount === 0}
-                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg"
+                disabled={saving || loading || activeCount === 0}
+                className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg flex items-center justify-center gap-2 transition-colors"
               >
                 {saving ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Starting Training...
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Training...
+                  </>
+                ) : (
+                  <>Save & Train</>
+                )}
+              </button>
+            </div>
+
+            {/* Desktop Button */}
+            <div className="hidden lg:flex justify-end mt-6">
+              <button
+                onClick={save}
+                disabled={saving || loading || activeCount === 0}
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg flex items-center gap-2 transition-colors min-w-48 justify-center"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Training...
                   </>
                 ) : (
                   <>Save & Train Avatar</>
@@ -497,24 +558,8 @@ export default function SourceSelector({ avatarHandle, onSaveSuccess }: Props) {
               </button>
             </div>
 
-            <div className="hidden lg:block mt-10 text-right">
-              <button
-                onClick={save}
-                disabled={saving || activeCount === 0}
-                className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold rounded-xl flex items-center gap-3 transition-all shadow-lg"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Starting Training...
-                  </>
-                ) : (
-                  <>Save & Train Avatar</>
-                )}
-              </button>
-            </div>
-
-            <div className="h-24 lg:hidden" />
+            {/* Mobile spacing to prevent content being hidden behind fixed button */}
+            <div className="h-20 lg:hidden"></div>
           </>
         )}
       </div>

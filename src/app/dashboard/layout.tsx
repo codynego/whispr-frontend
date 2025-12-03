@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
-import Sidebar from "@/components/sidebar"; // keep your existing Sidebar component
+import Sidebar from "@/components/sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function DashboardLayout({
@@ -10,104 +10,84 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Use a single state for desktop/main sidebar visibility
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  
-  // Mobile: overlay menu
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+  // Sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(true);        // Desktop: expanded/collapsed
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // Mobile: overlay open
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile on mount + resize
+  // Detect screen size (lg breakpoint = 1024px)
   useEffect(() => {
-    const check = () => {
-      const mobile = window.innerWidth < 1024; // lg breakpoint
+    const checkScreenSize = () => {
+      const mobile = window.innerWidth < 1024;
       setIsMobile(mobile);
-      // When transitioning from desktop to mobile, automatically close the overlay
-      if (mobile) setMobileMenuOpen(false); 
+      // Auto-close mobile menu when switching to desktop
+      if (!mobile) setMobileMenuOpen(false);
     };
-    
-    // Initial check
-    check(); 
-    
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  // Toggle function handles both mobile (overlay) and desktop (collapse)
+  // Unified toggle — works for both mobile and desktop
   const toggleSidebar = () => {
     if (isMobile) {
-      setMobileMenuOpen((v) => !v);
+      setMobileMenuOpen((prev) => !prev);
     } else {
-      setSidebarOpen((v) => !v);
+      setSidebarOpen((prev) => !prev);
     }
   };
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  // Calculate the correct margin for the main content area
-  const marginClass = isMobile 
-    ? "pt-0" 
-    : sidebarOpen 
-      ? "lg:ml-72" // Corresponds to w-72
-      : "lg:ml-20"; // Corresponds to w-20 (collapsed)
+  // Dynamic margin for main content (sidebar width)
+  const contentMargin = isMobile
+    ? ""
+    : sidebarOpen
+      ? "lg:ml-72"  // Full sidebar (w-72)
+      : "lg:ml-20"; // Collapsed sidebar (w-20)
 
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-gray-50">
-        
+      <div className="flex min-h-screen bg-gray-50">
+
         {/* Sidebar */}
         <Sidebar
-          mobileOpen={mobileMenuOpen} // Only handles mobile overlay
-          desktopOpen={sidebarOpen}    // Handles desktop expand/collapse
+          mobileOpen={mobileMenuOpen}
+          desktopOpen={sidebarOpen}
           isMobile={isMobile}
           toggleSidebar={toggleSidebar}
           closeMobile={closeMobileMenu}
         />
 
-        {/* Mobile backdrop */}
+        {/* Mobile Overlay */}
         {mobileMenuOpen && isMobile && (
           <div
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
             onClick={closeMobileMenu}
           />
         )}
 
-        {/* Main content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          
-          {/* Top bar (Always present on mobile for hamburger, persistent on desktop for spacing) */}
-          <header 
-            className={`
-              fixed top-0 right-0 z-30 bg-white border-b border-gray-200 
-              transition-all duration-300 ease-out
-              ${marginClass} 
-              w-full lg:w-auto
-            `}
-          >
-            {/* Content for the Top Bar - Only the Hamburger on Mobile */}
-            <div className="px-4 py-3 lg:hidden">
+        {/* Main Content Area */}
+        <div className={`flex-1 flex flex-col ${contentMargin} transition-all duration-300`}>
+
+          {/* Fixed Top Bar (only visible on mobile) */}
+          <header className="fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-200 lg:hidden">
+            <div className="flex items-center justify-between px-4 py-3">
               <button
-                onClick={() => setMobileMenuOpen(true)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition"
-                aria-label="Open menu"
+                onClick={toggleSidebar}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="Toggle menu"
               >
                 <Menu className="w-6 h-6 text-gray-700" />
               </button>
+              {/* Optional: Add logo or title here */}
             </div>
-            {/* Optional: Add desktop header content here */}
-            
           </header>
 
-          {/* Page content */}
-          <main
-            className={`
-              flex-1 overflow-y-auto bg-gray-50 pt-16
-              transition-all duration-300
-              ${marginClass} 
-            `}
-          >
-            <div className="max-w-7xl mx-auto  sm:px-6 lg:px-3">
+          {/* Page Content - This is the KEY FIX */}
+          <main className="flex-1 pt-16 lg:pt-0">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
               {children}
             </div>
           </main>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from '@/context/AuthContext';
 import {
-  Book, Calendar, CheckSquare, Upload, Mail, Globe, Type,
+  Book, Calendar, CheckSquare, Upload, Type,
   Brain, ChevronRight, Trash2, Loader2, Sparkles,
   BookOpen,  Check
 } from "lucide-react";

@@ -3,10 +3,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Brain, ArrowUp, Sparkles, AlertCircle } from "lucide-react";
+import { Loader2, Brain, MessageSquare, ArrowUp } from "lucide-react";
 import toast from "react-hot-toast";
+
 import { ChatMessageBubble } from "@/components/avatars/ChatMessageBubble";
 
+// --- Types ---
 interface AvatarProfile {
   id: string;
   name: string;
@@ -32,71 +34,117 @@ interface HistoryResponse {
   results: Message[];
 }
 
+// --- Constants ---
 const CHAT_TIMEOUT_MS = 45000;
 const CHAT_POLL_INTERVAL_MS = 1200;
 
+// --- Helper Component ---
+interface PublicMessageInputProps {
+  sendMessage: (message: string) => void;
+  isLoading: boolean;
+}
+
+function PublicMessageInput({ sendMessage, isLoading }: PublicMessageInputProps) {
+  const [input, setInput] = useState("");
+
+  const handleSend = () => {
+    if (input.trim() && !isLoading) {
+      sendMessage(input);
+      setInput("");
+    }
+  };
+
+  return (
+    <div className="flex items-center p-4 border-t border-gray-100 bg-white">
+      <input
+        type="text"
+        className="flex-1 px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+        placeholder={isLoading ? "Waiting for Avatar response..." : "Ask me anything..."}
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        disabled={isLoading}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") handleSend();
+        }}
+      />
+      <button
+        className="ml-3 p-3 bg-emerald-600 text-white rounded-xl flex items-center justify-center hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={handleSend}
+        disabled={isLoading || !input.trim()}
+        aria-label="Send message"
+      >
+        <ArrowUp className="w-5 h-5" />
+      </button>
+    </div>
+  );
+}
+
+// --- Main Component ---
 export default function PublicChatShell({ params }: { params: { handle: string } }) {
   const avatarHandle = params.handle;
 
+  // --- State ---
   const [visitorId, setVisitorId] = useState<string | null>(null);
   const [profile, setProfile] = useState<AvatarProfile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
-  const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
-  // Visitor ID
+  // 1. Persistent visitor ID
   useEffect(() => {
     let id = localStorage.getItem("whisone_visitor_id");
     if (!id) {
-      id = `vis_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      id = `vis_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       localStorage.setItem("whisone_visitor_id", id);
     }
     setVisitorId(id);
   }, []);
 
-  // Fetch profile + history
+  // 2. Fetch profile + history
   const fetchProfileAndHistory = useCallback(async () => {
-    if (!visitorId) return;
     setLoading(true);
+    if (!visitorId) return;
 
     try {
       const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/public/`);
-      if (!profileRes.ok) throw new Error("Avatar not found or not public");
-
+      if (!profileRes.ok) {
+        const errorText = await profileRes.text();
+        throw new Error(`Avatar not found or not public. (${profileRes.status})`);
+      }
       const profileData = await profileRes.json();
       setProfile(profileData);
 
-      const historyRes = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/history/?visitor_id=${visitorId}`
-      );
-      if (!historyRes.ok) throw new Error("Failed to load chat history");
+      const historyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/history/?visitor_id=${visitorId}`);
+      if (!historyRes.ok) throw new Error("Failed to load conversation history.");
 
-      const history: HistoryResponse = await historyRes.json();
-      const sorted = history.results.sort(
+      const historyResponseData: HistoryResponse = await historyRes.json();
+      const fetchedMessages = historyResponseData.results;
+
+      const sortedMessages = fetchedMessages.sort(
         (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
 
+      console.log("Fetched History:", sortedMessages);
+
       setMessages(
-        sorted.length > 0
-          ? sorted
+        sortedMessages.length > 0
+          ? sortedMessages
           : [
               {
                 id: "intro",
                 role: "assistant",
-                content: `Hi! I'm ${profileData.name}'s AI. Ask me anything about their work, notes, or expertise!`,
+                content: `Hello! I'm ${profileData.name}'s AI Avatar. I know everything about their notes, files, and work. Ask me anything!`,
                 created_at: new Date().toISOString(),
               },
             ]
       );
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load Avatar");
+    } catch (error: any) {
+      console.error("Fetch Error:", error);
+      toast.error(error.message || "Failed to load the Avatar page.");
       setProfile(null);
     } finally {
       setLoading(false);
@@ -107,200 +155,176 @@ export default function PublicChatShell({ params }: { params: { handle: string }
     if (visitorId) fetchProfileAndHistory();
   }, [visitorId, fetchProfileAndHistory]);
 
+  // 3. Auto-scroll
   useEffect(() => scrollToBottom(), [messages]);
 
-  // Polling for response
+  // 4. Polling for task completion
   useEffect(() => {
-    if (!currentTaskId) return;
+    if (!currentTaskId || !visitorId) return;
+
+    setIsSending(true);
 
     const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/chat-tasks/${currentTaskId}/status/`);
-        if (!res.ok) return;
-        const data = await res.json();
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/chat-tasks/${currentTaskId}/status/`);
+      if (!res.ok) return;
 
-        if (data.status === "SUCCESS" || data.status === "FAILURE") {
-          clearInterval(interval);
-          setCurrentTaskId(null);
-          setIsSending(false);
+      const data = await res.json();
 
-          if (data.status === "SUCCESS" && data.assistant_reply) {
-            const reply = data.assistant_reply.trim();
-            setMessages((prev) => {
-              if (prev.some(m => m.content === reply && m.role === "assistant")) return prev;
-              return [...prev, {
+      if (data.status === "SUCCESS" || data.status === "FAILURE") {
+        setCurrentTaskId(null);
+        setIsSending(false);
+
+        if (data.status === "SUCCESS") {
+          const assistantReply = data.assistant_reply || "I seem to be having trouble connecting. Please try again.";
+
+          setMessages((prev) => {
+            const alreadyAdded = prev.some((m) => m.content === assistantReply && m.role === "assistant");
+            if (alreadyAdded) return prev;
+
+            return [
+              ...prev,
+              {
                 id: Date.now(),
                 role: "assistant",
-                content: reply,
+                content: assistantReply,
                 created_at: new Date().toISOString(),
-              }];
-            });
-          } else {
-            toast.error("Avatar couldn't respond. Try again.");
-          }
+              },
+            ];
+          });
+        } else {
+          toast.error("Avatar failed to respond. Please try again.");
         }
-      } catch {}
+      }
     }, CHAT_POLL_INTERVAL_MS);
 
     const timeout = setTimeout(() => {
       clearInterval(interval);
+      if (currentTaskId) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            role: "assistant",
+            content: "The Avatar response timed out. Please try your message again.",
+            created_at: new Date().toISOString(),
+          },
+        ]);
+      }
       setCurrentTaskId(null);
       setIsSending(false);
-      toast.error("Response timed out");
     }, CHAT_TIMEOUT_MS);
 
     return () => {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [currentTaskId]);
+  }, [currentTaskId, visitorId]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || isSending || !visitorId) return;
+  // 5. Send message
+  const sendMessage = async (message: string) => {
+    if (!message.trim() || isSending || !visitorId) return;
 
     const userMsg: Message = {
       id: Date.now(),
       role: "visitor",
-      content: input,
+      content: message,
       created_at: new Date().toISOString(),
     };
-
-    setMessages(prev => [...prev, userMsg]);
-    setInput("");
+    setMessages((prev) => [...prev, userMsg]);
     setIsSending(true);
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/chat/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input, visitor_id: visitorId }),
+        body: JSON.stringify({ message, visitor_id: visitorId }),
       });
 
       if (res.ok) {
         const data = await res.json();
         setCurrentTaskId(data.task_id);
       } else {
-        throw new Error("Failed to send message");
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to send message to Avatar.");
       }
-    } catch {
-      toast.error("Failed to send message");
-      setMessages(prev => prev.filter(m => m.id !== userMsg.id));
+    } catch (error: any) {
+      toast.error(error.message || "Failed to initiate chat.");
+      setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
       setIsSending(false);
     }
   };
 
-  if (loading) {
+  // --- Render ---
+  if (loading || !visitorId) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
-        <div className="text-center">
-          <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center animate-pulse mb-6">
-            <Brain className="w-12 h-12 text-emerald-600" />
-          </div>
-          <p className="text-xl font-medium text-gray-700">Waking up @{avatarHandle}...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        <p className="ml-3 text-lg text-gray-700">Connecting to {avatarHandle}...</p>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="text-center max-w-md p-8 bg-white/90 backdrop-blur rounded-3xl shadow-2xl border border-gray-200">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Avatar Not Found</h1>
-          <p className="text-gray-600">@{avatarHandle} is either private or doesn&apos;t exist.</p>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4 text-center">
+        <Brain className="w-12 h-12 text-red-500 mb-4" />
+        <h1 className="text-2xl font-bold text-gray-900">Avatar Not Available</h1>
+        <p className="text-lg text-gray-600 mt-2">
+          The AI Avatar @{avatarHandle} could not be found or is not set to public access.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/30 overflow-hidden">
+    <div className="flex flex-col h-screen md:max-h-[90vh] md:w-[95%] lg:w-[700px] mx-auto bg-white shadow-2xl rounded-xl overflow-hidden">
+      {/* Header */}
+      <header className="flex items-center gap-4 p-4 border-b border-gray-100 bg-white z-10 sticky top-0">
+        <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+          {profile.photo_url ? (
+            <img src={profile.photo_url} alt={`${profile.name} photo`} className="w-full h-full object-cover rounded-full" />
+          ) : (
+            <Brain className="w-5 h-5 text-white" />
+          )}
+        </div>
+        <div>
+          <h1 className="text-lg font-bold text-gray-900 leading-tight">{profile.name}&apos;s AI</h1>
+          <p className="text-xs text-gray-500">Public Chat | @{profile.handle}</p>
+        </div>
+      </header>
 
-        {/* Floating Header */}
-        <header className="relative bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white">
-          <div className="flex items-center gap-5">
-            <div className="relative">
-              <div className="w-20 h-20 rounded-3xl overflow-hidden ring-4 ring-white/30 shadow-2xl">
-                {profile.photo_url ? (
-                  <img src={profile.photo_url} alt={profile.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                    <Brain className="w-10 h-10 text-white" />
-                  </div>
-                )}
-              </div>
-              <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-2 shadow-lg">
-                <Sparkles className="w-5 h-5 text-emerald-600" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">{profile.name}&apos;s AI</h1>
-              <p className="text-emerald-100">@{profile.handle} • Public Chat</p>
-            </div>
-          </div>
-        </header>
+      {/* Disclaimer */}
+      {profile.settings.disclaimer_text && (
+        <div className="p-3 bg-yellow-50 text-yellow-800 text-sm border-b border-yellow-200">
+          <span className="font-semibold">Disclaimer:</span> {profile.settings.disclaimer_text}
+        </div>
+      )}
 
-        {/* Disclaimer */}
-        {profile.settings.disclaimer_text && (
-          <div className="mx-6 -mt-4 relative z-10">
-            <div className="bg-amber-50 border border-amber-300 text-amber-900 px-5 py-3 rounded-2xl text-sm font-medium shadow-md">
-              <span className="font-bold">Note:</span> {profile.settings.disclaimer_text}
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-gray-50">
+        {messages.map((msg) => (
+          <ChatMessageBubble
+            key={msg.id}
+            message={msg}
+            avatarPhotoUrl={profile.photo_url}
+            avatarName={profile.name}
+          />
+        ))}
+
+        {isSending && (
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+              <MessageSquare className="w-4 h-4 text-emerald-600 animate-pulse" />
             </div>
+            <div className="text-gray-600 italic mt-1.5">Avatar is thinking...</div>
           </div>
         )}
 
-        {/* Messages Area */}
-        <div className="h-96 md:h-[520px] overflow-y-auto px-6 py-8 space-y-6 bg-gradient-to-b from-white/60 to-white/30">
-          {messages.map((msg) => (
-            <ChatMessageBubble
-              key={msg.id}
-              message={msg}
-              avatarPhotoUrl={profile.photo_url}
-              avatarName={profile.name}
-            />
-          ))}
-
-          {isSending && (
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center animate-pulse">
-                <Brain className="w-6 h-6 text-emerald-600" />
-              </div>
-              <div className="bg-gray-100 text-gray-600 px-5 py-3 rounded-3xl max-w-xs italic">
-                Thinking deeply...
-              </div>
-            </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Floating Input */}
-        <div className="p-6 pt-4 bg-gradient-to-t from-white to-white/80">
-          <div className="flex items-center gap-3 bg-white/70 backdrop-blur-xl border border-white/40 rounded-3xl shadow-2xl p-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-              placeholder={isSending ? "Avatar is thinking..." : "Ask me anything..."}
-              disabled={isSending}
-              className="flex-1 px-5 py-4 bg-transparent text-gray-800 placeholder-gray-500 focus:outline-none text-base"
-            />
-            <button
-              onClick={sendMessage}
-              disabled={isSending || !input.trim()}
-              className="p-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 text-white rounded-3xl shadow-lg transition-all duration-300 hover:scale-110 disabled:scale-100"
-            >
-              <ArrowUp className="w-6 h-6" />
-            </button>
-          </div>
-          <p className="text-center text-xs text-gray-500 mt-3">
-            Press Enter to send • Shift + Enter for new line
-          </p>
-        </div>
+        <div ref={messagesEndRef} />
       </div>
+
+      {/* Input */}
+      <PublicMessageInput sendMessage={sendMessage} isLoading={isSending} />
     </div>
   );
 }

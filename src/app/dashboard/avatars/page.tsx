@@ -23,6 +23,9 @@ interface AvatarData {
     total_conversations: number;
     total_messages: number;
   };
+  settings?: {
+    is_public?: boolean;
+  };
 }
 
 // ----------------------------------------------------
@@ -189,9 +192,9 @@ export default function AvatarDashboardPage() {
                     photoUrl={avatar.photo_url}
                     trained={avatar.trained}
                     // Used optional chaining for safety, though structure implies availability
-                    totalConversations={avatar.analytics?.total_conversations ?? 0}
-                    totalMessages={avatar.analytics?.total_messages ?? 0}
-                    isPublic={false} // Use actual data when available
+                    totalConversations={avatar.conversations_count ?? 0}
+                    totalMessages={avatar.messages_count ?? 0}
+                    isPublic={avatar.settings?.is_public ?? false} // Use actual data when available
                   />
                 ))}
               </div>

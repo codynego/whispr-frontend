@@ -186,7 +186,7 @@ export default function VaultPage() {
             <div className="p-20 text-center text-gray-500">
               <File className="w-20 h-20 mx-auto mb-5 text-gray-300" />
               <p className="text-xl font-medium">Your vault is empty</p>
-              <p className="mt-2">Click "Upload File" to add your first document</p>
+              <p className="mt-2">Click &quot;Upload File&quot; to add your first document</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100">

@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import {
   Book, Calendar, CheckSquare, Upload, Type,
   Brain, ChevronRight, Trash2, Loader2, Sparkles,
-  BookOpen, Check
+  BookOpen, Check, ArrowLeft
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -38,8 +38,6 @@ const CONFIG: SourceConfig[] = [
   { type: "reminders", label: "Reminders", description: "Tasks & reminders", icon: Calendar, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: true, manualContent: "" },
   { type: "todos", label: "To-Dos", description: "Task lists & projects", icon: CheckSquare, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: true, manualContent: "" },
   { type: "uploads", label: "Files", description: "Uploaded documents", icon: Upload, isEnabled: false, useForTone: true, useForKnowledge: false, selectedIds: [], hasItems: true, manualContent: "" },
-  // { type: "gmail", label: "Gmail", description: "Email conversations", icon: Mail, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: false, manualContent: "" },
-  // { type: "website", label: "Website", description: "Web content & pages", icon: Globe, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: false, manualContent: "" },
   { type: "manual", label: "Custom Text", description: "Add your own content", icon: Type, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: false, manualContent: "" },
 ];
 
@@ -50,7 +48,7 @@ const ENDPOINTS: Record<string, string> = {
   uploads: "files/",
 };
 
-export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
+export default function SourceSelector({ avatarHandle, onSaveSuccess }: Props) {
   const { accessToken } = useAuth();
   const [sources, setSources] = useState(CONFIG);
   const [backendSources, setBackendSources] = useState<BackendSource[]>([]);
@@ -96,13 +94,9 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
       });
       if (res.ok) {
         const data = await res.json();
-        // 🐛 FIX: Safely extract results array if the response is paginated (your API example)
-        const sourcesArray = Array.isArray(data) ? data : data.results || [];
-        setBackendSources(sourcesArray);
-        console.log("Fetched backend sources:", sourcesArray);
+        setBackendSources(data);
       }
-    } catch (error) {
-      console.error("Error fetching active sources:", error);
+    } catch {
       toast.error("Failed to load active sources");
     } finally {
       setLoading(false);
@@ -134,7 +128,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
       fetchItems("uploads");
       if (view === "manage") fetchBackendSources();
     }
-  }, [accessToken, view]);
+  }, [accessToken, view, fetchItems, fetchBackendSources]);
 
   const toggle = (type: SourceType, field: "useForTone" | "useForKnowledge", value: boolean) => {
     setSources(prev => prev.map(s => {
@@ -155,7 +149,6 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
     setSources(prev => prev.map(s => s.type === type ? { ...s, manualContent: content } : s));
   };
 
-  // THIS IS THE REAL SAVE FUNCTION — NOW ACTUALLY SAVES TO API
   const save = async () => {
     if (!accessToken || activeCount === 0) {
       toast.error("Select at least one source");
@@ -212,164 +205,186 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
 
   const IconComponent = ({ type }: { type: SourceType }) => {
     const C = CONFIG.find(c => c.type === type)?.icon || Book;
-    return <C className="w-5 h-5" />;
+    return <C className="w-4 h-4" />;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50">
-      <div className="w-full px-4 py-8 max-w-7xl mx-auto">
-
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 py-6 md:py-8">
+        
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg">
-                  <Brain className="w-7 h-7 text-white" />
-                </div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                  AI Training Studio
-                </h1>
+        <header className="mb-6 md:mb-8">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center">
+                <Brain className="w-5 h-5 text-white" />
               </div>
-              <p className="text-gray-600">Configure your avatar&apos;s learning sources</p>
+              <div>
+                <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Training Studio</h1>
+                <p className="text-sm text-gray-500">Configure learning sources</p>
+              </div>
             </div>
 
             <button
               onClick={() => { setView(view === "config" ? "manage" : "config"); setActiveType(null); }}
-              className="px-5 py-3 bg-white hover:bg-gray-50 rounded-xl font-medium text-gray-700 shadow-md border border-gray-200 transition-all hover:shadow-lg flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              {view === "config" ? (
-                <>View Active</>
-              ) : (
-                <>Add Sources</>
-              )}
+              {view === "config" ? "View Active" : "Add Sources"}
             </button>
           </div>
 
           {view === "config" && (
-            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                  <span className="text-sm text-gray-600">
-                    <span className="font-semibold text-gray-900">{activeCount}</span> sources selected
-                  </span>
-                </div>
-                <div className="hidden sm:block h-4 w-px bg-gray-200"></div>
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-emerald-500" />
-                  <span className="text-sm text-gray-600">Training Mode</span>
-                </div>
+            <div className="flex items-center gap-4 px-4 py-3 bg-white border border-gray-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                <span className="text-sm text-gray-600">
+                  <strong className="font-medium text-gray-900">{activeCount}</strong> selected
+                </span>
+              </div>
+              <div className="w-px h-4 bg-gray-300"></div>
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-gray-400" />
+                <span className="text-sm text-gray-600">Training Mode</span>
               </div>
             </div>
           )}
-        </div>
+        </header>
 
-        {/* Training Configuration Grid */}
+        {/* Main Content */}
         {view === "config" ? (
-          <div className="grid lg:grid-cols-12 gap-6">
-            {/* Source List */}
-            <div className={`lg:col-span-4 ${activeType ? "hidden lg:block" : "block"}`}>
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  Data Sources
-                </h2>
-                <div className="space-y-2">
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+            
+            {/* Source List - Hidden on mobile when detail is open */}
+            <aside className={`lg:w-80 flex-shrink-0 ${activeType ? 'hidden lg:block' : 'block'}`}>
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div className="p-4 border-b border-gray-200">
+                  <h2 className="font-medium text-gray-900">Data Sources</h2>
+                </div>
+                <nav className="divide-y divide-gray-100">
                   {sources.map(s => {
                     const Icon = s.icon;
                     const isActive = s.useForTone || s.useForKnowledge;
+                    const isSelected = activeType === s.type;
+                    
                     return (
                       <button
                         key={s.type}
                         onClick={() => { setActiveType(s.type); if (s.hasItems && !s.items) fetchItems(s.type); }}
-                        className={`w-full text-left p-4 rounded-xl border-2 transition-all group ${
-                          activeType === s.type
-                            ? "bg-emerald-50 border-emerald-400 shadow-md"
-                            : isActive
-                            ? "border-emerald-200 bg-emerald-50/50 hover:border-emerald-300"
-                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        className={`w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${
+                          isSelected ? 'bg-emerald-50' : ''
                         }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className={`p-2 rounded-lg ${isActive ? "bg-emerald-100" : "bg-gray-100"}`}>
-                              <Icon className={`w-4 h-4 ${isActive ? "text-emerald-600" : "text-gray-500"}`} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-gray-900 text-sm">{s.label}</div>
-                              <div className="text-xs text-gray-500 truncate">{s.description}</div>
-                            </div>
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            isActive ? 'bg-emerald-100' : 'bg-gray-100'
+                          }`}>
+                            <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600' : 'text-gray-500'}`} />
                           </div>
+                          <div className="text-left min-w-0 flex-1">
+                            <div className="font-medium text-sm text-gray-900 truncate">{s.label}</div>
+                            <div className="text-xs text-gray-500 truncate">{s.description}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           {isActive && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>}
-                          <ChevronRight className={`w-4 h-4 ml-2 transition ${activeType === s.type ? "text-emerald-600" : "text-gray-400"}`} />
+                          <ChevronRight className={`w-4 h-4 ${isSelected ? 'text-emerald-600' : 'text-gray-400'}`} />
                         </div>
                       </button>
                     );
                   })}
-                </div>
+                </nav>
               </div>
-            </div>
+            </aside>
 
-            {/* Detail Panel & Desktop Save Button Container */}
-            {/* Added flex-col and gap-6 to manage spacing between panel and save button */}
-            <div className={`lg:col-span-8 ${activeType ? "block" : "hidden lg:block"} flex flex-col gap-6`}>
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Detail Panel */}
+            <main className={`flex-1 min-w-0 ${activeType ? 'block' : 'hidden lg:block'}`}>
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                 {!activeType ? (
-                  <div className="text-center py-20 px-6">
-                    <div className="bg-gradient-to-br from-emerald-100 to-teal-100 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Brain className="w-10 h-10 text-emerald-600" />
+                  <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                    <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center mb-4">
+                      <Brain className="w-8 h-8 text-gray-400" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a Source</h3>
-                    <p className="text-gray-500">Choose a data source from the left to configure it</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">Select a Source</h3>
+                    <p className="text-sm text-gray-500">Choose a data source to configure</p>
                   </div>
                 ) : (
-                  <div>
-                    <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6">
-                      <button onClick={() => setActiveType(null)} className="lg:hidden flex items-center gap-2 text-white/90 hover:text-white mb-4 text-sm">
-                        Back to sources
+                  <>
+                    {/* Header */}
+                    <div className="bg-emerald-600 p-4 md:p-6">
+                      <button 
+                        onClick={() => setActiveType(null)} 
+                        className="lg:hidden flex items-center gap-2 text-white/90 hover:text-white mb-3 text-sm"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back
                       </button>
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-white/20 backdrop-blur rounded-xl">
-                          <IconComponent type={activeType} />
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                          {active && <IconComponent type={active.type} />}
                         </div>
-                        <div className="text-white">
-                          <h3 className="text-xl font-bold">{active?.label}</h3>
+                        <div className="text-white min-w-0">
+                          <h3 className="font-semibold text-lg">{active?.label}</h3>
                           <p className="text-emerald-100 text-sm">{active?.description}</p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="p-6 space-y-6">
+                    {/* Content */}
+                    <div className="p-4 md:p-6 space-y-6">
+                      
                       {/* Training Options */}
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-700 mb-3">Training Configuration</h4>
-                        <div className="grid sm:grid-cols-2 gap-3">
-                          <label className={`relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${active?.useForTone ? "bg-emerald-50 border-emerald-400" : "bg-gray-50 border-gray-200 hover:border-gray-300"}`}>
-                            <input type="checkbox" checked={active?.useForTone} onChange={e => toggle(activeType, "useForTone", e.target.checked)} className="sr-only" />
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">Training Type</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          
+                          <label className={`relative flex items-start p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                            active?.useForTone ? 'bg-emerald-50 border-emerald-500' : 'border-gray-200 hover:border-gray-300'
+                          }`}>
+                            <input 
+                              type="checkbox" 
+                              checked={active?.useForTone} 
+                              onChange={e => activeType && toggle(activeType, "useForTone", e.target.checked)} 
+                              className="sr-only" 
+                            />
                             <div className="flex items-center gap-3 flex-1">
-                              <div className={`p-2 rounded-lg ${active?.useForTone ? "bg-emerald-100" : "bg-white"}`}>
-                                <Sparkles className={`w-4 h-4 ${active?.useForTone ? "text-emerald-600" : "text-gray-400"}`} />
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                active?.useForTone ? 'bg-emerald-100' : 'bg-gray-100'
+                              }`}>
+                                <Sparkles className={`w-4 h-4 ${active?.useForTone ? 'text-emerald-600' : 'text-gray-400'}`} />
                               </div>
-                              <div>
-                                <div className="font-medium text-gray-900 text-sm">Tone & Style</div>
+                              <div className="min-w-0">
+                                <div className="font-medium text-sm text-gray-900">Tone & Style</div>
                                 <div className="text-xs text-gray-500">Writing personality</div>
                               </div>
                             </div>
-                            {active?.useForTone && <Check className="w-5 h-5 text-emerald-600" />}
+                            {active?.useForTone && (
+                              <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 ml-2" />
+                            )}
                           </label>
 
-                          <label className={`relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${active?.useForKnowledge ? "bg-teal-50 border-teal-400" : "bg-gray-50 border-gray-200 hover:border-gray-300"}`}>
-                            <input type="checkbox" checked={active?.useForKnowledge} onChange={e => toggle(activeType, "useForKnowledge", e.target.checked)} className="sr-only" />
+                          <label className={`relative flex items-start p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                            active?.useForKnowledge ? 'bg-teal-50 border-teal-500' : 'border-gray-200 hover:border-gray-300'
+                          }`}>
+                            <input 
+                              type="checkbox" 
+                              checked={active?.useForKnowledge} 
+                              onChange={e => activeType && toggle(activeType, "useForKnowledge", e.target.checked)} 
+                              className="sr-only" 
+                            />
                             <div className="flex items-center gap-3 flex-1">
-                              <div className={`p-2 rounded-lg ${active?.useForKnowledge ? "bg-teal-100" : "bg-white"}`}>
-                                <Brain className={`w-4 h-4 ${active?.useForKnowledge ? "text-teal-600" : "text-gray-400"}`} />
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                active?.useForKnowledge ? 'bg-teal-100' : 'bg-gray-100'
+                              }`}>
+                                <Brain className={`w-4 h-4 ${active?.useForKnowledge ? 'text-teal-600' : 'text-gray-400'}`} />
                               </div>
-                              <div>
-                                <div className="font-medium text-gray-900 text-sm">Knowledge Base</div>
+                              <div className="min-w-0">
+                                <div className="font-medium text-sm text-gray-900">Knowledge</div>
                                 <div className="text-xs text-gray-500">Facts & information</div>
                               </div>
                             </div>
-                            {active?.useForKnowledge && <Check className="w-5 h-5 text-teal-600" />}
+                            {active?.useForKnowledge && (
+                              <Check className="w-4 h-4 text-teal-600 flex-shrink-0 ml-2" />
+                            )}
                           </label>
                         </div>
                       </div>
@@ -379,45 +394,57 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
                         <div>
                           {active?.type === "manual" ? (
                             <div>
-                              <h4 className="text-sm font-semibold text-gray-700 mb-3">Add Your Content</h4>
+                              <h4 className="text-sm font-medium text-gray-700 mb-3">Your Content</h4>
                               <textarea
                                 value={active?.manualContent}
-                                onChange={e => updateManual(activeType, e.target.value)}
-                                rows={10}
-                                className="w-full p-4 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
-                                placeholder="Paste Q&A pairs, tone examples, or any knowledge..."
+                                onChange={e => activeType && updateManual(activeType, e.target.value)}
+                                rows={8}
+                                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
+                                placeholder="Paste Q&A pairs, tone examples, or knowledge..."
                               />
                             </div>
                           ) : active.hasItems ? (
                             <div>
-                              <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                              <h4 className="text-sm font-medium text-gray-700 mb-3">
                                 Select Items <span className="text-gray-400 font-normal">(optional)</span>
                               </h4>
-                              <div className="border-2 border-gray-200 rounded-xl p-4 max-h-80 overflow-y-auto">
+                              <div className="border border-gray-300 rounded-lg max-h-64 overflow-y-auto">
                                 {loading ? (
                                   <div className="py-12 text-center">
-                                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" />
-                                    <p className="text-sm text-gray-500 mt-3">Loading items...</p>
+                                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-emerald-600 mb-2" />
+                                    <p className="text-sm text-gray-500">Loading...</p>
                                   </div>
                                 ) : active.items?.length ? (
-                                  <div className="space-y-2">
+                                  <div className="divide-y divide-gray-100">
                                     {active.items.map(item => {
                                       const isSelected = active.selectedIds.includes(item.id);
                                       return (
-                                        <label key={item.id} className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected ? "bg-emerald-50 border-emerald-300" : "bg-white border-gray-200 hover:border-gray-300"}`}>
-                                          <span className="text-sm text-gray-700 truncate pr-4 flex-1">{item.title}</span>
-                                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? "bg-emerald-600 border-emerald-600" : "border-gray-300"}`}>
+                                        <label 
+                                          key={item.id} 
+                                          className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                                            isSelected ? 'bg-emerald-50' : ''
+                                          }`}
+                                        >
+                                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                            isSelected ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300'
+                                          }`}>
                                             {isSelected && <Check className="w-3 h-3 text-white" />}
                                           </div>
-                                          <input type="checkbox" checked={isSelected} onChange={e => toggleItem(activeType, item.id, e.target.checked)} className="sr-only" />
+                                          <span className="text-sm text-gray-700 truncate flex-1">{item.title}</span>
+                                          <input 
+                                            type="checkbox" 
+                                            checked={isSelected} 
+                                            onChange={e => activeType && toggleItem(activeType, item.id, e.target.checked)} 
+                                            className="sr-only" 
+                                          />
                                         </label>
                                       );
                                     })}
                                   </div>
                                 ) : (
                                   <div className="py-12 text-center">
-                                    <div className="bg-gray-100 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-3">
-                                      <IconComponent type={activeType} />
+                                    <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center mx-auto mb-2">
+                                      {activeType && <IconComponent type={activeType} />}
                                     </div>
                                     <p className="text-sm text-gray-500">No items found</p>
                                   </div>
@@ -428,64 +455,61 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
-              
-              {/* Desktop Save Button (only visible when a source is active) */}
-              {activeType && (
-                <div className="hidden md:flex justify-end">
-                  <button
-                    onClick={save}
-                    disabled={saving || loading || activeCount === 0}
-                    className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl flex items-center gap-3 shadow-xl transition-all min-w-[260px] justify-center"
-                  >
-                    {saving ? <>Training Avatar...</> : <>Save & Train Avatar</>}
-                  </button>
-                </div>
-              )}
-
-            </div>
+            </main>
           </div>
         ) : (
-          /* Manage View — unchanged */
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Active Training Sources</h2>
-              <div className="text-sm text-gray-500">{backendSources.length} sources</div>
+          /* Manage View */
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h2 className="font-medium text-gray-900">Active Sources</h2>
+              <span className="text-sm text-gray-500">{backendSources.length} active</span>
             </div>
             {backendSources.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="bg-gradient-to-br from-emerald-100 to-teal-100 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-10 h-10 text-emerald-600" />
+              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center mb-4">
+                  <Sparkles className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Active Sources</h3>
-                <p className="text-gray-500 mb-6">Add sources to start training your avatar</p>
-                <button onClick={() => setView("config")} className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors inline-flex items-center gap-2">
+                <h3 className="text-lg font-medium text-gray-900 mb-1">No Active Sources</h3>
+                <p className="text-sm text-gray-500 mb-6">Add sources to train your avatar</p>
+                <button 
+                  onClick={() => setView("config")} 
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
                   Add Sources
                 </button>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-3 p-4">
                 {backendSources.map(src => {
                   const cfg = CONFIG.find(c => c.type === src.source_type);
                   const Icon = cfg?.icon || Book;
                   return (
-                    <div key={src.id} className="flex items-center justify-between p-4 bg-gradient-to-br from-emerald-50 to-white rounded-xl border-2 border-emerald-200">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="p-2.5 bg-emerald-100 rounded-lg">
-                          <Icon className="w-5 h-5 text-emerald-700" />
+                    <div key={src.id} className="flex items-center justify-between p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                          <Icon className="w-4 h-4 text-emerald-700" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-gray-900">{cfg?.label || src.source_type}</div>
-                          <div className="text-xs text-gray-600 flex items-center gap-1.5 flex-wrap">
-                            {src.include_for_tone && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">Tone</span>}
-                            {src.include_for_knowledge && <span className="px-2 py-0.5 bg-teal-100 text-teal-700 rounded">Knowledge</span>}
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-sm text-gray-900 truncate">{cfg?.label || src.source_type}</div>
+                          <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                            {src.include_for_tone && (
+                              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded">Tone</span>
+                            )}
+                            {src.include_for_knowledge && (
+                              <span className="px-2 py-0.5 bg-teal-100 text-teal-700 text-xs rounded">Knowledge</span>
+                            )}
                           </div>
                         </div>
                       </div>
-                      <button onClick={() => deleteSource(src.id)} disabled={saving} className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50">
-                        <Trash2 className="w-5 h-5" />
+                      <button 
+                        onClick={() => deleteSource(src.id)} 
+                        disabled={saving}
+                        className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   );
@@ -495,19 +519,50 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
           </div>
         )}
 
-        {/* Mobile Save Button (fixed to bottom and uses z-50) */}
+        {/* Save Button */}
         {view === "config" && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-200 p-4 md:hidden z-50">
-            <button
-              onClick={save}
-              disabled={saving || loading || activeCount === 0}
-              className="w-full px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl flex items-center justify-center gap-3 shadow-2xl transition-all"
-            >
-              {saving ? <><Loader2 className="w-5 h-5 animate-spin" /> Training...</> : <>Save & Train Avatar</>}
-            </button>
-          </div>
+          <>
+            {/* Mobile Fixed Button */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 lg:hidden z-50">
+              <button
+                onClick={save}
+                disabled={saving || loading || activeCount === 0}
+                className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg flex items-center justify-center gap-2 transition-colors"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Training...
+                  </>
+                ) : (
+                  <>Save & Train</>
+                )}
+              </button>
+            </div>
+
+            {/* Desktop Button */}
+            <div className="hidden lg:flex justify-end mt-6">
+              <button
+                onClick={save}
+                disabled={saving || loading || activeCount === 0}
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg flex items-center gap-2 transition-colors min-w-48 justify-center"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Training...
+                  </>
+                ) : (
+                  <>Save & Train Avatar</>
+                )}
+              </button>
+            </div>
+
+            {/* Mobile spacing to prevent content being hidden behind fixed button */}
+            <div className="h-20 lg:hidden"></div>
+          </>
         )}
       </div>
     </div>
   );
-};
+}

@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   Book, Calendar, CheckSquare, Upload, Type,
   Brain, ChevronRight, Trash2, Loader2, Sparkles,
-  BookOpen, Check, ArrowLeft, AlertCircle
+ Check, ArrowLeft,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -251,7 +251,7 @@ export default function SourceSelector({ avatarHandle, onSaveSuccess }: Props) {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Training Studio</h1>
-                <p className="text-gray-600 mt-1">Configure your avatar's learning sources</p>
+                <p className="text-gray-600 mt-1">Configure your avatar&apos;s learning sources</p>
               </div>
             </div>
             <button

@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from '@/context/AuthContext';
 import {
   Book, Calendar, CheckSquare, Upload, Mail, Globe, Type,
-  Brain, ChevronRight, ArrowLeft, Trash2, List, Save, Loader2, CheckCircle2, Circle
+  Brain, ChevronRight, ArrowLeft, Trash2, Save, Loader2, Sparkles, 
+  BookOpen, Zap, X, Plus, Check
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -16,6 +17,7 @@ interface BackendSource { id: string; source_type: SourceType; include_for_tone:
 interface SourceConfig {
   type: SourceType;
   label: string;
+  description: string;
   icon: React.ElementType;
   isEnabled: boolean;
   useForTone: boolean;
@@ -32,13 +34,13 @@ interface Props {
 }
 
 const CONFIG: SourceConfig[] = [
-  { type: "notes", label: "Whisone Notes", icon: Book, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: true, manualContent: "" },
-  { type: "reminders", label: "Reminders", icon: Calendar, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: true, manualContent: "" },
-  { type: "todos", label: "To-Dos", icon: CheckSquare, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: true, manualContent: "" },
-  { type: "uploads", label: "File Uploads", icon: Upload, isEnabled: false, useForTone: true, useForKnowledge: false, selectedIds: [], hasItems: true, manualContent: "" },
-  { type: "gmail", label: "Gmail", icon: Mail, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: false, manualContent: "" },
-  { type: "website", label: "Website", icon: Globe, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: false, manualContent: "" },
-  { type: "manual", label: "Manual Entry", icon: Type, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: false, manualContent: "" },
+  { type: "notes", label: "Notes", description: "Personal notes & documents", icon: Book, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: true, manualContent: "" },
+  { type: "reminders", label: "Reminders", description: "Tasks & reminders", icon: Calendar, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: true, manualContent: "" },
+  { type: "todos", label: "To-Dos", description: "Task lists & projects", icon: CheckSquare, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: true, manualContent: "" },
+  { type: "uploads", label: "Files", description: "Uploaded documents", icon: Upload, isEnabled: false, useForTone: true, useForKnowledge: false, selectedIds: [], hasItems: true, manualContent: "" },
+  { type: "gmail", label: "Gmail", description: "Email conversations", icon: Mail, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: false, manualContent: "" },
+  { type: "website", label: "Website", description: "Web content & pages", icon: Globe, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: false, manualContent: "" },
+  { type: "manual", label: "Custom Text", description: "Add your own content", icon: Type, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: false, manualContent: "" },
 ];
 
 const ENDPOINTS: Record<string, string> = {
@@ -161,261 +163,383 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
     }
   };
 
-  const Icon = ({ type }: { type: SourceType }) => {
+  const IconComponent = ({ type }: { type: SourceType }) => {
     const C = CONFIG.find(c => c.type === type)?.icon || Book;
-    return <C className="w-5 h-5 text-emerald-600" />;
+    return <C className="w-5 h-5" />;
   };
 
+  const activeCount = sources.filter(s => s.useForTone || s.useForKnowledge).length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50">
-      {/* Full-width safe container */}
-      <div className="w-full max-w-6xl mx-auto p-4 pb-32 md:pb-8">
-
-        <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
-
-          {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Brain className="w-10 h-10 flex-shrink-0" />
-                <div>
-                  <h2 className="text-2xl font-bold">Train Your Avatar</h2>
-                  <p className="text-emerald-100 text-sm">Choose what your AI learns from</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pb-32 md:pb-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg">
+                  <Brain className="w-7 h-7 text-white" />
                 </div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  AI Training Studio
+                </h1>
               </div>
-              <button
-                onClick={() => { setView(view === "config" ? "manage" : "config"); setActiveType(null); }}
-                className="px-5 py-2.5 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-medium transition whitespace-nowrap"
-              >
-                {view === "config" ? "Manage Sources" : "Add Sources"}
-              </button>
+              <p className="text-gray-600 ml-14">Configure your avatar's learning sources</p>
             </div>
+            
+            <button
+              onClick={() => { setView(view === "config" ? "manage" : "config"); setActiveType(null); }}
+              className="px-5 py-3 bg-white hover:bg-gray-50 rounded-xl font-medium text-gray-700 shadow-md border border-gray-200 transition-all hover:shadow-lg flex items-center gap-2"
+            >
+              {view === "config" ? (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  View Active
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Add Sources
+                </>
+              )}
+            </button>
           </div>
 
-          {/* Main Content */}
-          <div className="p-6">
-            {view === "config" ? (
-              <div className="grid lg:grid-cols-12 gap-8">
-                {/* Source List */}
-                <div className={`lg:col-span-5 space-y-4 ${activeType ? "hidden lg:block" : "block"}`}>
-                  <h3 className="text-lg font-semibold text-gray-800">Data Sources</h3>
-                  <div className="space-y-3">
-                    {sources.map(s => (
+          {/* Stats Bar */}
+          {view === "config" && (
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                    <span className="text-sm text-gray-600">
+                      <span className="font-semibold text-gray-900">{activeCount}</span> sources selected
+                    </span>
+                  </div>
+                  <div className="h-4 w-px bg-gray-200"></div>
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-indigo-500" />
+                    <span className="text-sm text-gray-600">Training Mode</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Main Content */}
+        {view === "config" ? (
+          <div className="grid lg:grid-cols-12 gap-6">
+            {/* Source Grid */}
+            <div className={`lg:col-span-4 ${activeType ? "hidden lg:block" : "block"}`}>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-indigo-500" />
+                  Data Sources
+                </h2>
+                <div className="space-y-2">
+                  {sources.map(s => {
+                    const Icon = s.icon;
+                    const isActive = s.useForTone || s.useForKnowledge;
+                    return (
                       <button
                         key={s.type}
                         onClick={() => { setActiveType(s.type); if (s.hasItems && !s.items) fetchItems(s.type); }}
-                        className={`w-full text-left p-4 rounded-2xl border-2 transition-all ${
+                        className={`w-full text-left p-4 rounded-xl border-2 transition-all group ${
                           activeType === s.type
-                            ? "bg-emerald-50 border-emerald-500 shadow-md"
-                            : "border-gray-200 hover:border-emerald-300 hover:bg-gray-50"
+                            ? "bg-indigo-50 border-indigo-400 shadow-md"
+                            : isActive
+                            ? "border-indigo-200 bg-indigo-50/50 hover:border-indigo-300"
+                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="p-2.5 bg-emerald-100 rounded-lg flex-shrink-0">
-                              <Icon type={s.type} />
+                            <div className={`p-2 rounded-lg ${isActive ? "bg-indigo-100" : "bg-gray-100"}`}>
+                              <Icon className={`w-4 h-4 ${isActive ? "text-indigo-600" : "text-gray-500"}`} />
                             </div>
-                            <div className="min-w-0">
-                              <div className="font-medium text-gray-900 truncate">{s.label}</div>
-                              <div className="text-xs text-gray-500 truncate">
-                                {s.useForTone && "Tone"} {s.useForTone && s.useForKnowledge && " · "} {s.useForKnowledge && "Knowledge"}
-                                {!s.useForTone && !s.useForKnowledge && "Not used"}
-                              </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-gray-900 text-sm">{s.label}</div>
+                              <div className="text-xs text-gray-500 truncate">{s.description}</div>
                             </div>
                           </div>
-                          <ChevronRight className={`w-5 h-5 flex-shrink-0 transition ${activeType === s.type ? "text-emerald-600" : "text-gray-400"}`} />
+                          {isActive && (
+                            <div className="flex items-center gap-1.5 ml-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                            </div>
+                          )}
+                          <ChevronRight className={`w-4 h-4 ml-2 transition ${activeType === s.type ? "text-indigo-600" : "text-gray-400"}`} />
                         </div>
                       </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Detail Panel */}
-                <div className={`lg:col-span-7 ${activeType ? "block" : "hidden lg:block"}`}>
-                  {!activeType ? (
-                    <div className="text-center py-20 text-gray-400">
-                      <div className="bg-gray-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Brain className="w-12 h-12 text-gray-400" />
-                      </div>
-                      <p className="text-lg font-medium">Select a source to configure</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {/* Mobile Back Button */}
-                      <button
-                        onClick={() => setActiveType(null)}
-                        className="lg:hidden flex items-center gap-2 text-gray-600 mb-4 font-medium"
-                      >
-                        <ArrowLeft className="w-5 h-5" /> Back
-                      </button>
-
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-emerald-100 rounded-xl flex-shrink-0">
-                          <Icon type={activeType} />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-900">{active?.label ?? ""}</h3>
-                      </div>
-
-                      {/* Tone & Knowledge */}
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition">
-                          <div className="flex items-center gap-3">
-                            <Book className="w-5 h-5 text-emerald-600" />
-                            <div>
-                              <div className="font-medium">Tone & Style</div>
-                              <div className="text-xs text-gray-600">How the AI speaks</div>
-                            </div>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={active?.useForTone}
-                            onChange={e => toggle(activeType, "useForTone", e.target.checked)}
-                            className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500"
-                          />
-                        </label>
-
-                        <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition">
-                          <div className="flex items-center gap-3">
-                            <Brain className="w-5 h-5 text-emerald-600" />
-                            <div>
-                              <div className="font-medium">Knowledge</div>
-                              <div className="text-xs text-gray-600">Facts & answers</div>
-                            </div>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={active?.useForKnowledge}
-                            onChange={e => toggle(activeType, "useForKnowledge", e.target.checked)}
-                            className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500"
-                          />
-                        </label>
-                      </div>
-
-                      {/* Manual Entry or Item Selection */}
-                      {(active?.useForTone || active?.useForKnowledge) && (
-                        active?.type === "manual" ? (
-                          <div className="bg-gray-50 rounded-2xl p-5">
-                            <textarea
-                              value={active?.manualContent}
-                              onChange={e => updateManual(activeType, e.target.value)}
-                              rows={10}
-                              className="w-full p-4 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
-                              placeholder="Paste Q&A, tone examples, or knowledge here..."
-                            />
-                          </div>
-                        ) : active.hasItems ? (
-                          <div className="bg-gray-50 rounded-2xl p-5 max-h-96 overflow-y-auto">
-                            <p className="text-sm font-medium text-gray-700 mb-3">Select items (optional)</p>
-                            {loading ? (
-                              <div className="py-8 text-center">
-                                <Loader2 className="w-6 h-6 animate-spin mx-auto text-emerald-600" />
-                              </div>
-                            ) : active.items?.length ? (
-                              <div className="space-y-2">
-                                {active.items.map(item => (
-                                  <label
-                                    key={item.id}
-                                    className="flex items-center justify-between p-3 bg-white rounded-lg border hover:shadow cursor-pointer transition"
-                                  >
-                                    <span className="text-sm text-gray-700 truncate pr-4 flex-1">{item.title}</span>
-                                    <div className="flex-shrink-0">
-                                      {active.selectedIds.includes(item.id) ?
-                                        <CheckCircle2 className="w-5 h-5 text-emerald-600" /> :
-                                        <Circle className="w-5 h-5 text-gray-400" />
-                                      }
-                                    </div>
-                                    <input
-                                      type="checkbox"
-                                      checked={active.selectedIds.includes(item.id)}
-                                      onChange={e => toggleItem(activeType, item.id, e.target.checked)}
-                                      className="sr-only"
-                                    />
-                                  </label>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="text-sm text-gray-500 text-center py-8">No items found</p>
-                            )}
-                          </div>
-                        ) : null
-                      )}
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
               </div>
-            ) : (
-              /* Manage View */
-              <div>
-                <h3 className="text-lg font-semibold mb-5">Active Training Sources</h3>
-                {backendSources.length === 0 ? (
-                  <div className="text-center py-16 text-gray-500">
-                    <div className="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <List className="w-10 h-10 text-gray-400" />
+            </div>
+
+            {/* Detail Panel */}
+            <div className={`lg:col-span-8 ${activeType ? "block" : "hidden lg:block"}`}>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {!activeType ? (
+                  <div className="text-center py-20 px-6">
+                    <div className="bg-gradient-to-br from-indigo-100 to-purple-100 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Brain className="w-10 h-10 text-indigo-600" />
                     </div>
-                    <p>No sources added yet</p>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a Source</h3>
+                    <p className="text-gray-500">Choose a data source from the left to configure it</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {backendSources.map(src => {
-                      const cfg = CONFIG.find(c => c.type === src.source_type);
-                      const IconC = cfg?.icon || Book;
-                      return (
-                        <div key={src.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                          <div className="flex items-center gap-4 flex-1 min-w-0">
-                            <div className="p-2.5 bg-emerald-100 rounded-lg flex-shrink-0">
-                              <IconC className="w-5 h-5 text-emerald-700" />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-medium truncate">{cfg?.label || src.source_type}</div>
-                              <div className="text-xs text-gray-600">
-                                {src.include_for_tone && "Tone"} {src.include_for_tone && src.include_for_knowledge && " · "} {src.include_for_knowledge && "Knowledge"}
+                  <div>
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6">
+                      <button 
+                        onClick={() => setActiveType(null)} 
+                        className="lg:hidden flex items-center gap-2 text-white/90 hover:text-white mb-4 text-sm"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Back to sources
+                      </button>
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-white/20 backdrop-blur rounded-xl">
+                          <IconComponent type={activeType} />
+                        </div>
+                        <div className="text-white">
+                          <h3 className="text-xl font-bold">{active?.label}</h3>
+                          <p className="text-indigo-100 text-sm">{active?.description}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-6 space-y-6">
+                      {/* Training Options */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3">Training Configuration</h4>
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <label className={`relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                            active?.useForTone ? "bg-indigo-50 border-indigo-400" : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                          }`}>
+                            <input 
+                              type="checkbox" 
+                              checked={active?.useForTone} 
+                              onChange={e => toggle(activeType, "useForTone", e.target.checked)}
+                              className="sr-only" 
+                            />
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className={`p-2 rounded-lg ${active?.useForTone ? "bg-indigo-100" : "bg-white"}`}>
+                                <Sparkles className={`w-4 h-4 ${active?.useForTone ? "text-indigo-600" : "text-gray-400"}`} />
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-900 text-sm">Tone & Style</div>
+                                <div className="text-xs text-gray-500">Writing personality</div>
                               </div>
                             </div>
-                          </div>
-                          <button
-                            onClick={() => deleteSource(src.id)}
-                            disabled={saving}
-                            className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition flex-shrink-0"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
+                            {active?.useForTone && (
+                              <Check className="w-5 h-5 text-indigo-600" />
+                            )}
+                          </label>
+
+                          <label className={`relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                            active?.useForKnowledge ? "bg-purple-50 border-purple-400" : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                          }`}>
+                            <input 
+                              type="checkbox" 
+                              checked={active?.useForKnowledge} 
+                              onChange={e => toggle(activeType, "useForKnowledge", e.target.checked)}
+                              className="sr-only" 
+                            />
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className={`p-2 rounded-lg ${active?.useForKnowledge ? "bg-purple-100" : "bg-white"}`}>
+                                <Brain className={`w-4 h-4 ${active?.useForKnowledge ? "text-purple-600" : "text-gray-400"}`} />
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-900 text-sm">Knowledge Base</div>
+                                <div className="text-xs text-gray-500">Facts & information</div>
+                              </div>
+                            </div>
+                            {active?.useForKnowledge && (
+                              <Check className="w-5 h-5 text-purple-600" />
+                            )}
+                          </label>
                         </div>
-                      );
-                    })}
+                      </div>
+
+                      {/* Content Selection */}
+                      {(active?.useForTone || active?.useForKnowledge) && (
+                        <div>
+                          {active?.type === "manual" ? (
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-700 mb-3">Add Your Content</h4>
+                              <textarea
+                                value={active?.manualContent}
+                                onChange={e => updateManual(activeType, e.target.value)}
+                                rows={10}
+                                className="w-full p-4 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                                placeholder="Paste Q&A pairs, tone examples, or any knowledge you want your avatar to learn..."
+                              />
+                            </div>
+                          ) : active.hasItems ? (
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                                Select Items <span className="text-gray-400 font-normal">(optional)</span>
+                              </h4>
+                              <div className="border-2 border-gray-200 rounded-xl p-4 max-h-80 overflow-y-auto">
+                                {loading ? (
+                                  <div className="py-12 text-center">
+                                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-600" />
+                                    <p className="text-sm text-gray-500 mt-3">Loading items...</p>
+                                  </div>
+                                ) : active.items?.length ? (
+                                  <div className="space-y-2">
+                                    {active.items.map(item => {
+                                      const isSelected = active.selectedIds.includes(item.id);
+                                      return (
+                                        <label 
+                                          key={item.id} 
+                                          className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                            isSelected 
+                                              ? "bg-indigo-50 border-indigo-300" 
+                                              : "bg-white border-gray-200 hover:border-gray-300"
+                                          }`}
+                                        >
+                                          <span className="text-sm text-gray-700 truncate pr-4 flex-1">{item.title}</span>
+                                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                            isSelected ? "bg-indigo-600 border-indigo-600" : "border-gray-300"
+                                          }`}>
+                                            {isSelected && <Check className="w-3 h-3 text-white" />}
+                                          </div>
+                                          <input 
+                                            type="checkbox" 
+                                            checked={isSelected}
+                                            onChange={e => toggleItem(activeType, item.id, e.target.checked)} 
+                                            className="sr-only" 
+                                          />
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <div className="py-12 text-center">
+                                    <div className="bg-gray-100 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                      <IconComponent type={activeType} />
+                                    </div>
+                                    <p className="text-sm text-gray-500">No items found</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Manage View */
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Active Training Sources</h2>
+              <div className="text-sm text-gray-500">{backendSources.length} sources</div>
+            </div>
+            
+            {backendSources.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-10 h-10 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Active Sources</h3>
+                <p className="text-gray-500 mb-6">Add sources to start training your avatar</p>
+                <button
+                  onClick={() => setView("config")}
+                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors inline-flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Sources
+                </button>
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {backendSources.map(src => {
+                  const cfg = CONFIG.find(c => c.type === src.source_type);
+                  const Icon = cfg?.icon || Book;
+                  return (
+                    <div key={src.id} className="flex items-center justify-between p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border-2 border-gray-200">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="p-2.5 bg-indigo-100 rounded-lg">
+                          <Icon className="w-5 h-5 text-indigo-700" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900">{cfg?.label || src.source_type}</div>
+                          <div className="text-xs text-gray-600 flex items-center gap-1.5">
+                            {src.include_for_tone && <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded">Tone</span>}
+                            {src.include_for_knowledge && <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded">Knowledge</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => deleteSource(src.id)} 
+                        disabled={saving}
+                        className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Fixed Save Button - Always Visible & Safe on Mobile */}
-      {view === "config" && (
-        <div className="fixed inset-x-0 bottom-0 z-50 bg-white border-t border-gray-200 shadow-2xl">
-          <div className="px-4 py-4 max-w-6xl mx-auto">
-            <div className="flex justify-end">
-              <button
-                onClick={save}
-                disabled={saving || loading}
-                className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold rounded-2xl flex items-center justify-center gap-3 shadow-xl transition min-h-[56px]"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-6 h-6" />
-                    Save & Train Avatar
-                  </>
-                )}
-              </button>
-            </div>
+        {/* Floating Save Button */}
+        {view === "config" && (
+          <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-200 p-4 md:hidden z-50">
+            <button
+              onClick={save}
+              disabled={saving || loading || activeCount === 0}
+              className="w-full px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl flex items-center justify-center gap-3 shadow-2xl transition-all"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Training...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  Save & Train Avatar
+                </>
+              )}
+            </button>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Desktop Save Button */}
+        {view === "config" && (
+          <div className="hidden md:flex justify-end mt-6">
+            <button
+              onClick={save}
+              disabled={saving || loading || activeCount === 0}
+              className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl flex items-center gap-3 shadow-xl transition-all min-w-[240px] justify-center"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  Training Avatar...
+                </>
+              ) : (
+                <>
+                  <Save className="w-6 h-6" />
+                  Save & Train Avatar
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

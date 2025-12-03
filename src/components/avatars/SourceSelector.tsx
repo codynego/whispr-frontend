@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import {
   Book, Calendar, CheckSquare, Upload, Type,
   Brain, ChevronRight, Trash2, Loader2, Sparkles,
-  BookOpen,  Check
+  BookOpen, Check
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -96,10 +96,13 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
       });
       if (res.ok) {
         const data = await res.json();
-        setBackendSources(data);
-        console.log("Fetched backend sources:", data);
+        // 🐛 FIX: Safely extract results array if the response is paginated (your API example)
+        const sourcesArray = Array.isArray(data) ? data : data.results || [];
+        setBackendSources(sourcesArray);
+        console.log("Fetched backend sources:", sourcesArray);
       }
-    } catch {
+    } catch (error) {
+      console.error("Error fetching active sources:", error);
       toast.error("Failed to load active sources");
     } finally {
       setLoading(false);
@@ -262,7 +265,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
           )}
         </div>
 
-        {/* Rest of your UI — unchanged but beautiful */}
+        {/* Training Configuration Grid */}
         {view === "config" ? (
           <div className="grid lg:grid-cols-12 gap-6">
             {/* Source List */}
@@ -307,8 +310,9 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
               </div>
             </div>
 
-            {/* Detail Panel */}
-            <div className={`lg:col-span-8 ${activeType ? "block" : "hidden lg:block"}`}>
+            {/* Detail Panel & Desktop Save Button Container */}
+            {/* Added flex-col and gap-6 to manage spacing between panel and save button */}
+            <div className={`lg:col-span-8 ${activeType ? "block" : "hidden lg:block"} flex flex-col gap-6`}>
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 {!activeType ? (
                   <div className="text-center py-20 px-6">
@@ -427,6 +431,20 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
                   </div>
                 )}
               </div>
+              
+              {/* Desktop Save Button (only visible when a source is active) */}
+              {activeType && (
+                <div className="hidden md:flex justify-end">
+                  <button
+                    onClick={save}
+                    disabled={saving || loading || activeCount === 0}
+                    className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl flex items-center gap-3 shadow-xl transition-all min-w-[260px] justify-center"
+                  >
+                    {saving ? <>Training Avatar...</> : <>Save & Train Avatar</>}
+                  </button>
+                </div>
+              )}
+
             </div>
           </div>
         ) : (
@@ -477,29 +495,17 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
           </div>
         )}
 
-        {/* Save Buttons */}
+        {/* Mobile Save Button (fixed to bottom and uses z-50) */}
         {view === "config" && (
-          <>
-            <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-200 p-4 md:hidden z-50">
-              <button
-                onClick={save}
-                disabled={saving || loading || activeCount === 0}
-                className="w-full px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl flex items-center justify-center gap-3 shadow-2xl transition-all"
-              >
-                {saving ? <>Training...</> : <>Save & Train Avatar</>}
-              </button>
-            </div>
-
-            <div className="hidden md:flex justify-end mt-8">
-              <button
-                onClick={save}
-                disabled={saving || loading || activeCount === 0}
-                className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl flex items-center gap-3 shadow-xl transition-all min-w-[260px] justify-center"
-              >
-                {saving ? <>Training Avatar...</> : <>Save & Train Avatar</>}
-              </button>
-            </div>
-          </>
+          <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-200 p-4 md:hidden z-50">
+            <button
+              onClick={save}
+              disabled={saving || loading || activeCount === 0}
+              className="w-full px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl flex items-center justify-center gap-3 shadow-2xl transition-all"
+            >
+              {saving ? <><Loader2 className="w-5 h-5 animate-spin" /> Training...</> : <>Save & Train Avatar</>}
+            </button>
+          </div>
         )}
       </div>
     </div>

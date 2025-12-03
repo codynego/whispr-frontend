@@ -4,8 +4,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from '@/context/AuthContext';
 import {
   Book, Calendar, CheckSquare, Upload, Mail, Globe, Type,
-  Brain, ChevronRight, ArrowLeft, Trash2, Save, Loader2, Sparkles,
-  BookOpen, Zap, Plus, Check
+  Brain, ChevronRight, Trash2, Loader2, Sparkles,
+  BookOpen,  Check
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -38,8 +38,8 @@ const CONFIG: SourceConfig[] = [
   { type: "reminders", label: "Reminders", description: "Tasks & reminders", icon: Calendar, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: true, manualContent: "" },
   { type: "todos", label: "To-Dos", description: "Task lists & projects", icon: CheckSquare, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: true, manualContent: "" },
   { type: "uploads", label: "Files", description: "Uploaded documents", icon: Upload, isEnabled: false, useForTone: true, useForKnowledge: false, selectedIds: [], hasItems: true, manualContent: "" },
-  { type: "gmail", label: "Gmail", description: "Email conversations", icon: Mail, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: false, manualContent: "" },
-  { type: "website", label: "Website", description: "Web content & pages", icon: Globe, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: false, manualContent: "" },
+  // { type: "gmail", label: "Gmail", description: "Email conversations", icon: Mail, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: false, manualContent: "" },
+  // { type: "website", label: "Website", description: "Web content & pages", icon: Globe, isEnabled: false, useForTone: false, useForKnowledge: false, selectedIds: [], hasItems: false, manualContent: "" },
   { type: "manual", label: "Custom Text", description: "Add your own content", icon: Type, isEnabled: false, useForTone: true, useForKnowledge: true, selectedIds: [], hasItems: false, manualContent: "" },
 ];
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from '@/context/AuthContext';
 import {
   Book, Calendar, CheckSquare, Upload, Mail, Globe, Type,
-  Brain, ChevronRight, ArrowLeft, Trash2, Save, Loader2, Sparkles, 
+  Brain, ChevronRight, ArrowLeft, Trash2, Save, Loader2, Sparkles,
   BookOpen, Zap, Plus, Check
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -60,6 +60,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
   const [view, setView] = useState<"config" | "manage">("config");
 
   const active = sources.find(s => s.type === activeType);
+  const activeCount = sources.filter(s => s.useForTone || s.useForKnowledge).length;
 
   const fetchItems = useCallback(async (type: SourceType) => {
     const endpoint = ENDPOINTS[type];
@@ -151,9 +152,8 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
     setSaving(true);
     try {
       await new Promise(r => setTimeout(r, 800));
-      const count = sources.filter(s => s.useForTone || s.useForKnowledge).length;
-      if (count === 0) throw new Error("Select at least one source");
-      toast.success(`Training started with ${count} source${count > 1 ? "s" : ""}`);
+      if (activeCount === 0) throw new Error("Select at least one source");
+      toast.success(`Training started with ${activeCount} source${activeCount > 1 ? "s" : ""}`);
       fetchBackendSources();
       onSaveSuccess();
     } catch (e: any) {
@@ -168,38 +168,38 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
     return <C className="w-5 h-5" />;
   };
 
-  const activeCount = sources.filter(s => s.useForTone || s.useForKnowledge).length;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pb-32 md:pb-8">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50">
+      {/* Full-width safe container */}
+      <div className="w-full px-4 py-8 max-w-7xl mx-auto">
+
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-start justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg">
+                <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg">
                   <Brain className="w-7 h-7 text-white" />
                 </div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
                   AI Training Studio
                 </h1>
               </div>
-              <p className="text-gray-600 ml-14">Configure your avatar&apos;s learning sources</p>
+              <p className="text-gray-600">Configure your avatar&apos;s learning sources</p>
             </div>
-            
+
             <button
               onClick={() => { setView(view === "config" ? "manage" : "config"); setActiveType(null); }}
               className="px-5 py-3 bg-white hover:bg-gray-50 rounded-xl font-medium text-gray-700 shadow-md border border-gray-200 transition-all hover:shadow-lg flex items-center gap-2"
             >
               {view === "config" ? (
                 <>
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4 text-emerald-600" />
                   View Active
                 </>
               ) : (
                 <>
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-4 h-4 text-emerald-600" />
                   Add Sources
                 </>
               )}
@@ -209,19 +209,17 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
           {/* Stats Bar */}
           {view === "config" && (
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                    <span className="text-sm text-gray-600">
-                      <span className="font-semibold text-gray-900">{activeCount}</span> sources selected
-                    </span>
-                  </div>
-                  <div className="h-4 w-px bg-gray-200"></div>
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-indigo-500" />
-                    <span className="text-sm text-gray-600">Training Mode</span>
-                  </div>
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  <span className="text-sm text-gray-600">
+                    <span className="font-semibold text-gray-900">{activeCount}</span> sources selected
+                  </span>
+                </div>
+                <div className="hidden sm:block h-4 w-px bg-gray-200"></div>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-emerald-500" />
+                  <span className="text-sm text-gray-600">Training Mode</span>
                 </div>
               </div>
             </div>
@@ -231,11 +229,11 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
         {/* Main Content */}
         {view === "config" ? (
           <div className="grid lg:grid-cols-12 gap-6">
-            {/* Source Grid */}
+            {/* Source List */}
             <div className={`lg:col-span-4 ${activeType ? "hidden lg:block" : "block"}`}>
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-indigo-500" />
+                  <Zap className="w-5 h-5 text-emerald-500" />
                   Data Sources
                 </h2>
                 <div className="space-y-2">
@@ -248,16 +246,16 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
                         onClick={() => { setActiveType(s.type); if (s.hasItems && !s.items) fetchItems(s.type); }}
                         className={`w-full text-left p-4 rounded-xl border-2 transition-all group ${
                           activeType === s.type
-                            ? "bg-indigo-50 border-indigo-400 shadow-md"
+                            ? "bg-emerald-50 border-emerald-400 shadow-md"
                             : isActive
-                            ? "border-indigo-200 bg-indigo-50/50 hover:border-indigo-300"
+                            ? "border-emerald-200 bg-emerald-50/50 hover:border-emerald-300"
                             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className={`p-2 rounded-lg ${isActive ? "bg-indigo-100" : "bg-gray-100"}`}>
-                              <Icon className={`w-4 h-4 ${isActive ? "text-indigo-600" : "text-gray-500"}`} />
+                            <div className={`p-2 rounded-lg ${isActive ? "bg-emerald-100" : "bg-gray-100"}`}>
+                              <Icon className={`w-4 h-4 ${isActive ? "text-emerald-600" : "text-gray-500"}`} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-gray-900 text-sm">{s.label}</div>
@@ -265,11 +263,9 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
                             </div>
                           </div>
                           {isActive && (
-                            <div className="flex items-center gap-1.5 ml-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-                            </div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                           )}
-                          <ChevronRight className={`w-4 h-4 ml-2 transition ${activeType === s.type ? "text-indigo-600" : "text-gray-400"}`} />
+                          <ChevronRight className={`w-4 h-4 ml-2 transition ${activeType === s.type ? "text-emerald-600" : "text-gray-400"}`} />
                         </div>
                       </button>
                     );
@@ -283,18 +279,17 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 {!activeType ? (
                   <div className="text-center py-20 px-6">
-                    <div className="bg-gradient-to-br from-indigo-100 to-purple-100 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Brain className="w-10 h-10 text-indigo-600" />
+                    <div className="bg-gradient-to-br from-emerald-100 to-teal-100 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Brain className="w-10 h-10 text-emerald-600" />
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a Source</h3>
                     <p className="text-gray-500">Choose a data source from the left to configure it</p>
                   </div>
                 ) : (
                   <div>
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6">
-                      <button 
-                        onClick={() => setActiveType(null)} 
+                    <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6">
+                      <button
+                        onClick={() => setActiveType(null)}
                         className="lg:hidden flex items-center gap-2 text-white/90 hover:text-white mb-4 text-sm"
                       >
                         <ArrowLeft className="w-4 h-4" /> Back to sources
@@ -305,66 +300,49 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
                         </div>
                         <div className="text-white">
                           <h3 className="text-xl font-bold">{active?.label}</h3>
-                          <p className="text-indigo-100 text-sm">{active?.description}</p>
+                          <p className="text-emerald-100 text-sm">{active?.description}</p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Content */}
                     <div className="p-6 space-y-6">
-                      {/* Training Options */}
                       <div>
                         <h4 className="text-sm font-semibold text-gray-700 mb-3">Training Configuration</h4>
                         <div className="grid sm:grid-cols-2 gap-3">
                           <label className={`relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                            active?.useForTone ? "bg-indigo-50 border-indigo-400" : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                            active?.useForTone ? "bg-emerald-50 border-emerald-400" : "bg-gray-50 border-gray-200 hover:border-gray-300"
                           }`}>
-                            <input 
-                              type="checkbox" 
-                              checked={active?.useForTone} 
-                              onChange={e => toggle(activeType, "useForTone", e.target.checked)}
-                              className="sr-only" 
-                            />
+                            <input type="checkbox" checked={active?.useForTone} onChange={e => toggle(activeType, "useForTone", e.target.checked)} className="sr-only" />
                             <div className="flex items-center gap-3 flex-1">
-                              <div className={`p-2 rounded-lg ${active?.useForTone ? "bg-indigo-100" : "bg-white"}`}>
-                                <Sparkles className={`w-4 h-4 ${active?.useForTone ? "text-indigo-600" : "text-gray-400"}`} />
+                              <div className={`p-2 rounded-lg ${active?.useForTone ? "bg-emerald-100" : "bg-white"}`}>
+                                <Sparkles className={`w-4 h-4 ${active?.useForTone ? "text-emerald-600" : "text-gray-400"}`} />
                               </div>
                               <div>
                                 <div className="font-medium text-gray-900 text-sm">Tone & Style</div>
                                 <div className="text-xs text-gray-500">Writing personality</div>
                               </div>
                             </div>
-                            {active?.useForTone && (
-                              <Check className="w-5 h-5 text-indigo-600" />
-                            )}
+                            {active?.useForTone && <Check className="w-5 h-5 text-emerald-600" />}
                           </label>
 
                           <label className={`relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                            active?.useForKnowledge ? "bg-purple-50 border-purple-400" : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                            active?.useForKnowledge ? "bg-teal-50 border-teal-400" : "bg-gray-50 border-gray-200 hover:border-gray-300"
                           }`}>
-                            <input 
-                              type="checkbox" 
-                              checked={active?.useForKnowledge} 
-                              onChange={e => toggle(activeType, "useForKnowledge", e.target.checked)}
-                              className="sr-only" 
-                            />
+                            <input type="checkbox" checked={active?.useForKnowledge} onChange={e => toggle(activeType, "useForKnowledge", e.target.checked)} className="sr-only" />
                             <div className="flex items-center gap-3 flex-1">
-                              <div className={`p-2 rounded-lg ${active?.useForKnowledge ? "bg-purple-100" : "bg-white"}`}>
-                                <Brain className={`w-4 h-4 ${active?.useForKnowledge ? "text-purple-600" : "text-gray-400"}`} />
+                              <div className={`p-2 rounded-lg ${active?.useForKnowledge ? "bg-teal-100" : "bg-white"}`}>
+                                <Brain className={`w-4 h-4 ${active?.useForKnowledge ? "text-teal-600" : "text-gray-400"}`} />
                               </div>
                               <div>
                                 <div className="font-medium text-gray-900 text-sm">Knowledge Base</div>
                                 <div className="text-xs text-gray-500">Facts & information</div>
                               </div>
                             </div>
-                            {active?.useForKnowledge && (
-                              <Check className="w-5 h-5 text-purple-600" />
-                            )}
+                            {active?.useForKnowledge && <Check className="w-5 h-5 text-teal-600" />}
                           </label>
                         </div>
                       </div>
 
-                      {/* Content Selection */}
                       {(active?.useForTone || active?.useForKnowledge) && (
                         <div>
                           {active?.type === "manual" ? (
@@ -374,8 +352,8 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
                                 value={active?.manualContent}
                                 onChange={e => updateManual(activeType, e.target.value)}
                                 rows={10}
-                                className="w-full p-4 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-                                placeholder="Paste Q&A pairs, tone examples, or any knowledge you want your avatar to learn..."
+                                className="w-full p-4 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
+                                placeholder="Paste Q&A pairs, tone examples, or any knowledge..."
                               />
                             </div>
                           ) : active.hasItems ? (
@@ -386,7 +364,7 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
                               <div className="border-2 border-gray-200 rounded-xl p-4 max-h-80 overflow-y-auto">
                                 {loading ? (
                                   <div className="py-12 text-center">
-                                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-600" />
+                                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" />
                                     <p className="text-sm text-gray-500 mt-3">Loading items...</p>
                                   </div>
                                 ) : active.items?.length ? (
@@ -394,26 +372,16 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
                                     {active.items.map(item => {
                                       const isSelected = active.selectedIds.includes(item.id);
                                       return (
-                                        <label 
-                                          key={item.id} 
-                                          className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                                            isSelected 
-                                              ? "bg-indigo-50 border-indigo-300" 
-                                              : "bg-white border-gray-200 hover:border-gray-300"
-                                          }`}
-                                        >
+                                        <label key={item.id} className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                          isSelected ? "bg-emerald-50 border-emerald-300" : "bg-white border-gray-200 hover:border-gray-300"
+                                        }`}>
                                           <span className="text-sm text-gray-700 truncate pr-4 flex-1">{item.title}</span>
                                           <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                                            isSelected ? "bg-indigo-600 border-indigo-600" : "border-gray-300"
+                                            isSelected ? "bg-emerald-600 border-emerald-600" : "border-gray-300"
                                           }`}>
                                             {isSelected && <Check className="w-3 h-3 text-white" />}
                                           </div>
-                                          <input 
-                                            type="checkbox" 
-                                            checked={isSelected}
-                                            onChange={e => toggleItem(activeType, item.id, e.target.checked)} 
-                                            className="sr-only" 
-                                          />
+                                          <input type="checkbox" checked={isSelected} onChange={e => toggleItem(activeType, item.id, e.target.checked)} className="sr-only" />
                                         </label>
                                       );
                                     })}
@@ -444,17 +412,17 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
               <h2 className="text-lg font-semibold text-gray-900">Active Training Sources</h2>
               <div className="text-sm text-gray-500">{backendSources.length} sources</div>
             </div>
-            
+
             {backendSources.length === 0 ? (
               <div className="text-center py-20">
-                <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-10 h-10 text-gray-400" />
+                <div className="bg-gradient-to-br from-emerald-100 to-teal-100 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-10 h-10 text-emerald-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No Active Sources</h3>
                 <p className="text-gray-500 mb-6">Add sources to start training your avatar</p>
                 <button
                   onClick={() => setView("config")}
-                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors inline-flex items-center gap-2"
+                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors inline-flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
                   Add Sources
@@ -466,24 +434,20 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
                   const cfg = CONFIG.find(c => c.type === src.source_type);
                   const Icon = cfg?.icon || Book;
                   return (
-                    <div key={src.id} className="flex items-center justify-between p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border-2 border-gray-200">
+                    <div key={src.id} className="flex items-center justify-between p-4 bg-gradient-to-br from-emerald-50 to-white rounded-xl border-2 border-emerald-200">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="p-2.5 bg-indigo-100 rounded-lg">
-                          <Icon className="w-5 h-5 text-indigo-700" />
+                        <div className="p-2.5 bg-emerald-100 rounded-lg">
+                          <Icon className="w-5 h-5 text-emerald-700" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-gray-900">{cfg?.label || src.source_type}</div>
-                          <div className="text-xs text-gray-600 flex items-center gap-1.5">
-                            {src.include_for_tone && <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded">Tone</span>}
-                            {src.include_for_knowledge && <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded">Knowledge</span>}
+                          <div className="text-xs text-gray-600 flex items-center gap-1.5 flex-wrap">
+                            {src.include_for_tone && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">Tone</span>}
+                            {src.include_for_knowledge && <span className="px-2 py-0.5 bg-teal-100 text-teal-700 rounded">Knowledge</span>}
                           </div>
                         </div>
                       </div>
-                      <button 
-                        onClick={() => deleteSource(src.id)} 
-                        disabled={saving}
-                        className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
-                      >
+                      <button onClick={() => deleteSource(src.id)} disabled={saving} className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50">
                         <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
@@ -494,13 +458,13 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
           </div>
         )}
 
-        {/* Floating Save Button */}
+        {/* Floating Save Button (Mobile) */}
         {view === "config" && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-200 p-4 md:hidden z-50">
+          <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-200 p-4 md:hidden z-50">
             <button
               onClick={save}
               disabled={saving || loading || activeCount === 0}
-              className="w-full px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl flex items-center justify-center gap-3 shadow-2xl transition-all"
+              className="w-full px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl flex items-center justify-center gap-3 shadow-2xl transition-all"
             >
               {saving ? (
                 <>
@@ -519,11 +483,11 @@ export const SourceSelector = ({ avatarHandle, onSaveSuccess }: Props) => {
 
         {/* Desktop Save Button */}
         {view === "config" && (
-          <div className="hidden md:flex justify-end mt-6">
+          <div className="hidden md:flex justify-end mt-8">
             <button
               onClick={save}
               disabled={saving || loading || activeCount === 0}
-              className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl flex items-center gap-3 shadow-xl transition-all min-w-[240px] justify-center"
+              className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl flex items-center gap-3 shadow-xl transition-all min-w-[260px] justify-center"
             >
               {saving ? (
                 <>

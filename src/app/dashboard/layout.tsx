@@ -102,7 +102,7 @@ export default function DashboardLayout({
           {/* Page content */}
           <main
             className={`
-              flex-1 overflow-y-auto bg-gray-50 pt-16
+              flex-1 bg-gray-50 pt-16
               transition-all duration-300
               ${marginClass} 
             `}

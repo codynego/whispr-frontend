@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Brain, ArrowUp, Sparkles, AlertCircle } from "lucide-react";
+import { Brain, ArrowUp, Sparkles, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { ChatMessageBubble } from "@/components/avatars/ChatMessageBubble";
 

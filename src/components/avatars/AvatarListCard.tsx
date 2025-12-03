@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { 
-  Settings, Users, MessageSquare, TrendingUp, Cpu, 
+  Settings, Users, MessageSquare, Cpu, 
   Globe, Lock, ExternalLink, Calendar, Sparkles,
   ArrowRight, Activity
 } from "lucide-react"; 

@@ -17,6 +17,7 @@ interface AvatarData {
   handle: string;
   photo_url?: string | null;
   trained: boolean;
+  trained_at?: string | null; // Added property for last trained date
   conversations_count: number;
   messages_count: number;
   analytics: {
@@ -191,9 +192,9 @@ export default function AvatarDashboardPage() {
                     handle={avatar.handle}
                     photoUrl={avatar.photo_url}
                     trained={avatar.trained}
-                    // Used optional chaining for safety, though structure implies availability
                     totalConversations={avatar.conversations_count ?? 0}
                     totalMessages={avatar.messages_count ?? 0}
+                    lastTrainedDate={avatar.trained_at ?? null} // Pass as string or null
                     isPublic={avatar.settings?.is_public ?? false} // Use actual data when available
                   />
                 ))}

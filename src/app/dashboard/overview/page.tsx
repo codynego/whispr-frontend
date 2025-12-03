@@ -418,7 +418,7 @@ export default function WhisoneDashboard() {
                     </div>
                     <div>
                       <h4 className="text-lg font-bold text-white">Action Needed</h4>
-                      <p className="text-white/80 text-xs">Don't fall behind</p>
+                      <p className="text-white/80 text-xs">Don&apos;t fall behind</p>
                     </div>
                   </div>
                   

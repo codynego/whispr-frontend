@@ -153,7 +153,7 @@ export default function SourceSelector({ avatarHandle, onSaveSuccess }: Props) {
               </div>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Training Studio</h1>
-                <p className="text-sm text-gray-600 mt-0.5">Configure your avatar's learning sources</p>
+                <p className="text-sm text-gray-600 mt-0.5">Configure your avatar&apos;s learning sources</p>
               </div>
             </div>
 

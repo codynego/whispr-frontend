@@ -13,7 +13,6 @@ import {
   RefreshCw,
   Trash2,
   Upload,
-  X,
   CheckCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";

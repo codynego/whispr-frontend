@@ -1,18 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation"; // ← Added
 import { useAuth } from "@/context/AuthContext";
-import {
-  Brain,
-  Settings,
-  BarChart3,
-  Loader2,
-  Lock,
-  Globe,
-  AlertTriangle,
-  ArrowLeft, // ← Added
-} from "lucide-react";
+import { Brain, Settings, BarChart3, Loader2, Lock, Globe, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 
 import SourceSelector from "@/components/avatars/SourceSelector";
@@ -38,7 +28,6 @@ interface FullAvatarData {
 }
 
 export default function AvatarConfigurationPage({ params }: { params: { handle: string } }) {
-  const router = useRouter(); // ← Added
   const { accessToken } = useAuth();
   const avatarHandle = params.handle;
 
@@ -79,9 +68,9 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/20 flex items-center justify-center p-6">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-emerald-600 mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mx-auto mb-4" />
           <p className="text-lg font-medium text-gray-700">Loading avatar...</p>
         </div>
       </div>
@@ -90,7 +79,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
 
   if (!fullAvatarData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/20 flex items-center justify-center p-6">
         <div className="text-center max-w-md">
           <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-5" />
           <h2 className="text-2xl font-bold text-red-600">Avatar Not Found</h2>
@@ -104,50 +93,30 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
   const isPublic = fullAvatarData.settings?.is_public ?? false;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
 
-        {/* Header with Back Button */}
+        {/* Header */}
         <header className="mb-10">
-          {/* Back Button + Avatar Info */}
-          <div className="flex items-center justify-between mb-8">
-            <button
-              onClick={() => router.back()}
-              className="group flex items-center gap-3 px-5 py-3 bg-white/80 backdrop-blur-lg border border-gray-200 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300"
-            >
-              <div className="p-2 bg-emerald-100 rounded-xl group-hover:bg-emerald-200 transition-colors">
-                <ArrowLeft className="w-5 h-5 text-emerald-600" />
-              </div>
-              <span className="font-semibold text-gray-800">Back</span>
-            </button>
-
-            {/* Mobile title */}
-            <h1 className="sm:hidden text-xl font-bold text-gray-900 truncate">
-              {fullAvatarData.name}
-            </h1>
-
-            <div className="w-10" /> {/* Spacer */}
-          </div>
-
-          {/* Avatar Info */}
           <div className="flex flex-col gap-8">
+            {/* Avatar Info */}
             <div className="flex items-center gap-6">
               <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl shadow-2xl flex items-center justify-center ring-4 ring-white/50">
+                <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl shadow-2xl flex items-center justify-center ring-4 ring-white/50">
                   <Brain className="w-14 h-14 text-white" />
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full border-4 border-white shadow-md"></div>
               </div>
 
               <div className="flex-1 min-w-0">
-                <h1 className="hidden sm:block text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
                   {fullAvatarData.name}
                 </h1>
                 <div className="flex items-center gap-4 mt-3 flex-wrap">
                   <span className="text-lg text-gray-500 font-medium">@{fullAvatarData.handle}</span>
                   <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-all
                     ${isPublic 
-                      ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200" 
+                      ? "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200" 
                       : "bg-gray-100 text-gray-600 ring-1 ring-gray-300"
                     }`}>
                     {isPublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
@@ -169,7 +138,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                   onClick={() => setActiveTab(id as Tab)}
                   className={`flex items-center gap-3 px-6 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200
                     ${activeTab === id
-                      ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/30"
+                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     }`}
                 >
@@ -189,10 +158,10 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {/* Source Selector */}
               <section className="bg-white rounded-3xl shadow-xl border border-gray-200/70 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
-                <div className="p-6 sm:p-8 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50">
+                <div className="p-6 sm:p-8 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-white/80 rounded-2xl shadow-md">
-                      <Brain className="w-8 h-8 text-emerald-600" />
+                      <Brain className="w-8 h-8 text-indigo-600" />
                     </div>
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900">Training Data Sources</h2>
@@ -213,7 +182,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                 {/* Training Status */}
                 <section className="bg-white rounded-3xl shadow-xl border border-gray-200/70 p-7 hover:shadow-2xl transition-all duration-300">
                   <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                    <BarChart3 className="w-7 h-7 text-emerald-600" />
+                    <BarChart3 className="w-7 h-7 text-indigo-600" />
                     Training Status
                   </h3>
                   <TrainingStatusMonitor
@@ -288,7 +257,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                 onClick={() => setActiveTab(id as Tab)}
                 className={`flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl transition-all duration-200
                   ${activeTab === id 
-                    ? "text-emerald-600 bg-emerald-50" 
+                    ? "text-indigo-600 bg-indigo-50" 
                     : "text-gray-500 hover:text-gray-700"
                   }`}
               >

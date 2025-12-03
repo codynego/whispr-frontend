@@ -40,7 +40,7 @@ const formatDate = (date: string): string => {
   });
 };
 
-export const FileList = () => {
+export const VaultListPage = () => {
   const { accessToken } = useAuth();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [loading, setLoading] = useState(true);

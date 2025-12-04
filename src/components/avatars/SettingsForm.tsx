@@ -83,6 +83,14 @@ export const SettingsForm = ({ avatarHandle }: SettingsFormProps) => {
           }),
         }
       );
+      console.log("Settings save payload:", {
+        is_public: settings.is_public,
+        disclaimer_text: settings.disclaimer_text,
+        response_delay_ms: settings.response_delay_ms,
+        enable_owner_takeover: settings.enable_owner_takeover,
+      });
+
+      console.log("Settings save response status:", res);
 
       if (!res.ok) {
         const err = await res.json();

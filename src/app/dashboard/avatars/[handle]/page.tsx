@@ -43,6 +43,7 @@ interface Todo { id: number; task: string; }
 export default function AvatarConfigurationPage({ params }: { params: { handle: string } }) {
   const { accessToken } = useAuth();
   const avatarHandle = params.handle;
+  const [saving, setSaving] = useState(false);
 
   const [avatar, setAvatar] = useState<FullAvatarData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -273,7 +274,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
   const isPublic = avatar.settings?.is_public ?? false;
 
   // Add saving state and saveSettings function
-  const [saving, setSaving] = useState(false);
+  
 
   const saveSettings = async () => {
     if (!accessToken || !avatar) return;

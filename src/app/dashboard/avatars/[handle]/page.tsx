@@ -43,13 +43,13 @@ interface Todo { id: number; task: string; }
 export default function AvatarConfigurationPage({ params }: { params: { handle: string } }) {
   const { accessToken } = useAuth();
   const avatarHandle = params.handle;
-  const [saving, setSaving] = useState(false);
 
   const [avatar, setAvatar] = useState<FullAvatarData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("training");
+  const [saving, setSaving] = useState(false);
 
-  // Training sources
+  // Sources
   const [notes, setNotes] = useState<Note[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -58,9 +58,10 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
   const [selectedTodos, setSelectedTodos] = useState<number[]>([]);
   const [manualText, setManualText] = useState("");
 
-  // Training job
+  // Training state
   const [trainingJobId, setTrainingJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<"pending" | "running" | "completed" | "failed" | null>(null);
+  const [isPolling, setIsPolling] = useState(false);
   const [isSavingSources, setIsSavingSources] = useState(false);
 
   // Fetch Avatar
@@ -73,7 +74,15 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
       if (!res.ok) throw new Error();
       const data: FullAvatarData = await res.json();
       setAvatar(data);
-      setTrainingJobId(data.last_training_job_id);
+
+      // Only set job ID if it's actually running
+      if (data.last_training_job_id) {
+        setTrainingJobId(data.last_training_job_id);
+      } else {
+        setTrainingJobId(null);
+        setJobStatus(null);
+        setIsPolling(false);
+      }
     } catch (err) {
       console.error("Failed to load avatar");
     } finally {
@@ -81,7 +90,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
     }
   }, [accessToken, avatarHandle]);
 
-  // Fetch all user data sources
+  // Fetch user data sources
   const fetchSources = useCallback(async () => {
     if (!accessToken) return;
     try {
@@ -103,97 +112,143 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
     }
   }, [accessToken]);
 
-  // Poll training job status
+  // Poll job status — this is the source of truth
   const pollJobStatus = useCallback(async (jobId: string) => {
     if (!accessToken) return;
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/training-jobs/${jobId}/status/`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      if (!res.ok) throw new Error();
+
+      if (!res.ok) {
+        console.warn("Job status endpoint failed — clearing stale job");
+        setTrainingJobId(null);
+        setJobStatus(null);
+        setIsPolling(false);
+        return;
+      }
+
       const data = await res.json();
       setJobStatus(data.status);
 
       if (data.status === "completed" || data.status === "failed") {
         setTrainingJobId(null);
         setJobStatus(null);
-        fetchAvatar();
+        setIsPolling(false);
+        fetchAvatar(); // Refresh avatar data
       }
     } catch (err) {
-      console.error("Job poll failed");
+      console.error("Job polling failed", err);
+      // Don't leave user stuck forever
+      setTimeout(() => {
+        setTrainingJobId(null);
+        setJobStatus(null);
+        setIsPolling(false);
+      }, 10000);
     }
   }, [accessToken, fetchAvatar]);
 
-  useEffect(() => { fetchAvatar(); fetchSources(); }, [fetchAvatar, fetchSources]);
+  // Start polling when we have a job ID
   useEffect(() => {
     if (trainingJobId) {
+      setIsPolling(true);
       setJobStatus("running");
+
       const interval = setInterval(() => pollJobStatus(trainingJobId), 5000);
       return () => clearInterval(interval);
+    } else {
+      setIsPolling(false);
+      setJobStatus(null);
     }
   }, [trainingJobId, pollJobStatus]);
 
-  // Save selected sources + manual text → then start training
+  useEffect(() => {
+    fetchAvatar();
+    fetchSources();
+  }, [fetchAvatar, fetchSources]);
+
+  // Save sources + start training
   const saveSourcesAndTrain = async () => {
-  if (!accessToken || !avatar) return;
+    if (!accessToken || !avatar) return;
 
-  const hasSelection = 
-    selectedNotes.length > 0 || 
-    selectedReminders.length > 0 || 
-    selectedTodos.length > 0 || 
-    manualText.trim() !== "";  // ← This was the bug!
+    const hasSelection =
+      selectedNotes.length > 0 ||
+      selectedReminders.length > 0 ||
+      selectedTodos.length > 0 ||
+      manualText.trim() !== "";
 
-  if (!hasSelection) {
-    alert("Please select at least one source or add custom text.");
-    return;
-  }
+    if (!hasSelection) {
+      alert("Please select at least one source or add custom text.");
+      return;
+    }
 
-  setIsSavingSources(true);
-  try {
-    const sourcesPayload = [
-      ...(selectedNotes.length > 0 ? [{ source_type: "note", metadata: { item_ids: selectedNotes } }] : []),
-      ...(selectedReminders.length > 0 ? [{ source_type: "reminder", metadata: { item_ids: selectedReminders } }] : []),
-      ...(selectedTodos.length > 0 ? [{ source_type: "todo", metadata: { item_ids: selectedTodos } }] : []),
-      ...(manualText.trim() ? [{ source_type: "text", metadata: { content: manualText.trim() } }] : []),
-    ];
+    setIsSavingSources(true);
+    try {
+      const sourcesPayload = [
+        ...(selectedNotes.length > 0 ? [{ source_type: "note", metadata: { item_ids: selectedNotes } }] : []),
+        ...(selectedReminders.length > 0 ? [{ source_type: "reminder", metadata: { item_ids: selectedReminders } }] : []),
+        ...(selectedTodos.length > 0 ? [{ source_type: "todo", metadata: { item_ids: selectedTodos } }] : []),
+        ...(manualText.trim() ? [{ source_type: "text", metadata: { content: manualText.trim() } }] : []),
+      ];
 
-    // Save sources
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/sources/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(sourcesPayload),
-    });
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/sources/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(sourcesPayload),
+      });
 
-    // Start training
-    const trainRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/train/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({}),
-    });
+      const trainRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/train/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({}),
+      });
 
-    if (!trainRes.ok) throw new Error("Training failed");
-    const trainData = await trainRes.json();
-    setTrainingJobId(trainData.job_id);
+      if (!trainRes.ok) throw new Error();
+      const trainData = await trainRes.json();
+      setTrainingJobId(trainData.job_id);
 
-    // Reset
-    setSelectedNotes([]);
-    setSelectedReminders([]);
-    setSelectedTodos([]);
-    setManualText("");
-  } catch (err) {
-    console.error(err);
-    alert("Failed to save sources or start training.");
-  } finally {
-    setIsSavingSources(false);
-  }
-};
-  // Collapsible Source Section Component
+      setSelectedNotes([]);
+      setSelectedReminders([]);
+      setSelectedTodos([]);
+      setManualText("");
+    } catch (err) {
+      alert("Failed to save sources or start training.");
+    } finally {
+      setIsSavingSources(false);
+    }
+  };
+
+  // Save settings
+  const saveSettings = async () => {
+    if (!accessToken || !avatar) return;
+    setSaving(true);
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          name: avatar.name,
+          settings: avatar.settings,
+        }),
+      });
+      fetchAvatar();
+    } catch (err) {
+      alert("Failed to save settings.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Collapsible Section
   const CollapsibleSourceSection = ({ title, icon: Icon, items, selectedIds, onToggle, getTitle, getContent }: {
     title: string;
     icon: any;
@@ -204,7 +259,6 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
     getContent: (item: any) => string;
   }) => {
     const [open, setOpen] = useState(false);
-
     return (
       <div className="border border-gray-200 rounded-2xl overflow-hidden">
         <button
@@ -237,8 +291,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 text-sm">{getTitle(item)}</p>
                     <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                      {getContent(item).slice(0, 80)}
-                      {getContent(item).length > 80 && "..."}
+                      {getContent(item).slice(0, 80)}{getContent(item).length > 80 && "..."}
                     </p>
                   </div>
                 </label>
@@ -276,40 +329,13 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
   }
 
   const isPublic = avatar.settings?.is_public ?? false;
-
-  // Add saving state and saveSettings function
-  
-
-  const saveSettings = async () => {
-    if (!accessToken || !avatar) return;
-    setSaving(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          name: avatar.name,
-          settings: avatar.settings,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      // Optionally refetch avatar data
-      fetchAvatar();
-    } catch (err) {
-      alert("Failed to save settings. Please try again.");
-    } finally {
-      setSaving(false);
-    }
-  };
+  const isTrainingActive = isPolling || jobStatus === "running";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
       <div className="max-w-7xl mx-auto p-4 md:p-8">
 
-        {/* Header Card */}
+        {/* Header */}
         <div className="bg-white rounded-3xl shadow-xl p-6 md:p-8 mb-8 border-2 border-emerald-100">
           <div className="flex flex-col md:flex-row md:items-center gap-6">
             <div className="relative">
@@ -330,45 +356,19 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
               </div>
             </div>
 
-            {/* Desktop Tabs */}
             <div className="hidden md:flex flex-col gap-2">
-              {[
-                { id: "training", icon: Brain, label: "Training" },
-                { id: "settings", icon: Settings, label: "Settings" },
-                { id: "analytics", icon: BarChart3, label: "Analytics" },
-              ].map(({ id, icon: Icon, label }) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id as Tab)}
-                  className={`flex items-center gap-3 px-5 py-3 rounded-xl text-sm font-semibold transition-all ${
-                    activeTab === id
-                      ? "bg-emerald-500 text-white shadow-lg scale-105"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {label}
+              {[{ id: "training", icon: Brain, label: "Training" }, { id: "settings", icon: Settings, label: "Settings" }, { id: "analytics", icon: BarChart3, label: "Analytics" }].map(({ id, icon: Icon, label }) => (
+                <button key={id} onClick={() => setActiveTab(id as Tab)} className={`flex items-center gap-3 px-5 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === id ? "bg-emerald-500 text-white shadow-lg scale-105" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+                  <Icon className="w-5 h-5" /> {label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Mobile Tabs */}
           <div className="md:hidden mt-6 grid grid-cols-3 gap-2">
-            {[
-              { id: "training", icon: Brain },
-              { id: "settings", icon: Settings },
-              { id: "analytics", icon: BarChart3 },
-            ].map(({ id, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as Tab)}
-                className={`flex flex-col items-center gap-2 py-3 px-2 rounded-xl text-xs font-semibold transition-all ${
-                  activeTab === id ? "bg-emerald-500 text-white shadow-md" : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                {id.charAt(0).toUpperCase() + id.slice(1)}
+            {[{ id: "training", icon: Brain }, { id: "settings", icon: Settings }, { id: "analytics", icon: BarChart3 }].map(({ id, icon: Icon }) => (
+              <button key={id} onClick={() => setActiveTab(id as Tab)} className={`flex flex-col items-center gap-2 py-3 px-2 rounded-xl text-xs font-semibold transition-all ${activeTab === id ? "bg-emerald-500 text-white shadow-md" : "bg-gray-100 text-gray-600"}`}>
+                <Icon className="w-5 h-5" /> {id.charAt(0).toUpperCase() + id.slice(1)}
               </button>
             ))}
           </div>
@@ -377,7 +377,6 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
         {/* TRAINING TAB */}
         {activeTab === "training" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Sources Panel */}
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-6 text-white">
@@ -389,87 +388,47 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                 </div>
 
                 <div className="p-6 space-y-6">
-                  <CollapsibleSourceSection
-                    title="Notes"
-                    icon={FileText}
-                    items={notes}
-                    selectedIds={selectedNotes}
-                    onToggle={(id) => setSelectedNotes(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
-                    getTitle={(n) => n.title || "Untitled Note"}
-                    getContent={(n) => n.content}
-                  />
+                  <CollapsibleSourceSection title="Notes" icon={FileText} items={notes} selectedIds={selectedNotes} onToggle={(id) => setSelectedNotes(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])} getTitle={(n) => n.title || "Untitled"} getContent={(n) => n.content} />
+                  <CollapsibleSourceSection title="Reminders" icon={Bell} items={reminders} selectedIds={selectedReminders} onToggle={(id) => setSelectedReminders(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])} getTitle={(r) => r.text} getContent={(r) => r.text} />
+                  <CollapsibleSourceSection title="Todos" icon={CheckSquare} items={todos} selectedIds={selectedTodos} onToggle={(id) => setSelectedTodos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])} getTitle={(t) => t.task} getContent={(t) => t.task} />
 
-                  <CollapsibleSourceSection
-                    title="Reminders"
-                    icon={Bell}
-                    items={reminders}
-                    selectedIds={selectedReminders}
-                    onToggle={(id) => setSelectedReminders(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
-                    getTitle={(r) => r.text}
-                    getContent={(r) => r.text}
-                  />
-
-                  <CollapsibleSourceSection
-                    title="Todos"
-                    icon={CheckSquare}
-                    items={todos}
-                    selectedIds={selectedTodos}
-                    onToggle={(id) => setSelectedTodos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
-                    getTitle={(t) => t.task}
-                    getContent={(t) => t.task}
-                  />
-
-                  {/* Manual Text */}
                   <div className="border-2 border-dashed border-emerald-300 rounded-2xl p-6 bg-emerald-50/30">
                     <div className="flex items-center gap-3 mb-4">
                       <Plus className="w-6 h-6 text-emerald-600" />
                       <h3 className="text-lg font-semibold text-gray-900">Add Custom Text</h3>
                     </div>
-                    <textarea
-                      value={manualText}
-                      onChange={(e) => setManualText(e.target.value)}
-                      placeholder="Paste articles, documents, or any text you want your AI to learn..."
-                      className="w-full h-48 px-4 py-3 border border-emerald-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                    />
-                    <p className="text-xs text-gray-500 mt-2 text-right">
-                      {manualText.length} characters
-                    </p>
+                    <textarea value={manualText} onChange={(e) => setManualText(e.target.value)} placeholder="Paste articles, documents, or any text..." className="w-full h-48 px-4 py-3 border border-emerald-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" />
+                    <p className="text-xs text-gray-500 mt-2 text-right">{manualText.length} characters</p>
                   </div>
 
-                  {/* Save & Train */}
                   <button
                     onClick={saveSourcesAndTrain}
-                    disabled={isSavingSources || trainingJobId !== null}
+                    disabled={isSavingSources || isTrainingActive || (selectedNotes.length === 0 && selectedReminders.length === 0 && selectedTodos.length === 0 && manualText.trim() === "")}
                     className="w-full flex items-center justify-center gap-3 py-5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-lg hover:shadow-2xl transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSavingSources ? (
-                      <>Saving Sources...</>
-                    ) : trainingJobId && jobStatus === "running" ? (
-                      <>Training in Progress...</>
+                      <>Saving Sources... <Loader2 className="w-6 h-6 animate-spin" /></>
+                    ) : isTrainingActive ? (
+                      <>Training in Progress... <RefreshCw className="w-6 h-6 animate-spin" /></>
                     ) : (
-                      <>Save Sources & Start Training</>
+                      <>Save Sources & Start Training <Play className="w-6 h-6" /></>
                     )}
-                    {!isSavingSources && !trainingJobId && <Play className="w-6 h-6" />}
-                    {isSavingSources && <Loader2 className="w-6 h-6 animate-spin" />}
-                    {trainingJobId && <RefreshCw className="w-6 h-6 animate-spin" />}
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Right Column */}
             <div className="space-y-6">
-              {/* Training Status */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <RefreshCw className={`w-6 h-6 ${trainingJobId ? 'text-emerald-500 animate-spin' : 'text-gray-400'}`} />
+                  <RefreshCw className={`w-6 h-6 ${isTrainingActive ? 'text-emerald-500 animate-spin' : 'text-gray-400'}`} />
                   <h3 className="text-lg font-bold text-gray-900">Training Status</h3>
                 </div>
-                {trainingJobId ? (
+                {isTrainingActive ? (
                   <div className="p-6 bg-emerald-50 rounded-xl text-center">
                     <Clock className="w-10 h-10 text-emerald-600 animate-pulse mx-auto mb-3" />
                     <p className="font-bold text-emerald-900">Training in Progress</p>
-                    <p className="text-xs text-emerald-600 mt-1">Job: {trainingJobId.slice(0, 8)}...</p>
+                    <p className="text-xs text-emerald-600 mt-1">Job: {trainingJobId?.slice(0, 8)}...</p>
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -479,37 +438,29 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                 )}
               </div>
 
-              {/* Danger Zone */}
               <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl border-2 border-red-200 p-6 shadow-lg">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
                     <AlertTriangle className="w-6 h-6 text-white" />
                   </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-red-900">Danger Zone</h3>
-                    <p className="text-xs text-red-600">Irreversible action</p>
-                  </div>
+                  <h3 className="text-lg font-bold text-red-900">Danger Zone</h3>
                 </div>
-                <p className="text-sm text-red-800 mb-4">
-                  Permanently delete this avatar and all associated data.
-                </p>
+                <p className="text-sm text-red-800 mb-4">Permanently delete this avatar and all data.</p>
                 <button className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition flex items-center justify-center gap-2">
-                  <Trash2 className="w-4 h-4" />
-                  Delete Avatar
+                  <Trash2 className="w-4 h-4" /> Delete Avatar
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* SETTINGS TAB */}
+        {/* SETTINGS & ANALYTICS — unchanged (kept clean) */}
         {activeTab === "settings" && (
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <div className="flex items-center gap-3 mb-8">
               <Settings className="w-7 h-7 text-emerald-600" />
               <h2 className="text-2xl font-bold text-gray-900">Avatar Settings</h2>
             </div>
-
             <div className="space-y-8 max-w-2xl">
               <div className="p-6 bg-gray-50 rounded-xl">
                 <div className="flex items-center justify-between">
@@ -518,27 +469,15 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                     <p className="text-sm text-gray-600">Allow others to chat with your avatar</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isPublic}
-                      onChange={(e) => setAvatar(a => a ? { ...a, settings: { ...a.settings, is_public: e.target.checked } } : null)}
-                      className="sr-only peer"
-                    />
+                    <input type="checkbox" checked={isPublic} onChange={(e) => setAvatar(a => a ? { ...a, settings: { ...a.settings, is_public: e.target.checked } } : null)} className="sr-only peer" />
                     <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500"></div>
                   </label>
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Avatar Name</label>
-                <input
-                  type="text"
-                  value={avatar.name}
-                  onChange={(e) => setAvatar(a => a ? { ...a, name: e.target.value } : null)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
+                <input type="text" value={avatar.name} onChange={(e) => setAvatar(a => a ? { ...a, name: e.target.value } : null)} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
-
               <button onClick={saveSettings} disabled={saving} className="w-full py-4 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition shadow-md disabled:opacity-50">
                 {saving ? "Saving..." : "Save Settings"}
               </button>
@@ -546,14 +485,12 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
           </div>
         )}
 
-        {/* ANALYTICS TAB */}
         {activeTab === "analytics" && (
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <div className="flex items-center gap-3 mb-8">
               <BarChart3 className="w-7 h-7 text-emerald-600" />
               <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200">
                 <p className="text-sm text-emerald-700 font-medium mb-1">Total Interactions</p>
@@ -568,7 +505,6 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                 <p className="text-3xl font-bold text-purple-900">{(avatar.analytics?.average_response_time_ms || 0) / 1000}s</p>
               </div>
             </div>
-
             <div className="h-80 bg-gray-50 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300">
               <p className="text-gray-400 text-lg">Detailed charts coming soon</p>
             </div>

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Brain, Settings, BarChart3, Loader2, Lock, Globe, AlertTriangle,
   Sparkles, Database, Trash2, Play, RefreshCw, CheckCircle2, Clock,
-  FileText, Bell, CheckSquare
+  FileText, Bell, CheckSquare, ChevronDown, Plus
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -24,14 +24,6 @@ interface AvatarAnalytics {
   average_response_time_ms: number;
 }
 
-interface AvatarSource {
-  id: string;
-  source_type: "note" | "reminder" | "todo" | "document" | "chat";
-  metadata: { id: number; title?: string; content?: string };
-  include_for_tone: boolean;
-  include_for_knowledge: boolean;
-}
-
 interface FullAvatarData {
   id: string;
   name: string;
@@ -44,19 +36,33 @@ interface FullAvatarData {
   analytics: AvatarAnalytics;
 }
 
+interface Note { id: number; title: string; content: string; }
+interface Reminder { id: number; text: string; }
+interface Todo { id: number; task: string; }
+
 export default function AvatarConfigurationPage({ params }: { params: { handle: string } }) {
   const { accessToken } = useAuth();
   const avatarHandle = params.handle;
 
   const [avatar, setAvatar] = useState<FullAvatarData | null>(null);
-  const [sources, setSources] = useState<AvatarSource[]>([]);
-  const [trainingJobId, setTrainingJobId] = useState<string | null>(null);
-  const [jobStatus, setJobStatus] = useState<"pending" | "running" | "completed" | "failed" | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("training");
 
-  // Fetch Avatar + Settings + Analytics
+  // Training sources
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [selectedNotes, setSelectedNotes] = useState<number[]>([]);
+  const [selectedReminders, setSelectedReminders] = useState<number[]>([]);
+  const [selectedTodos, setSelectedTodos] = useState<number[]>([]);
+  const [manualText, setManualText] = useState("");
+
+  // Training job
+  const [trainingJobId, setTrainingJobId] = useState<string | null>(null);
+  const [jobStatus, setJobStatus] = useState<"pending" | "running" | "completed" | "failed" | null>(null);
+  const [isSavingSources, setIsSavingSources] = useState(false);
+
+  // Fetch Avatar
   const fetchAvatar = useCallback(async () => {
     if (!accessToken) return;
     try {
@@ -74,7 +80,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
     }
   }, [accessToken, avatarHandle]);
 
-  // Fetch Training Sources (Notes, Reminders, Todos)
+  // Fetch all user data sources
   const fetchSources = useCallback(async () => {
     if (!accessToken) return;
     try {
@@ -84,41 +90,19 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/`, { headers: { Authorization: `Bearer ${accessToken}` } }),
       ]);
 
-      const notes = (await notesRes.json()).results || [];
-      const reminders = (await remindersRes.json()).results || [];
-      const todos = (await todosRes.json()).results || [];
+      const notesData = (await notesRes.json()).results || [];
+      const remindersData = (await remindersRes.json()).results || [];
+      const todosData = (await todosRes.json()).results || [];
 
-      const mapped: AvatarSource[] = [
-        ...notes.map((n: any) => ({
-          id: `note-${n.id}`,
-          source_type: "note" as const,
-          metadata: { id: n.id, title: n.title || "Untitled Note", content: n.content },
-          include_for_tone: true,
-          include_for_knowledge: true,
-        })),
-        ...reminders.map((r: any) => ({
-          id: `reminder-${r.id}`,
-          source_type: "reminder" as const,
-          metadata: { id: r.id, title: r.text, content: r.text },
-          include_for_tone: true,
-          include_for_knowledge: false,
-        })),
-        ...todos.map((t: any) => ({
-          id: `todo-${t.id}`,
-          source_type: "todo" as const,
-          metadata: { id: t.id, title: t.task, content: t.task },
-          include_for_tone: true,
-          include_for_knowledge: false,
-        })),
-      ];
-
-      setSources(mapped);
+      setNotes(notesData);
+      setReminders(remindersData);
+      setTodos(todosData);
     } catch (err) {
       console.error("Failed to load sources");
     }
   }, [accessToken]);
 
-  // Poll Training Job Status
+  // Poll training job status
   const pollJobStatus = useCallback(async (jobId: string) => {
     if (!accessToken) return;
     try {
@@ -131,6 +115,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
 
       if (data.status === "completed" || data.status === "failed") {
         setTrainingJobId(null);
+        setJobStatus(null);
         fetchAvatar();
       }
     } catch (err) {
@@ -138,69 +123,126 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
     }
   }, [accessToken, fetchAvatar]);
 
-  useEffect(() => {
-    fetchAvatar();
-    fetchSources();
-  }, [fetchAvatar, fetchSources]);
-
+  useEffect(() => { fetchAvatar(); fetchSources(); }, [fetchAvatar, fetchSources]);
   useEffect(() => {
     if (trainingJobId) {
       setJobStatus("running");
-      const interval = setInterval(() => pollJobStatus(trainingJobId), 4000);
+      const interval = setInterval(() => pollJobStatus(trainingJobId), 5000);
       return () => clearInterval(interval);
     }
   }, [trainingJobId, pollJobStatus]);
 
-  // Save Settings
-  const saveSettings = async () => {
-    if (!avatar || !accessToken) return;
-    setSaving(true);
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/settings/`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          is_public: avatar.settings.is_public,
-          // Add more fields as needed
-        }),
-      });
-    } catch (err) {
-      alert("Failed to save settings");
-    } finally {
-      setSaving(false);
-    }
-  };
+  // Save selected sources + manual text → then start training
+  const saveSourcesAndTrain = async () => {
+    if (!accessToken || !avatar) return;
 
-  // Start Training
-  const startTraining = async () => {
-    if (!accessToken) return;
+    const hasSelection = selectedNotes.length > 0 || selectedReminders.length > 0 || selectedTodos.length > 0 || manualText.trim();
+
+    if (!hasSelection) {
+      alert("Please select at least one source or add custom text.");
+      return;
+    }
+
+    setIsSavingSources(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/train/`, {
+      const sourcesPayload = [
+        ...(selectedNotes.length > 0 ? [{ source_type: "note", metadata: { item_ids: selectedNotes } }] : []),
+        ...(selectedReminders.length > 0 ? [{ source_type: "reminder", metadata: { item_ids: selectedReminders } }] : []),
+        ...(selectedTodos.length > 0 ? [{ source_type: "todo", metadata: { item_ids: selectedTodos } }] : []),
+        ...(manualText.trim() ? [{ source_type: "text", metadata: { content: manualText.trim() } }] : []),
+      ];
+
+      // Save sources
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/sources/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          sources: sources
-            .filter(s => s.include_for_knowledge || s.include_for_tone)
-            .map(s => ({
-              source_type: s.source_type,
-              source_id: s.metadata.id,
-              include_for_tone: s.include_for_tone,
-              include_for_knowledge: s.include_for_knowledge,
-            })),
-        }),
+        body: JSON.stringify(sourcesPayload),
       });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setTrainingJobId(data.job_id);
+
+      // Start training
+      const trainRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/train/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!trainRes.ok) throw new Error();
+      const trainData = await trainRes.json();
+      setTrainingJobId(trainData.job_id);
+
+      // Reset form
+      setSelectedNotes([]);
+      setSelectedReminders([]);
+      setSelectedTodos([]);
+      setManualText("");
     } catch (err) {
-      alert("Failed to start training");
+      alert("Failed to save sources or start training. Please try again.");
+    } finally {
+      setIsSavingSources(false);
     }
+  };
+
+  // Collapsible Source Section Component
+  const CollapsibleSourceSection = ({ title, icon: Icon, items, selectedIds, onToggle, getTitle, getContent }: {
+    title: string;
+    icon: any;
+    items: any[];
+    selectedIds: number[];
+    onToggle: (id: number) => void;
+    getTitle: (item: any) => string;
+    getContent: (item: any) => string;
+  }) => {
+    const [open, setOpen] = useState(false);
+
+    return (
+      <div className="border border-gray-200 rounded-2xl overflow-hidden">
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition"
+        >
+          <div className="flex items-center gap-3">
+            <Icon className="w-6 h-6 text-emerald-600" />
+            <div className="text-left">
+              <h3 className="font-semibold text-gray-900">{title}</h3>
+              <p className="text-xs text-gray-500">{items.length} items • {selectedIds.length} selected</p>
+            </div>
+          </div>
+          <ChevronDown className={`w-5 h-5 text-gray-500 transition ${open ? "rotate-180" : ""}`} />
+        </button>
+
+        {open && (
+          <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 space-y-3">
+            {items.length === 0 ? (
+              <p className="text-center text-sm text-gray-500 py-6">No {title.toLowerCase()} yet</p>
+            ) : (
+              items.map((item) => (
+                <label key={item.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-white transition cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(item.id)}
+                    onChange={() => onToggle(item.id)}
+                    className="mt-1 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 text-sm">{getTitle(item)}</p>
+                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                      {getContent(item).slice(0, 80)}
+                      {getContent(item).length > 80 && "..."}
+                    </p>
+                  </div>
+                </label>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (loading) {
@@ -208,7 +250,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-6">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-emerald-500 mx-auto mb-4" />
-          <p className="text-lg text-gray-600 font-medium">Loading avatar...</p>
+          <p className="text-lg text-gray-600 font-medium">Loading your avatar...</p>
         </div>
       </div>
     );
@@ -229,6 +271,34 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
   }
 
   const isPublic = avatar.settings?.is_public ?? false;
+
+  // Add saving state and saveSettings function
+  const [saving, setSaving] = useState(false);
+
+  const saveSettings = async () => {
+    if (!accessToken || !avatar) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          name: avatar.name,
+          settings: avatar.settings,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      // Optionally refetch avatar data
+      fetchAvatar();
+    } catch (err) {
+      alert("Failed to save settings. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
@@ -255,19 +325,45 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
               </div>
             </div>
 
+            {/* Desktop Tabs */}
             <div className="hidden md:flex flex-col gap-2">
-              {[{ id: "training", icon: Brain, label: "Training" }, { id: "settings", icon: Settings, label: "Settings" }, { id: "analytics", icon: BarChart3, label: "Analytics" }].map(({ id, icon: Icon, label }) => (
-                <button key={id} onClick={() => setActiveTab(id as Tab)} className={`flex items-center gap-3 px-5 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === id ? "bg-emerald-500 text-white shadow-lg scale-105" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-                  <Icon className="w-5 h-5" /> {label}
+              {[
+                { id: "training", icon: Brain, label: "Training" },
+                { id: "settings", icon: Settings, label: "Settings" },
+                { id: "analytics", icon: BarChart3, label: "Analytics" },
+              ].map(({ id, icon: Icon, label }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as Tab)}
+                  className={`flex items-center gap-3 px-5 py-3 rounded-xl text-sm font-semibold transition-all ${
+                    activeTab === id
+                      ? "bg-emerald-500 text-white shadow-lg scale-105"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  {label}
                 </button>
               ))}
             </div>
           </div>
 
+          {/* Mobile Tabs */}
           <div className="md:hidden mt-6 grid grid-cols-3 gap-2">
-            {[{ id: "training", icon: Brain }, { id: "settings", icon: Settings }, { id: "analytics", icon: BarChart3 }].map(({ id, icon: Icon }) => (
-              <button key={id} onClick={() => setActiveTab(id as Tab)} className={`flex flex-col items-center gap-2 py-3 px-2 rounded-xl text-xs font-semibold transition-all ${activeTab === id ? "bg-emerald-500 text-white shadow-md" : "bg-gray-100 text-gray-600"}`}>
-                <Icon className="w-5 h-5" /> {id.charAt(0).toUpperCase() + id.slice(1)}
+            {[
+              { id: "training", icon: Brain },
+              { id: "settings", icon: Settings },
+              { id: "analytics", icon: BarChart3 },
+            ].map(({ id, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id as Tab)}
+                className={`flex flex-col items-center gap-2 py-3 px-2 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === id ? "bg-emerald-500 text-white shadow-md" : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                {id.charAt(0).toUpperCase() + id.slice(1)}
               </button>
             ))}
           </div>
@@ -276,6 +372,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
         {/* TRAINING TAB */}
         {activeTab === "training" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Sources Panel */}
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-6 text-white">
@@ -283,73 +380,101 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                     <Database className="w-7 h-7" />
                     <h2 className="text-2xl font-bold">Training Data Sources</h2>
                   </div>
-                  <p className="text-emerald-50">Select what your AI learns from</p>
+                  <p className="text-emerald-50">Choose what your AI learns from</p>
                 </div>
-                <div className="p-6 space-y-4">
-                  {sources.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8">No data sources available</p>
-                  ) : (
-                    sources.map((source) => {
-                      const Icon = source.source_type === "note" ? FileText : source.source_type === "reminder" ? Bell : CheckSquare;
-                      return (
-                        <div key={source.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                              <Icon className="w-5 h-5 text-emerald-600" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-900">{source.metadata.title || "Untitled"}</p>
-                              <p className="text-xs text-gray-500 capitalize">{source.source_type}</p>
-                            </div>
-                          </div>
-                          <div className="flex gap-3">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input type="checkbox" checked={source.include_for_knowledge} onChange={(e) => {
-                                setSources(s => s.map(s2 => s2.id === source.id ? { ...s2, include_for_knowledge: e.target.checked } : s2));
-                              }} className="w-4 h-4 text-emerald-600 rounded" />
-                              <span className="text-xs text-gray-600">Knowledge</span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input type="checkbox" checked={source.include_for_tone} onChange={(e) => {
-                                setSources(s => s.map(s2 => s2.id === source.id ? { ...s2, include_for_tone: e.target.checked } : s2));
-                              }} className="w-4 h-4 text-emerald-600 rounded" />
-                              <span className="text-xs text-gray-600">Tone</span>
-                            </label>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                  <button onClick={startTraining} disabled={trainingJobId !== null} className="w-full mt-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3">
-                    <Play className="w-5 h-5" />
-                    {trainingJobId ? "Training in Progress..." : "Start Training"}
+
+                <div className="p-6 space-y-6">
+                  <CollapsibleSourceSection
+                    title="Notes"
+                    icon={FileText}
+                    items={notes}
+                    selectedIds={selectedNotes}
+                    onToggle={(id) => setSelectedNotes(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+                    getTitle={(n) => n.title || "Untitled Note"}
+                    getContent={(n) => n.content}
+                  />
+
+                  <CollapsibleSourceSection
+                    title="Reminders"
+                    icon={Bell}
+                    items={reminders}
+                    selectedIds={selectedReminders}
+                    onToggle={(id) => setSelectedReminders(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+                    getTitle={(r) => r.text}
+                    getContent={(r) => r.text}
+                  />
+
+                  <CollapsibleSourceSection
+                    title="Todos"
+                    icon={CheckSquare}
+                    items={todos}
+                    selectedIds={selectedTodos}
+                    onToggle={(id) => setSelectedTodos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+                    getTitle={(t) => t.task}
+                    getContent={(t) => t.task}
+                  />
+
+                  {/* Manual Text */}
+                  <div className="border-2 border-dashed border-emerald-300 rounded-2xl p-6 bg-emerald-50/30">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Plus className="w-6 h-6 text-emerald-600" />
+                      <h3 className="text-lg font-semibold text-gray-900">Add Custom Text</h3>
+                    </div>
+                    <textarea
+                      value={manualText}
+                      onChange={(e) => setManualText(e.target.value)}
+                      placeholder="Paste articles, documents, or any text you want your AI to learn..."
+                      className="w-full h-48 px-4 py-3 border border-emerald-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                    />
+                    <p className="text-xs text-gray-500 mt-2 text-right">
+                      {manualText.length} characters
+                    </p>
+                  </div>
+
+                  {/* Save & Train */}
+                  <button
+                    onClick={saveSourcesAndTrain}
+                    disabled={isSavingSources || trainingJobId !== null}
+                    className="w-full flex items-center justify-center gap-3 py-5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-lg hover:shadow-2xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSavingSources ? (
+                      <>Saving Sources...</>
+                    ) : trainingJobId ? (
+                      <>Training in Progress...</>
+                    ) : (
+                      <>Save Sources & Start Training</>
+                    )}
+                    {!isSavingSources && !trainingJobId && <Play className="w-6 h-6" />}
+                    {isSavingSources && <Loader2 className="w-6 h-6 animate-spin" />}
+                    {trainingJobId && <RefreshCw className="w-6 h-6 animate-spin" />}
                   </button>
                 </div>
               </div>
             </div>
 
+            {/* Right Column */}
             <div className="space-y-6">
+              {/* Training Status */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <RefreshCw className={`w-6 h-6 ${trainingJobId ? 'text-emerald-500 animate-spin' : 'text-gray-400'}`} />
                   <h3 className="text-lg font-bold text-gray-900">Training Status</h3>
                 </div>
                 {trainingJobId ? (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-emerald-50 rounded-xl text-center">
-                      <Clock className="w-8 h-8 text-emerald-600 animate-pulse mx-auto mb-2" />
-                      <p className="font-semibold text-emerald-900">Training in Progress</p>
-                      <p className="text-xs text-emerald-600">Job: {trainingJobId.slice(0, 8)}...</p>
-                    </div>
+                  <div className="p-6 bg-emerald-50 rounded-xl text-center">
+                    <Clock className="w-10 h-10 text-emerald-600 animate-pulse mx-auto mb-3" />
+                    <p className="font-bold text-emerald-900">Training in Progress</p>
+                    <p className="text-xs text-emerald-600 mt-1">Job: {trainingJobId.slice(0, 8)}...</p>
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <CheckCircle2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">Ready to train</p>
+                    <CheckCircle2 className="w-14 h-14 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">Ready to train</p>
                   </div>
                 )}
               </div>
 
+              {/* Danger Zone */}
               <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl border-2 border-red-200 p-6 shadow-lg">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
@@ -360,7 +485,9 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                     <p className="text-xs text-red-600">Irreversible action</p>
                   </div>
                 </div>
-                <p className="text-sm text-red-800 mb-4">Permanently delete this avatar and all data.</p>
+                <p className="text-sm text-red-800 mb-4">
+                  Permanently delete this avatar and all associated data.
+                </p>
                 <button className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition flex items-center justify-center gap-2">
                   <Trash2 className="w-4 h-4" />
                   Delete Avatar

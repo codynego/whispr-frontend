@@ -130,6 +130,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
 
       const data = await res.json();
       setJobStatus(data.status);
+      console.log("Polled job status:", data.status);
 
       if (data.status === "completed" || data.status === "failed") {
         setTrainingJobId(null);

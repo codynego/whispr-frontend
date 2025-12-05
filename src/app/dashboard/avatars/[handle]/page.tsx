@@ -135,60 +135,64 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
 
   // Save selected sources + manual text → then start training
   const saveSourcesAndTrain = async () => {
-    if (!accessToken || !avatar) return;
+  if (!accessToken || !avatar) return;
 
-    const hasSelection = selectedNotes.length > 0 || selectedReminders.length > 0 || selectedTodos.length > 0 || manualText.trim();
+  const hasSelection = 
+    selectedNotes.length > 0 || 
+    selectedReminders.length > 0 || 
+    selectedTodos.length > 0 || 
+    manualText.trim() !== "";  // ← This was the bug!
 
-    if (!hasSelection) {
-      alert("Please select at least one source or add custom text.");
-      return;
-    }
+  if (!hasSelection) {
+    alert("Please select at least one source or add custom text.");
+    return;
+  }
 
-    setIsSavingSources(true);
-    try {
-      const sourcesPayload = [
-        ...(selectedNotes.length > 0 ? [{ source_type: "note", metadata: { item_ids: selectedNotes } }] : []),
-        ...(selectedReminders.length > 0 ? [{ source_type: "reminder", metadata: { item_ids: selectedReminders } }] : []),
-        ...(selectedTodos.length > 0 ? [{ source_type: "todo", metadata: { item_ids: selectedTodos } }] : []),
-        ...(manualText.trim() ? [{ source_type: "text", metadata: { content: manualText.trim() } }] : []),
-      ];
+  setIsSavingSources(true);
+  try {
+    const sourcesPayload = [
+      ...(selectedNotes.length > 0 ? [{ source_type: "note", metadata: { item_ids: selectedNotes } }] : []),
+      ...(selectedReminders.length > 0 ? [{ source_type: "reminder", metadata: { item_ids: selectedReminders } }] : []),
+      ...(selectedTodos.length > 0 ? [{ source_type: "todo", metadata: { item_ids: selectedTodos } }] : []),
+      ...(manualText.trim() ? [{ source_type: "text", metadata: { content: manualText.trim() } }] : []),
+    ];
 
-      // Save sources
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/sources/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(sourcesPayload),
-      });
+    // Save sources
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/sources/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(sourcesPayload),
+    });
 
-      // Start training
-      const trainRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/train/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({}),
-      });
+    // Start training
+    const trainRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/train/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({}),
+    });
 
-      if (!trainRes.ok) throw new Error();
-      const trainData = await trainRes.json();
-      setTrainingJobId(trainData.job_id);
+    if (!trainRes.ok) throw new Error("Training failed");
+    const trainData = await trainRes.json();
+    setTrainingJobId(trainData.job_id);
 
-      // Reset form
-      setSelectedNotes([]);
-      setSelectedReminders([]);
-      setSelectedTodos([]);
-      setManualText("");
-    } catch (err) {
-      alert("Failed to save sources or start training. Please try again.");
-    } finally {
-      setIsSavingSources(false);
-    }
-  };
-
+    // Reset
+    setSelectedNotes([]);
+    setSelectedReminders([]);
+    setSelectedTodos([]);
+    setManualText("");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to save sources or start training.");
+  } finally {
+    setIsSavingSources(false);
+  }
+};
   // Collapsible Source Section Component
   const CollapsibleSourceSection = ({ title, icon: Icon, items, selectedIds, onToggle, getTitle, getContent }: {
     title: string;

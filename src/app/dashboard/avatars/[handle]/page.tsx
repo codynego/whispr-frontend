@@ -456,7 +456,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                     <Database className="w-7 h-7" />
                     <h2 className="text-2xl font-bold">Training Data Sources</h2>
                   </div>
-                  <p className="text-emerald-50">Fine-tune your AI's knowledge and personality</p>
+                  <p className="text-emerald-50">Fine-tune your AI&apos;s knowledge and personality</p>
                 </div>
 
                 <div className="p-6 space-y-6">

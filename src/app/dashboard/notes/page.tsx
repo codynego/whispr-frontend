@@ -40,7 +40,7 @@ export default function NotePage() {
             
         const data = await res.json();
         console.log("Fetched notes:", data);
-        setNotes(data.results ?? []);  // ← THIS FIXES EVERYTHING
+        setNotes(data.results ?? []);
         } catch (error) {
             console.error("Could not load notes:", error);
         } finally {

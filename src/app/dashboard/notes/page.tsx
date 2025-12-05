@@ -134,10 +134,12 @@ export default function NotePage() {
     };
 
     // Filter notes by search
-    const filteredNotes = notes.filter(note => 
-        note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        note.content.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredNotes = Array.isArray(notes) 
+        ? notes.filter(note => 
+            note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            note.content.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        : [];
 
     // Format date
     const formatDate = (dateString: string) => {

@@ -37,9 +37,9 @@ export default function TodoPage() {
             
             if (!res.ok) throw new Error("Failed to fetch todos.");
             
-            const data: Todo[] = await res.json();
+            const data = await res.json();
             console.log("Fetched todos:", data);
-            setTodos(data);
+            setTodos(data.results ?? []);;
         } catch (error) {
             console.error("Could not load todos:", error);
         } finally {

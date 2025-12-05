@@ -114,56 +114,57 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
 
   // Poll job status — this is the source of truth
   const pollJobStatus = useCallback(async (jobId: string) => {
-    if (!accessToken) return;
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/training-jobs/${jobId}/status/`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
-      if (!res.ok) {
-        console.warn("Job status endpoint failed — clearing stale job");
-        setTrainingJobId(null);
-        setJobStatus(null);
-        setIsPolling(false);
-        return;
-      }
+      if (!res.ok) throw new Error();
 
       const data = await res.json();
-      console.log("Job status data:", data);
-      console.log("Polled job status:", data.status);
-      setJobStatus(data.status);
-      
+      console.log("Job status:", data.status);
 
+      setJobStatus(data.status);
+
+      // THIS IS THE KEY: Stop polling when done!
       if (data.status === "completed" || data.status === "failed") {
-        setTrainingJobId(null);
+        setTrainingJobId(null);  // ← This kills the interval instantly!
         setJobStatus(null);
         setIsPolling(false);
         fetchAvatar(); // Refresh avatar data
       }
     } catch (err) {
-      console.error("Job polling failed", err);
-      // Don't leave user stuck forever
-      setTimeout(() => {
-        setTrainingJobId(null);
-        setJobStatus(null);
-        setIsPolling(false);
-      }, 10000);
+      console.error("Polling failed", err);
+      // Safety: never leave user stuck
+      setTrainingJobId(null);
+      setIsPolling(false);
     }
   }, [accessToken, fetchAvatar]);
 
   // Start polling when we have a job ID
+// This effect starts/stops polling based ONLY on trainingJobId
   useEffect(() => {
-    if (trainingJobId) {
-      setIsPolling(true);
-      setJobStatus("running");
-
-      const interval = setInterval(() => pollJobStatus(trainingJobId), 5000);
-      return () => clearInterval(interval);
-    } else {
+    if (!trainingJobId) {
+      // No job → no polling
       setIsPolling(false);
       setJobStatus(null);
+      return;
     }
-  }, [trainingJobId, pollJobStatus]);
+
+    // We have a job → start polling
+    setIsPolling(true);
+    setJobStatus("running");
+
+    const interval = setInterval(() => {
+      pollJobStatus(trainingJobId);
+    }, 5000);
+
+    // This runs when trainingJobId changes (especially when set to null!)
+    return () => {
+      clearInterval(interval);
+      setIsPolling(false);
+    };
+}, [trainingJobId, pollJobStatus]); // ← Re-runs when trainingJobId changes!
 
   useEffect(() => {
     fetchAvatar();
@@ -332,7 +333,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
   }
 
   const isPublic = avatar.settings?.is_public ?? false;
-  const isTrainingActive =  jobStatus === "running";
+  const isTrainingActive =  isPolling || jobStatus === "running";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">

@@ -19,7 +19,7 @@ interface FullAvatarData {
 }
 
 // Mock Auth Context
-const useAuth = () => ({ accessToken: 'mock-token' });
+import { useAuth } from "@/context/AuthContext";
 
 export default function AvatarConfigurationPage({ params }: { params: { handle: string } }) {
   const { accessToken } = useAuth();

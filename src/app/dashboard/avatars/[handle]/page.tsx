@@ -444,7 +444,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                   >
                     {isSavingSources ? (
                       <>Saving Sources...</>
-                    ) : trainingJobId ? (
+                    ) : trainingJobId && jobStatus === "running" ? (
                       <>Training in Progress...</>
                     ) : (
                       <>Save Sources & Start Training</>

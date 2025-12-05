@@ -97,7 +97,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
       setLoading(false);
     }
   }, [accessToken, avatarHandle]);
-  
+
   // Fetch sources
   const fetchSources = useCallback(async () => {
     if (!accessToken) return;
@@ -201,6 +201,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify(sourcesPayload),
       });
+      console.log("source payload", sourcesPayload);
 
       const trainRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/train/`, {
         method: "POST",

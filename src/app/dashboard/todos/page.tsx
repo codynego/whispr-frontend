@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, CheckCircle2, Circle, Loader2, Trash2, Edit2, Check, X, Calendar, Filter } from 'lucide-react';
+import { Plus, CheckCircle2, Circle, Loader2, Trash2, Edit2, Check, X, Calendar } from 'lucide-react';
 
 interface Todo {
     id: number;
@@ -13,7 +13,7 @@ interface Todo {
 }
 
 // Mock Auth Context
-const useAuth = () => ({ accessToken: 'mock-token' });
+import { useAuth } from "@/context/AuthContext";
 
 export default function TodoPage() {
     const { accessToken } = useAuth();

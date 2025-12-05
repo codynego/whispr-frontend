@@ -1,16 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { Brain, Settings, BarChart3, Loader2, Lock, Globe, AlertTriangle } from "lucide-react";
-import toast from "react-hot-toast";
-
-import  SourceSelector  from "@/components/avatars/SourceSelector";
-import { TrainingTriggerButton } from "@/components/avatars/TrainingTriggerButton";
-import { TrainingStatusMonitor, ManualCheckFunction } from "@/components/avatars/TrainingStatusMonitor";
-import { SettingsForm } from "@/components/avatars/SettingsForm";
-import { AnalyticsDisplay } from "@/components/avatars/AnalyticsDisplay";
-import { DeleteAvatarButton } from "@/components/avatars/DeleteAvatarButton";
+import { Brain, Settings, BarChart3, Loader2, Lock, Globe, AlertTriangle, Sparkles, Database, Trash2, Play, RefreshCw, CheckCircle2, Clock } from "lucide-react";
 
 type Tab = "training" | "settings" | "analytics";
 
@@ -27,6 +18,9 @@ interface FullAvatarData {
   settings: AvatarSettings;
 }
 
+// Mock Auth Context
+const useAuth = () => ({ accessToken: 'mock-token' });
+
 export default function AvatarConfigurationPage({ params }: { params: { handle: string } }) {
   const { accessToken } = useAuth();
   const avatarHandle = params.handle;
@@ -36,7 +30,6 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
   const [activeTab, setActiveTab] = useState<Tab>("training");
   const [isConfigSaved, setIsConfigSaved] = useState(true);
   const [apiJobId, setApiJobId] = useState<string | null>(null);
-  const [manualCheckFunction, setManualCheckFunction] = useState<ManualCheckFunction | null>(null);
 
   const fetchAvatarDetails = useCallback(async () => {
     if (!accessToken) return;
@@ -51,7 +44,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
       setApiJobId(data.last_training_job_id);
       setIsConfigSaved(true);
     } catch {
-      toast.error("Failed to load avatar");
+      console.error("Failed to load avatar");
     } finally {
       setLoading(false);
     }
@@ -62,16 +55,13 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
   const handleConfigSave = () => setIsConfigSaved(true);
   const handleJobComplete = () => { setApiJobId(null); fetchAvatarDetails(); };
   const handleTrainingStart = (jobId: string) => setApiJobId(jobId);
-  const handleManualCheckSetup = useCallback((func: ManualCheckFunction) => {
-    setManualCheckFunction(() => func);
-  }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-6">
         <div className="text-center">
-          <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mx-auto mb-4" />
-          <p className="text-base text-gray-600">Loading avatar...</p>
+          <Loader2 className="w-12 h-12 animate-spin text-emerald-500 mx-auto mb-4" />
+          <p className="text-lg text-gray-600 font-medium">Loading avatar...</p>
         </div>
       </div>
     );
@@ -79,11 +69,13 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
 
   if (!fullAvatarData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white flex items-center justify-center p-6">
-        <div className="text-center">
-          <AlertTriangle className="w-14 h-14 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-red-600">Avatar Not Found</h2>
-          <p className="text-gray-600 mt-1">@{avatarHandle}</p>
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl shadow-2xl p-12 text-center max-w-md">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="w-10 h-10 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Avatar Not Found</h2>
+          <p className="text-gray-600">@{avatarHandle}</p>
         </div>
       </div>
     );
@@ -92,54 +84,39 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
   const isPublic = fullAvatarData.settings?.is_public ?? false;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
 
-        {/* Header */}
-        <header className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-100 rounded-3xl flex items-center justify-center shadow-lg flex-shrink-0">
-                <Brain className="w-9 h-9 sm:w-11 sm:h-11 text-indigo-600" />
+        {/* Floating Header Card */}
+        <div className="bg-white rounded-3xl shadow-xl p-6 md:p-8 mb-8 border-2 border-emerald-100">
+          <div className="flex flex-col md:flex-row md:items-center gap-6">
+            {/* Avatar Icon */}
+            <div className="relative">
+              <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-3xl flex items-center justify-center shadow-2xl">
+                <Sparkles className="w-12 h-12 text-white" />
               </div>
-              <div className="min-w-0">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
-                  {fullAvatarData.name}
-                </h1>
-                <div className="flex items-center gap-3 mt-2 flex-wrap">
-                  <span className="text-sm sm:text-base text-gray-500">@{fullAvatarData.handle}</span>
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium
-                    ${isPublic ? "bg-blue-100 text-blue-700" : "bg-gray-200 text-gray-600"}`}>
-                    {isPublic ? <Globe className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                    {isPublic ? "Public" : "Private"}
-                  </span>
-                </div>
+              <div className={`absolute -bottom-2 -right-2 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg
+                ${isPublic ? "bg-emerald-500 text-white" : "bg-gray-700 text-white"}`}>
+                {isPublic ? <Globe className="w-3 h-3 inline mr-1" /> : <Lock className="w-3 h-3 inline mr-1" />}
+                {isPublic ? "Public" : "Private"}
               </div>
             </div>
 
-            {/* Mobile Sticky Tabs */}
-            <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-10">
-              <div className="flex">
-                {[
-                  { id: "training", icon: Brain, label: "Training" },
-                  { id: "settings", icon: Settings, label: "Settings" },
-                  { id: "analytics", icon: BarChart3, label: "Analytics" },
-                ].map(({ id, icon: Icon, label }) => (
-                  <button
-                    key={id}
-                    onClick={() => setActiveTab(id as Tab)}
-                    className={`flex-1 py-4 flex flex-col items-center gap-1 transition
-                      ${activeTab === id ? "text-indigo-600" : "text-gray-500"}`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-xs font-medium">{label}</span>
-                  </button>
-                ))}
+            {/* Avatar Info */}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 truncate">
+                {fullAvatarData.name}
+              </h1>
+              <div className="flex items-center gap-3">
+                <span className="text-lg text-gray-500">@{fullAvatarData.handle}</span>
+                <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">
+                  AI Avatar
+                </span>
               </div>
             </div>
 
-            {/* Desktop Tabs */}
-            <nav className="hidden sm:flex gap-1 bg-white/80 backdrop-blur p-1 rounded-2xl shadow-md border border-gray-100">
+            {/* Tab Navigation - Desktop */}
+            <div className="hidden md:flex flex-col gap-2">
               {[
                 { id: "training", icon: Brain, label: "Training" },
                 { id: "settings", icon: Settings, label: "Settings" },
@@ -148,83 +125,188 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
                 <button
                   key={id}
                   onClick={() => setActiveTab(id as Tab)}
-                  className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium transition
+                  className={`flex items-center gap-3 px-5 py-3 rounded-xl text-sm font-semibold transition-all
                     ${activeTab === id 
-                      ? "bg-indigo-600 text-white shadow-sm" 
-                      : "text-gray-600 hover:bg-gray-100"
+                      ? "bg-emerald-500 text-white shadow-lg scale-105" 
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                 >
-                  <Icon className="w-4.5 h-4.5" />
+                  <Icon className="w-5 h-5" />
                   {label}
                 </button>
               ))}
-            </nav>
+            </div>
           </div>
-        </header>
 
-        {/* Main Content */}
-        <div className="pb-20 sm:pb-8"> {/* Extra bottom padding for mobile sticky tabs */}
+          {/* Tab Navigation - Mobile */}
+          <div className="md:hidden mt-6 grid grid-cols-3 gap-2">
+            {[
+              { id: "training", icon: Brain, label: "Training" },
+              { id: "settings", icon: Settings, label: "Settings" },
+              { id: "analytics", icon: BarChart3, label: "Analytics" },
+            ].map(({ id, icon: Icon, label }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id as Tab)}
+                className={`flex flex-col items-center gap-2 py-3 px-2 rounded-xl text-xs font-semibold transition-all
+                  ${activeTab === id 
+                    ? "bg-emerald-500 text-white shadow-md" 
+                    : "bg-gray-100 text-gray-600"
+                  }`}
+              >
+                <Icon className="w-5 h-5" />
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="space-y-6">
 
           {/* TRAINING TAB */}
           {activeTab === "training" && (
-            <div className="space-y-6">
-
-              {/* Source Selector */}
-              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-                <div className="p-5 sm:p-7 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-100">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <Brain className="w-7 h-7 text-indigo-600" />
-                    Training Data Sources
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-1">Select what your AI learns from</p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Left Column - Training Sources */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Data Sources Card */}
+                <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                  <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-6 text-white">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Database className="w-7 h-7" />
+                      <h2 className="text-2xl font-bold">Training Data</h2>
+                    </div>
+                    <p className="text-emerald-50">Configure what your AI learns from</p>
+                  </div>
+                  <div className="p-6">
+                    {/* Mock Source Selector */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                            <Database className="w-5 h-5 text-emerald-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">Notes</p>
+                            <p className="text-xs text-gray-500">Personal knowledge base</p>
+                          </div>
+                        </div>
+                        <input type="checkbox" className="w-5 h-5 text-emerald-500 rounded" defaultChecked />
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                            <Database className="w-5 h-5 text-emerald-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">Documents</p>
+                            <p className="text-xs text-gray-500">Uploaded files & PDFs</p>
+                          </div>
+                        </div>
+                        <input type="checkbox" className="w-5 h-5 text-emerald-500 rounded" />
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                            <Database className="w-5 h-5 text-emerald-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">Chat History</p>
+                            <p className="text-xs text-gray-500">Previous conversations</p>
+                          </div>
+                        </div>
+                        <input type="checkbox" className="w-5 h-5 text-emerald-500 rounded" defaultChecked />
+                      </div>
+                    </div>
+                    <button 
+                      onClick={handleConfigSave}
+                      className="w-full mt-6 py-3 bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-600 transition shadow-md"
+                    >
+                      Save Configuration
+                    </button>
+                  </div>
                 </div>
-                <div className="">
-                  <SourceSelector
-                    avatarHandle={avatarHandle}
-                    onSaveSuccess={handleConfigSave}
-                  />
+
+                {/* Training Action Card */}
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Play className="w-6 h-6 text-emerald-600" />
+                    <h3 className="text-xl font-bold text-gray-900">Start Training</h3>
+                  </div>
+                  <p className="text-gray-600 mb-6">
+                    Train your AI avatar with the selected data sources. This process may take several minutes.
+                  </p>
+                  <button
+                    onClick={() => handleTrainingStart('job-' + Date.now())}
+                    disabled={!isConfigSaved}
+                    className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Play className="w-5 h-5" />
+                    Begin Training
+                  </button>
                 </div>
               </div>
 
-              {/* Status + Actions Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Right Column - Status & Danger */}
+              <div className="space-y-6">
                 {/* Training Status */}
-                <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-3">
-                    <BarChart3 className="w-6 h-6 text-indigo-600" />
-                    Training Status
-                  </h3>
-                  <TrainingStatusMonitor
-                    jobId={apiJobId}
-                    avatarHandle={avatarHandle}
-                    onJobComplete={handleJobComplete}
-                    onManualCheck={handleManualCheckSetup}
-                  />
-                  <div className="mt-6 pt-5 border-t border-gray-200">
-                    <TrainingTriggerButton
-                      avatarHandle={avatarHandle}
-                      isConfigSaved={isConfigSaved}
-                      onTrainingStart={handleTrainingStart}
-                    />
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <RefreshCw className={`w-6 h-6 ${apiJobId ? 'text-emerald-500 animate-spin' : 'text-gray-400'}`} />
+                    <h3 className="text-lg font-bold text-gray-900">Status</h3>
                   </div>
+                  
+                  {apiJobId ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-xl">
+                        <Clock className="w-5 h-5 text-emerald-600 animate-pulse" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-emerald-900">Training in Progress</p>
+                          <p className="text-xs text-emerald-600">Job ID: {apiJobId.slice(0, 8)}...</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          Data collected
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <RefreshCw className="w-4 h-4 text-emerald-500 animate-spin" />
+                          Processing...
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                          <Clock className="w-4 h-4" />
+                          Finalizing
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <CheckCircle2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-gray-500">No active training</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Danger Zone */}
-                <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-3xl border-2 border-red-200 p-6 shadow-xl">
-                  <div className="flex items-start gap-3 mb-5">
-                    <AlertTriangle className="w-8 h-8 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl border-2 border-red-200 p-6 shadow-lg">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+                      <AlertTriangle className="w-6 h-6 text-white" />
+                    </div>
                     <div>
                       <h3 className="text-lg font-bold text-red-900">Danger Zone</h3>
-                      <p className="text-xs text-red-700">Irreversible action</p>
+                      <p className="text-xs text-red-600">Irreversible action</p>
                     </div>
                   </div>
-                  <p className="text-sm text-red-800 mb-6">
-                    Delete this avatar and all its data permanently.
+                  <p className="text-sm text-red-800 mb-4">
+                    Permanently delete this avatar and all associated data. This cannot be undone.
                   </p>
-                  <DeleteAvatarButton
-                    avatarId={fullAvatarData.id}
-                    avatarHandle={avatarHandle}
-                  />
+                  <button className="w-full flex items-center justify-center gap-2 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition">
+                    <Trash2 className="w-4 h-4" />
+                    Delete Avatar
+                  </button>
                 </div>
               </div>
             </div>
@@ -232,17 +314,82 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
 
           {/* SETTINGS TAB */}
           {activeTab === "settings" && (
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-10">
-                <SettingsForm avatarHandle={avatarHandle} />
+            <div className="bg-white rounded-2xl shadow-lg p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <Settings className="w-7 h-7 text-emerald-600" />
+                <h2 className="text-2xl font-bold text-gray-900">Avatar Settings</h2>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Public/Private Toggle */}
+                <div className="p-6 bg-gray-50 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1">Public Access</h3>
+                      <p className="text-sm text-gray-600">Allow others to interact with your avatar</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" defaultChecked={isPublic} />
+                      <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Name Setting */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Avatar Name</label>
+                  <input
+                    type="text"
+                    defaultValue={fullAvatarData.name}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                {/* Handle (Read-only) */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Handle</label>
+                  <input
+                    type="text"
+                    value={`@${fullAvatarData.handle}`}
+                    disabled
+                    className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl text-gray-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Handle cannot be changed</p>
+                </div>
+
+                <button className="w-full py-3 bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-600 transition shadow-md">
+                  Save Settings
+                </button>
               </div>
             </div>
           )}
 
           {/* ANALYTICS TAB */}
           {activeTab === "analytics" && (
-            <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-10">
-              <AnalyticsDisplay avatarHandle={avatarHandle} />
+            <div className="bg-white rounded-2xl shadow-lg p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <BarChart3 className="w-7 h-7 text-emerald-600" />
+                <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200">
+                  <p className="text-sm text-emerald-700 font-medium mb-1">Total Interactions</p>
+                  <p className="text-3xl font-bold text-emerald-900">1,247</p>
+                </div>
+                <div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
+                  <p className="text-sm text-blue-700 font-medium mb-1">Training Sessions</p>
+                  <p className="text-3xl font-bold text-blue-900">12</p>
+                </div>
+                <div className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+                  <p className="text-sm text-purple-700 font-medium mb-1">Avg Response Time</p>
+                  <p className="text-3xl font-bold text-purple-900">2.3s</p>
+                </div>
+              </div>
+
+              <div className="h-64 bg-gray-50 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300">
+                <p className="text-gray-400">Analytics charts would appear here</p>
+              </div>
             </div>
           )}
         </div>

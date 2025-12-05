@@ -12,7 +12,7 @@ interface Note {
     updated_at: string;
 }
 
-// Mock Auth Context (replace with your actual context)
+
 import { useAuth } from "@/context/AuthContext";
 
 export default function NotePage() {

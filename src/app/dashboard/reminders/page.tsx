@@ -14,7 +14,7 @@ interface Reminder {
 }
 
 // Mock Auth Context
-const useAuth = () => ({ accessToken: 'mock-token' });
+import { useAuth } from "@/context/AuthContext";
 
 export default function ReminderPage() {
     const { accessToken } = useAuth();

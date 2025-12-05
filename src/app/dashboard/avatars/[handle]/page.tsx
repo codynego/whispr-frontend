@@ -329,7 +329,7 @@ export default function AvatarConfigurationPage({ params }: { params: { handle: 
   }
 
   const isPublic = avatar.settings?.is_public ?? false;
-  const isTrainingActive = isPolling || jobStatus === "running";
+  const isTrainingActive =  jobStatus === "running";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">

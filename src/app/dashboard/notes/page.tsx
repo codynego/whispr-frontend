@@ -39,6 +39,7 @@ export default function NotePage() {
             if (!res.ok) throw new Error("Failed to fetch notes.");
             
             const data: Note[] = await res.json();
+            console.log("Fetched notes:", data);
             setNotes(data);
         } catch (error) {
             console.error("Could not load notes:", error);

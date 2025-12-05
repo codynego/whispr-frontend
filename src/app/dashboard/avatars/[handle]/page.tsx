@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  Brain, Settings, BarChart3, Loader2, Lock, Globe, AlertTriangle,
-  Sparkles, Database, Trash2, Play, RefreshCw, CheckCircle2, Clock,
+Settings, BarChart3, Loader2, AlertTriangle,
+Database, Trash2, Play, RefreshCw, CheckCircle2, Clock,
   FileText, Bell, CheckSquare, ChevronDown, Plus
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";

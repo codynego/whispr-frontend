@@ -193,7 +193,7 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
           : [{
               id: "intro",
               role: "assistant" as const,
-              content: `Hello! I'm ${profileData.name}'s AI Avatar. I know everything about their notes, files, and work. Ask me anything!`,
+              content: `Hello! I'm ${profileData.name}'s AI Avatar!`,
               created_at: new Date().toISOString(),
             }]
       );

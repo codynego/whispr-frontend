@@ -132,13 +132,18 @@ function PublicMessageInput({
 
 // --- Main Component ---
 interface PublicChatShellProps {
-  params: {
+  params: Promise<{
     handle: string;
-  };
+  }>;
 }
 
 export default function PublicChatShell({ params }: PublicChatShellProps) {
-  const avatarHandle = params.handle;
+  const [avatarHandle, setAvatarHandle] = useState<string | null>(null);
+  
+  // Unwrap async params
+  useEffect(() => {
+    params.then(p => setAvatarHandle(p.handle));
+  }, [params]);
 
   // --- State ---
   const [visitorId, setVisitorId] = useState<string | null>(null);

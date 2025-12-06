@@ -172,6 +172,8 @@ export default function PublicChatShell({ params }: PublicChatShellProps) {
         throw new Error(`Avatar not found or not public. (${profileRes.status})`);
       }
       const profileData = await profileRes.json();
+      console.log("Fetched Profile:", profileData);
+      console.log("Avatar Handle:",  profileRes.url);
       setProfile(profileData);
 
       const historyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/history/?visitor_id=${visitorId}`);

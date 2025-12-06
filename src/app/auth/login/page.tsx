@@ -1,31 +1,37 @@
+// app/auth/login/page.tsx or wherever you have it
 "use client";
+
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { MessageCircle, Mail, Lock, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, loading: authLoading } = useAuth(); // login handles HttpOnly cookies
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!email.trim() || !password) {
+      setError("Please enter both email and password.");
+      return;
+    }
+
     try {
-      setLoading(true);
-      await login(email, password);
+      await login(email.trim(), password);
+      // Success! Redirect handled by AuthContext
     } catch (err: any) {
+      console.error("Login failed:", err);
       setError(err.message || "Invalid email or password. Please try again.");
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center px-4 py-12">
-      {/* Optional subtle background decoration */}
+      {/* Subtle background glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
@@ -65,8 +71,9 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
+                  disabled={authLoading}
                   required
+                  autoFocus
                   placeholder="you@example.com"
                   className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all disabled:opacity-60"
                 />
@@ -85,7 +92,7 @@ export default function LoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
+                  disabled={authLoading}
                   required
                   placeholder="••••••••"
                   className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all disabled:opacity-60"
@@ -96,10 +103,10 @@ export default function LoginPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={authLoading}
               className="w-full mt-8 py-4 bg-emerald-600 text-white font-semibold text-lg rounded-xl shadow-lg hover:bg-emerald-700 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-emerald-500/50 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 group"
             >
-              {loading ? (
+              {authLoading ? (
                 <>Signing you in...</>
               ) : (
                 <>
@@ -113,7 +120,7 @@ export default function LoginPage() {
           {/* Sign Up Link */}
           <div className="mt-8 text-center">
             <p className="text-gray-600">
-              Don{"'"}t have an account yet?{" "}
+              Don't have an account yet?{" "}
               <a
                 href="/auth/register"
                 className="font-semibold text-emerald-600 hover:text-emerald-700 underline-offset-4 hover:underline transition-all"

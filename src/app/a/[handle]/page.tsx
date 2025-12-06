@@ -1,8 +1,8 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Loader2, Brain, MessageSquare, Send } from "lucide-react";
 
-// --- Types & Constants (unchanged) ---
+// --- Types & Constants ---
 interface AvatarProfile {
   id: string;
   name: string;
@@ -28,7 +28,43 @@ interface HistoryResponse {
 const CHAT_TIMEOUT_MS = 45000;
 const CHAT_POLL_INTERVAL_MS = 1200;
 
-// --- Chat Bubble (unchanged) ---
+// --- Markdown Formatter ---
+function formatMessageContent(content: string): React.ReactElement {
+  // Split by code blocks first to preserve them
+  const parts = content.split(/```[\s\S]*?```/g);
+  const codeBlocks = content.match(/```[\s\S]*?```/g) || [];
+  
+  const formattedParts = parts.map((part, index) => {
+    // Process bold (**text** or __text__)
+    let processed = part.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/__(.+?)__/g, '<strong>$1</strong>');
+    
+    // Process italic (*text* or _text_) - but not if already inside bold
+    processed = processed.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
+                        .replace(/(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, '<em>$1</em>');
+    
+    return processed;
+  });
+
+  // Reconstruct with code blocks
+  let result = '';
+  formattedParts.forEach((part, index) => {
+    result += part;
+    if (codeBlocks[index]) {
+      const code = codeBlocks[index].replace(/```/g, '');
+      result += `<code class="code-block">${code}</code>`;
+    }
+  });
+
+  return (
+    <span 
+      dangerouslySetInnerHTML={{ __html: result }}
+      className="formatted-message"
+    />
+  );
+}
+
+// --- Chat Bubble ---
 function ChatMessageBubble({
   message,
   avatarPhotoUrl,
@@ -59,7 +95,7 @@ function ChatMessageBubble({
               : "bg-white text-gray-800 rounded-bl-none border border-gray-100"
           }`}
         >
-          {message.content}
+          {formatMessageContent(message.content)}
         </div>
         <span className="text-xs text-gray-400 mt-1 px-1">
           {new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -74,7 +110,7 @@ function ChatMessageBubble({
   );
 }
 
-// --- Input Component (unchanged) ---
+// --- Input Component ---
 function PublicMessageInput({
   sendMessage,
   isLoading,
@@ -211,7 +247,7 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
 
   useEffect(() => scrollToBottom(), [messages]);
 
-  // Polling & send logic (unchanged, only minor cleanup)
+  // Polling
   useEffect(() => {
     if (!currentTaskId) return;
     setIsSending(true);
@@ -333,7 +369,7 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
           )}
         </header>
 
-        {/* Messages Area - Only scrollable part */}
+        {/* Messages Area */}
         <main className="flex-1 overflow-y-auto px-4 py-6 bg-gray-50">
           <div className="max-w-4xl mx-auto">
             {messages.map(msg => (
@@ -378,6 +414,28 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
         @keyframes wave {
           0%, 60%, 100% { transform: translateY(0); }
           30% { transform: translateY(-10px); }
+        }
+        
+        .formatted-message strong {
+          font-weight: 600;
+          color: inherit;
+        }
+        
+        .formatted-message em {
+          font-style: italic;
+          color: inherit;
+        }
+        
+        .formatted-message .code-block {
+          display: block;
+          background: rgba(0, 0, 0, 0.05);
+          padding: 8px 12px;
+          border-radius: 8px;
+          font-family: 'Courier New', monospace;
+          font-size: 0.9em;
+          margin: 8px 0;
+          white-space: pre-wrap;
+          border: 1px solid rgba(0, 0, 0, 0.1);
         }
       `}</style>
     </div>

@@ -25,7 +25,8 @@ interface AssistantConfig {
 }
 
 export default function PersonalityTab() {
-  const { accessToken } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // No accessToken!
+
   const [config, setConfig] = useState<AssistantConfig>({
     id: 0,
     is_enabled: true,
@@ -41,7 +42,8 @@ export default function PersonalityTab() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!accessToken) {
+    if (authLoading) return;
+    if (!user) {
       setLoading(false);
       return;
     }
@@ -49,14 +51,15 @@ export default function PersonalityTab() {
     const fetchConfig = async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/config/`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+          credentials: "include", // Sends HttpOnly cookies automatically
         });
 
-        if (res.status === 401) {
-          console.error("Unauthorized");
-          return;
+        if (!res.ok) {
+          if (res.status === 401) {
+            console.warn("Unauthorized — user may be logged out");
+            return;
+          }
+          throw new Error("Failed to fetch config");
         }
 
         const data = await res.json();
@@ -73,19 +76,17 @@ export default function PersonalityTab() {
     };
 
     fetchConfig();
-  }, [accessToken]);
+  }, [user, authLoading]);
 
   const handleSave = async () => {
-    if (!accessToken) return;
+    if (!user) return;
 
     setSaving(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/config/`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           is_enabled: config.is_enabled,
           max_response_length: config.max_response_length,
@@ -113,10 +114,18 @@ export default function PersonalityTab() {
     setConfig((prev) => ({ ...prev, [key]: value }));
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <p>Loading assistant config...</p>
+        <p className="text-gray-600">Loading assistant config...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <p className="text-gray-600">Please log in to customize your assistant</p>
       </div>
     );
   }
@@ -146,7 +155,9 @@ export default function PersonalityTab() {
             id="max_response_length"
             type="number"
             value={config.max_response_length}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateConfig("max_response_length", parseInt(e.target.value) || 0)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              updateConfig("max_response_length", parseInt(e.target.value) || 0)
+            }
             disabled={saving}
           />
         </div>
@@ -179,7 +190,11 @@ export default function PersonalityTab() {
 
         <div>
           <Label className="mb-2 block">Select Tone</Label>
-          <RadioGroup value={config.tone} onValueChange={(value) => updateConfig("tone", value)} disabled={saving}>
+          <RadioGroup
+            value={config.tone}
+            onValueChange={(value) => updateConfig("tone", value)}
+            disabled={saving}
+          >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="business" id="business" />
               <Label htmlFor="business">Business (formal & focused)</Label>

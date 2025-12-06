@@ -15,7 +15,8 @@ interface Profile {
 }
 
 export default function AccountSettings() {
-  const { accessToken } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // No accessToken!
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [form, setForm] = useState<Profile>({
     first_name: "",
@@ -34,10 +35,11 @@ export default function AccountSettings() {
   const [changingPass, setChangingPass] = useState(false);
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (authLoading) return;
+    if (!user) return;
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile/`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      credentials: "include", // Sends HttpOnly cookies automatically
     })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
@@ -51,22 +53,26 @@ export default function AccountSettings() {
             plan: data.plan || "Free",
           });
         }
+      })
+      .catch(err => {
+        console.error("Failed to load profile:", err);
       });
-  }, [accessToken]);
+  }, [user, authLoading]);
 
   const saveProfile = async () => {
-    if (!accessToken) return;
+    if (!user) return;
     setSaving(true);
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile/`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(form),
       });
+
+      if (!res.ok) throw new Error("Failed to update profile");
+
       toast.success("Profile updated successfully");
     } catch {
       toast.error("Failed to update profile");
@@ -80,15 +86,15 @@ export default function AccountSettings() {
       toast.error("Passwords don't match");
       return;
     }
+    if (!user) return;
+
     setChangingPass(true);
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/change-password/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           old_password: oldPass,
           new_password: newPass,
@@ -112,10 +118,18 @@ export default function AccountSettings() {
     }
   };
 
-  if (!profile) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
         <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user || !profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
+        <p className="text-xl text-gray-600">Please log in to view account settings</p>
       </div>
     );
   }
@@ -136,7 +150,7 @@ export default function AccountSettings() {
 
         <div className="space-y-10">
           {/* Personal Info */}
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100">
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
               <User className="w-7 h-7 text-emerald-600" />
               Personal Information
@@ -208,26 +222,24 @@ export default function AccountSettings() {
           </div>
 
           {/* Security */}
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100">
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
               <Lock className="w-7 h-7 text-emerald-600" />
               Security
             </h2>
 
-            <div className="space-y-6">
-              <button
-                onClick={() => setShowPassword(true)}
-                className="w-full text-left p-6 bg-gray-50 rounded-2xl border border-gray-200 hover:bg-emerald-50 hover:border-emerald-300 transition"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">Change Password</p>
-                    <p className="text-sm text-gray-600 mt-1">Update your password to keep your account secure</p>
-                  </div>
-                  <Sparkles className="w-5 h-5 text-emerald-600" />
+            <button
+              onClick={() => setShowPassword(true)}
+              className="w-full text-left p-6 bg-gray-50 rounded-2xl border border-gray-200 hover:bg-emerald-50 hover:border-emerald-300 transition"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-900">Change Password</p>
+                  <p className="text-sm text-gray-600 mt-1">Update your password to keep your account secure</p>
                 </div>
-              </button>
-            </div>
+                <Sparkles className="w-5 h-5 text-emerald-600" />
+              </div>
+            </button>
           </div>
 
           {/* Current Plan */}
@@ -247,7 +259,7 @@ export default function AccountSettings() {
         {/* Password Change Modal */}
         {showPassword && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8">
               <h3 className="text-2xl font-bold text-gray-900 mb-8">Change Password</h3>
 
               <div className="space-y-6">

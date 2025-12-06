@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Edit3 } from "lucide-react";
+import { toast } from "sonner";
 
 interface UserRule {
   id: number;
@@ -62,7 +63,6 @@ const RULE_TYPES: RuleType[] = [
 const CHANNEL_CHOICES: ChannelChoice[] = [
   { value: "email", label: "Email" },
   { value: "sms", label: "SMS" },
-  // Add more channels as needed
 ];
 
 const IMPORTANCE_CHOICES: ImportanceChoice[] = [
@@ -72,12 +72,13 @@ const IMPORTANCE_CHOICES: ImportanceChoice[] = [
 ];
 
 export default function RulesTab() {
-  const { accessToken } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // No accessToken!
+
   const [rules, setRules] = useState<UserRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<UserRule | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     rule_type: "",
     channel: "email",
@@ -88,30 +89,35 @@ export default function RulesTab() {
   const [submitLoading, setSubmitLoading] = useState(false);
 
   useEffect(() => {
-    if (!accessToken) {
+    if (authLoading) return;
+    if (!user) {
       setLoading(false);
       return;
     }
     fetchRules();
-  }, [accessToken]);
+  }, [user, authLoading]);
 
   const fetchRules = async () => {
     setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/rules/`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        credentials: "include", // Sends HttpOnly cookies
       });
-      if (res.status === 401) {
-        console.error("Unauthorized");
-        return;
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          console.warn("Unauthorized — user may be logged out");
+          return;
+        }
+        throw new Error("Failed to fetch rules");
       }
+
       const data = await res.json();
       const rulesList = Array.isArray(data) ? data : (data.results || []);
       setRules(rulesList);
     } catch (err) {
       console.error("Failed to fetch rules", err);
+      toast.error("Failed to load rules");
     } finally {
       setLoading(false);
     }
@@ -126,29 +132,32 @@ export default function RulesTab() {
   };
 
   const handleSubmit = async () => {
-    if (!accessToken) return;
+    if (!user) return;
     setSubmitLoading(true);
+
     const url = editingRule
       ? `${process.env.NEXT_PUBLIC_API_URL}/unified/rules/${editingRule.id}/`
       : `${process.env.NEXT_PUBLIC_API_URL}/unified/rules/`;
     const method = editingRule ? "PUT" : "POST";
+
     try {
       const res = await fetch(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(formData),
       });
+
       if (res.ok) {
+        toast.success(editingRule ? "Rule updated" : "Rule created");
         fetchRules();
         resetForm();
       } else {
-        console.error("Failed to save rule");
+        toast.error("Failed to save rule");
       }
     } catch (err) {
       console.error(err);
+      toast.error("Failed to save rule");
     } finally {
       setSubmitLoading(false);
     }
@@ -156,46 +165,50 @@ export default function RulesTab() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this rule?")) return;
-    if (!accessToken) return;
+    if (!user) return;
+
     setSubmitLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/rules/${id}/`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        credentials: "include",
       });
+
       if (res.ok) {
+        toast.success("Rule deleted");
         fetchRules();
       } else {
-        console.error("Failed to delete rule");
+        toast.error("Failed to delete rule");
       }
     } catch (err) {
       console.error(err);
+      toast.error("Failed to delete rule");
     } finally {
       setSubmitLoading(false);
     }
   };
 
   const handleToggleActive = async (rule: UserRule) => {
-    if (!accessToken) return;
+    if (!user) return;
     setSubmitLoading(true);
+
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/unified/rules/${rule.id}/`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ ...rule, is_active: !rule.is_active }),
       });
+
       if (res.ok) {
+        toast.success("Rule updated");
         fetchRules();
       } else {
-        console.error("Failed to toggle active");
+        toast.error("Failed to update rule");
       }
     } catch (err) {
       console.error(err);
+      toast.error("Failed to update rule");
     } finally {
       setSubmitLoading(false);
     }
@@ -231,8 +244,12 @@ export default function RulesTab() {
     setFormOpen(true);
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return <div className="p-8 text-center">Loading rules...</div>;
+  }
+
+  if (!user) {
+    return <div className="p-8 text-center">Please log in to manage rules</div>;
   }
 
   return (
@@ -395,7 +412,7 @@ export default function RulesTab() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-red-600 hover:bg-red-700"
                         onClick={() => handleDelete(rule.id)}
                         disabled={submitLoading}
                       >

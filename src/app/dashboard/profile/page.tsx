@@ -13,7 +13,8 @@ import {
   Sparkles,
   Settings,
   Calendar,
-  Bell, Lock
+  Bell,
+  Lock,
 } from "lucide-react";
 
 interface ProfileData {
@@ -27,25 +28,34 @@ interface ProfileData {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { accessToken } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // No accessToken!
+
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!accessToken) {
+    if (authLoading) return;
+    if (!user) {
       setLoading(false);
       return;
     }
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile/`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      credentials: "include", // Sends HttpOnly cookies automatically
     })
       .then(r => r.ok ? r.json() : null)
-      .then(setProfile)
+      .then(data => {
+        if (data) {
+          setProfile(data);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to load profile:", err);
+      })
       .finally(() => setLoading(false));
-  }, [accessToken]);
+  }, [user, authLoading]);
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
         <p className="text-gray-600">Loading your profile...</p>
@@ -53,10 +63,10 @@ export default function ProfilePage() {
     );
   }
 
-  if (!profile) {
+  if (!user || !profile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
-        <p className="text-gray-600">Could not load profile.</p>
+        <p className="text-xl text-gray-600">Please log in to view your profile</p>
       </div>
     );
   }
@@ -150,7 +160,9 @@ export default function ProfilePage() {
                 <h3 className="text-2xl font-bold">Current Plan</h3>
                 <Sparkles className="w-8 h-8" />
               </div>
-              <div className="text-4xl font-bold mb-2">{profile.plan}</div>
+              <div className="text-4xl font-bold mb-2">
+                {profile.plan.charAt(0).toUpperCase() + profile.plan.slice(1)}
+              </div>
               <p className="opacity-90">Unlimited memory • Full AI access</p>
               <button
                 onClick={() => router.push("/dashboard/billing")}

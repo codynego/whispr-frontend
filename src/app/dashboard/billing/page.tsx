@@ -13,36 +13,49 @@ interface Subscription {
 }
 
 export default function BillingPage() {
-  const { accessToken } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // No accessToken!
+
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/billing/subscription/`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      credentials: "include", // Sends HttpOnly cookies automatically
     })
       .then(r => r.ok ? r.json() : null)
       .then(data => setSubscription(data || { plan: "free", status: "active" }))
+      .catch(() => setSubscription({ plan: "free", status: "active" }))
       .finally(() => setLoading(false));
-  }, [accessToken]);
+  }, [user, authLoading]);
 
   const upgrade = async (plan: "pro" | "premium") => {
+    if (!user) return;
+
     setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/billing/payments/initialize/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ plan }),
       });
+
+      if (!res.ok) throw new Error("Checkout failed");
+
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-    } catch {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to start checkout");
+      setLoading(false);
     }
   };
 
@@ -104,10 +117,18 @@ export default function BillingPage() {
     },
   ];
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
         <p className="text-gray-600">Loading your plan...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
+        <p className="text-xl text-gray-600">Please log in to view billing</p>
       </div>
     );
   }
@@ -185,7 +206,7 @@ export default function BillingPage() {
 
               <button
                 onClick={plan.action}
-                disabled={plan.current}
+                disabled={plan.current || loading}
                 className={`w-full py-4 rounded-2xl font-semibold transition ${
                   plan.current
                     ? "bg-white/20 text-white/80 cursor-default"

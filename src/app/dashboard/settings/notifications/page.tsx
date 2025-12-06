@@ -12,7 +12,8 @@ interface Preferences {
 }
 
 export default function NotificationSettings() {
-  const { accessToken } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // No accessToken!
+
   const [prefs, setPrefs] = useState<Preferences>({
     whatsapp_notifications: true,
     daily_summary: true,
@@ -20,10 +21,11 @@ export default function NotificationSettings() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (authLoading) return;
+    if (!user) return;
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/preferences/`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      credentials: "include", // Sends HttpOnly cookies automatically
     })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
@@ -33,27 +35,35 @@ export default function NotificationSettings() {
             daily_summary: data.daily_summary ?? true,
           });
         }
+      })
+      .catch(err => {
+        console.error("Failed to load notification preferences:", err);
       });
-  }, [accessToken]);
+  }, [user, authLoading]);
 
   const toggle = async (key: keyof Preferences) => {
+    if (!user) return;
+
     const newValue = !prefs[key];
     setSaving(true);
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/preferences/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/preferences/`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ [key]: newValue }),
       });
 
-      setPrefs(prev => ({ ...prev, [key]: newValue }));
-      toast.success("Updated");
-    } catch {
-      toast.error("Failed to save");
+      if (res.ok) {
+        setPrefs(prev => ({ ...prev, [key]: newValue }));
+        toast.success("Notification settings updated");
+      } else {
+        toast.error("Failed to save preferences");
+      }
+    } catch (err) {
+      console.error("Save error:", err);
+      toast.error("Failed to save preferences");
     } finally {
       setSaving(false);
     }
@@ -96,9 +106,25 @@ export default function NotificationSettings() {
     },
   ];
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
+        <p className="text-xl text-gray-600">Please log in to manage notifications</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 py-10">
-      <div className="max-w-3xl mx-auto">+
+      <div className="max-w-3xl mx-auto">
         {/* Compact Header */}
         <div className="text-center mb-10">
           <div className="w-16 h-16 bg-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">

@@ -197,10 +197,10 @@ export default function AvatarConfigurationPage({ params }: {
     setIsSavingSources(true);
     try {
       const sourcesPayload = [
-        ...(selectedNotes.length > 0 ? [{ source_type: "note", metadata: { item_ids: selectedNotes } }] : []),
-        ...(selectedReminders.length > 0 ? [{ source_type: "reminder", metadata: { item_ids: selectedReminders } }] : []),
-        ...(selectedTodos.length > 0 ? [{ source_type: "todo", metadata: { item_ids: selectedTodos } }] : []),
-        ...(manualText.trim() ? [{ source_type: "text", metadata: { content: manualText.trim() } }] : []),
+        ...(selectedNotes.length > 0 ? [{ source_type: "notes", metadata: { item_ids: selectedNotes } }] : []),
+        ...(selectedReminders.length > 0 ? [{ source_type: "reminders", metadata: { item_ids: selectedReminders } }] : []),
+        ...(selectedTodos.length > 0 ? [{ source_type: "todos", metadata: { item_ids: selectedTodos } }] : []),
+        ...(manualText.trim() ? [{ source_type: "texts", metadata: { content: manualText.trim() } }] : []),
       ];
 
       console.log("Sources payload:", sourcesPayload);

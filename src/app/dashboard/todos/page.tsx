@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, CheckCircle2, Circle, Loader2, Trash2, Edit2, Check, X, Calendar } from 'lucide-react';
+import { useAuth } from "@/context/AuthContext";
 
 interface Todo {
     id: number;
@@ -9,15 +10,12 @@ interface Todo {
     done: boolean;
     created_at: string;
     updated_at: string;
-    title: string;
+    title?: string;
 }
 
-// Mock Auth Context
-import { useAuth } from "@/context/AuthContext";
-
 export default function TodoPage() {
-    const { accessToken } = useAuth();
-    
+    const { user, loading: authLoading } = useAuth(); // No accessToken!
+
     const [todos, setTodos] = useState<Todo[]>([]);
     const [loading, setLoading] = useState(true);
     const [newTask, setNewTask] = useState('');
@@ -28,46 +26,49 @@ export default function TodoPage() {
 
     // Fetch Todos
     const fetchTodos = useCallback(async () => {
-        if (!accessToken) return;
+        if (authLoading) return;
+        if (!user) {
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/`, {
-                headers: { Authorization: `Bearer ${accessToken}` },
+                credentials: "include", // Sends HttpOnly cookies
             });
-            
+
             if (!res.ok) throw new Error("Failed to fetch todos.");
-            
+
             const data = await res.json();
-            console.log("Fetched todos:", data);
-            setTodos(data.results ?? []);;
+            setTodos(data.results ?? []);
         } catch (error) {
             console.error("Could not load todos:", error);
+            setTodos([]);
         } finally {
             setLoading(false);
         }
-    }, [accessToken]);
-    
+    }, [user, authLoading]);
+
     useEffect(() => {
         fetchTodos();
     }, [fetchTodos]);
 
     // Add Todo
     const handleAddTodo = async () => {
-        if (!newTask.trim() || !accessToken) return;
-        
+        if (!newTask.trim() || !user) return;
+
         setIsAdding(true);
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: "include",
                 body: JSON.stringify({ task: newTask, done: false }),
             });
-            
+
             if (!res.ok) throw new Error("Failed to create todo.");
-            
+
             setNewTask('');
             fetchTodos();
         } catch (error) {
@@ -79,20 +80,18 @@ export default function TodoPage() {
 
     // Toggle Todo
     const handleToggleTodo = async (todo: Todo) => {
-        if (!accessToken) return;
-        
+        if (!user) return;
+
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/${todo.id}/`, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: "include",
                 body: JSON.stringify({ task: todo.task, done: !todo.done }),
             });
-            
+
             if (!res.ok) throw new Error("Failed to update todo.");
-            
+
             fetchTodos();
         } catch (error) {
             console.error("Could not update todo:", error);
@@ -101,23 +100,21 @@ export default function TodoPage() {
 
     // Update Todo
     const handleUpdateTodo = async (id: number) => {
-        if (!editedTask.trim() || !accessToken) return;
-        
+        if (!editedTask.trim() || !user) return;
+
         try {
             const todo = todos.find(t => t.id === id);
             if (!todo) return;
 
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/${id}/`, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: "include",
                 body: JSON.stringify({ task: editedTask, done: todo.done }),
             });
-            
+
             if (!res.ok) throw new Error("Failed to update todo.");
-            
+
             setEditingId(null);
             setEditedTask('');
             fetchTodos();
@@ -128,16 +125,16 @@ export default function TodoPage() {
 
     // Delete Todo
     const handleDeleteTodo = async (id: number) => {
-        if (!accessToken) return;
-        
+        if (!user) return;
+
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/todos/${id}/`, {
                 method: 'DELETE',
-                headers: { Authorization: `Bearer ${accessToken}` },
+                credentials: "include",
             });
-            
+
             if (!res.ok) throw new Error("Failed to delete todo.");
-            
+
             fetchTodos();
         } catch (error) {
             console.error("Could not delete todo:", error);
@@ -154,10 +151,18 @@ export default function TodoPage() {
     const completedCount = todos.filter(t => t.done).length;
     const activeCount = todos.filter(t => !t.done).length;
 
-    if (loading) {
+    if (authLoading || loading) {
         return (
             <div className="flex items-center justify-center h-screen bg-gray-50">
                 <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gray-50">
+                <p className="text-xl text-gray-600">Please log in to manage your todos</p>
             </div>
         );
     }

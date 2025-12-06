@@ -5,6 +5,7 @@ import {
   Plus, Bell, Loader2, Trash2, Edit2, Check, X,
   Clock, Calendar, CheckCircle
 } from 'lucide-react';
+import { useAuth } from "@/context/AuthContext";
 
 interface Reminder {
   id: number;
@@ -13,13 +14,11 @@ interface Reminder {
   completed: boolean;
   created_at: string;
   updated_at: string;
-  title?: string; // optional if not always present
+  title?: string;
 }
 
-import { useAuth } from "@/context/AuthContext";
-
 export default function ReminderPage() {
-  const { accessToken } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // No accessToken!
 
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,20 +30,23 @@ export default function ReminderPage() {
   const [editedText, setEditedText] = useState('');
   const [editedRemindAt, setEditedRemindAt] = useState('');
 
-  // FETCH REMINDERS – FIXED FOR PAGINATION
+  // FETCH REMINDERS
   const fetchReminders = useCallback(async () => {
-    if (!accessToken) return;
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        credentials: "include", // Sends HttpOnly cookies automatically
       });
 
       if (!res.ok) throw new Error("Failed to fetch reminders.");
 
       const data = await res.json();
-      // DRF returns { count, next, previous, results }
       setReminders(data.results ?? []);
     } catch (error) {
       console.error("Could not load reminders:", error);
@@ -52,7 +54,7 @@ export default function ReminderPage() {
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [user, authLoading]);
 
   useEffect(() => {
     fetchReminders();
@@ -60,22 +62,22 @@ export default function ReminderPage() {
 
   // ADD
   const handleAddReminder = async () => {
-    if (!newText.trim() || !newRemindAt || !accessToken) return;
+    if (!newText.trim() || !newRemindAt || !user) return;
 
     setIsAdding(true);
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: "include",
         body: JSON.stringify({
           text: newText,
           remind_at: newRemindAt,
           completed: false,
         }),
-      }).then(r => r.ok ? r : Promise.reject());
+      });
+
+      if (!res.ok) throw new Error("Failed to create reminder");
 
       setNewText('');
       setNewRemindAt('');
@@ -90,21 +92,21 @@ export default function ReminderPage() {
 
   // TOGGLE COMPLETE
   const handleToggleComplete = async (reminder: Reminder) => {
-    if (!accessToken) return;
+    if (!user) return;
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/${reminder.id}/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/${reminder.id}/`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: "include",
         body: JSON.stringify({
           text: reminder.text,
           remind_at: reminder.remind_at,
           completed: !reminder.completed,
         }),
-      }).then(r => r.ok ? r : Promise.reject());
+      });
+
+      if (!res.ok) throw new Error("Failed to update reminder");
 
       fetchReminders();
     } catch (error) {
@@ -114,24 +116,24 @@ export default function ReminderPage() {
 
   // UPDATE
   const handleUpdateReminder = async (id: number) => {
-    if (!editedText.trim() || !editedRemindAt || !accessToken) return;
+    if (!editedText.trim() || !editedRemindAt || !user) return;
 
     try {
       const reminder = reminders.find(r => r.id === id);
       if (!reminder) return;
 
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/${id}/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/${id}/`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: "include",
         body: JSON.stringify({
           text: editedText,
           remind_at: editedRemindAt,
           completed: reminder.completed,
         }),
-      }).then(r => r.ok ? r : Promise.reject());
+      });
+
+      if (!res.ok) throw new Error("Failed to update reminder");
 
       setEditingId(null);
       setEditedText('');
@@ -144,13 +146,15 @@ export default function ReminderPage() {
 
   // DELETE
   const handleDeleteReminder = async (id: number) => {
-    if (!accessToken) return;
+    if (!user) return;
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/${id}/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/reminders/${id}/`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }).then(r => r.ok ? r : Promise.reject());
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error("Failed to delete reminder");
 
       fetchReminders();
     } catch (error) {
@@ -178,10 +182,18 @@ export default function ReminderPage() {
   const upcomingCount = reminders.filter(r => !r.completed && new Date(r.remind_at) > new Date()).length;
   const completedCount = reminders.filter(r => r.completed).length;
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
         <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
+        <p className="text-xl text-gray-600">Please log in to view reminders</p>
       </div>
     );
   }

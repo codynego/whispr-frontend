@@ -1,11 +1,12 @@
 "use client";
+
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
 interface AuthContextType {
   user: any;
-  accessToken: string | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: {
     email: string;
@@ -16,63 +17,82 @@ interface AuthContextType {
     last_name: string;
   }) => Promise<void>;
   logout: () => void;
-  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Global axios instance with refresh logic
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  withCredentials: true,
+});
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<any>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    const storedAccess = localStorage.getItem("access_token");
-    const storedRefresh = localStorage.getItem("refresh_token");
-    if (storedAccess) {
-      setAccessToken(storedAccess);
-      fetchUser(storedAccess);
-    } else if (storedRefresh) {
-      refreshToken(storedRefresh);
-    } else {
-      setLoading(false);
+  // Silent token refresh
+  const refreshToken = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await api.post("/users/token/refresh/");
+      // Refresh successful — no new tokens needed, cookies updated
+    } catch (err: any) {
+      console.warn("Refresh token expired or invalid");
+      logout();
+    } finally {
+      setIsRefreshing(false);
     }
+  };
+
+  // Interceptor: Auto-refresh on 401
+  useEffect(() => {
+    const interceptor = api.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+
+          await refreshToken();
+
+          // Retry the original request
+          return api(originalRequest);
+        }
+
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      api.interceptors.response.eject(interceptor);
+    };
   }, []);
 
-  const fetchUser = async (token: string) => {
+  const fetchUser = async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/profile/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/users/profile/");
       setUser(res.data);
-    } catch {
-      logout();
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const refreshToken = async (refresh: string) => {
-    try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/users/token/refresh/`, {
-        refresh,
-      });
-      const newAccess = res.data.access;
-      localStorage.setItem("access_token", newAccess);
-      setAccessToken(newAccess);
-      fetchUser(newAccess);
-    } catch {
-      logout();
-    }
-  };
+  useEffect(() => {
+    fetchUser();
+  }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/users/login/`, { email, password });
-    localStorage.setItem("access_token", res.data.access);
-    localStorage.setItem("refresh_token", res.data.refresh);
-    setAccessToken(res.data.access);
-    fetchUser(res.data.access);
+    await api.post("/users/login/", { email, password });
+    await fetchUser();
     router.push("/dashboard");
   };
 
@@ -84,23 +104,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     first_name: string;
     last_name: string;
   }) => {
-    // First, create the user via the registration endpoint
-    await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/users/register/`, data);
-    
-    // Then, automatically log in the new user
+    await api.post("/users/register/", data);
     await login(data.email, data.password);
   };
 
-  const logout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+  const logout = async () => {
+    try {
+      await api.post("/users/logout/", {});
+    } catch (err) {
+      console.warn("Logout failed");
+    }
     setUser(null);
-    setAccessToken(null);
     router.push("/auth/login");
   };
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

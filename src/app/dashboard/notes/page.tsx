@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, BookOpen, Loader2, Search, Calendar, Edit3, Trash2, Save, X, ChevronLeft } from 'lucide-react';
+import { useAuth } from "@/context/AuthContext";
 
-// Type definition based on Django Serializer
 interface Note {
     id: number;
     title: string;
@@ -12,12 +12,9 @@ interface Note {
     updated_at: string;
 }
 
-
-import { useAuth } from "@/context/AuthContext";
-
 export default function NotePage() {
-    const { accessToken } = useAuth();
-    
+    const { user, loading: authLoading } = useAuth(); // No accessToken!
+
     const [notes, setNotes] = useState<Note[]>([]);
     const [selectedNote, setSelectedNote] = useState<Note | null>(null);
     const [loading, setLoading] = useState(true);
@@ -29,34 +26,39 @@ export default function NotePage() {
 
     // Fetch Notes
     const fetchNotes = useCallback(async () => {
-        if (!accessToken) return;
+        if (authLoading) return;
+        if (!user) {
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/notes/`, {
-                headers: { Authorization: `Bearer ${accessToken}` },
+                credentials: "include", // Sends HttpOnly cookies
             });
-            
+
             if (!res.ok) throw new Error("Failed to fetch notes.");
-            
-        const data = await res.json();
-        console.log("Fetched notes:", data);
-        setNotes(data.results ?? []);
+
+            const data = await res.json();
+            setNotes(data.results ?? []);
         } catch (error) {
             console.error("Could not load notes:", error);
+            setNotes([]);
         } finally {
             setLoading(false);
         }
-    }, [accessToken]);
-    
+    }, [user, authLoading]);
+
     useEffect(() => {
         fetchNotes();
     }, [fetchNotes]);
 
     // Handle New Note
     const handleNewNote = () => {
-        const newNote = { 
+        const newNote = {
             id: -1,
-            title: "Untitled Note", 
+            title: "Untitled Note",
             content: "",
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -77,31 +79,29 @@ export default function NotePage() {
 
     // Handle Save
     const handleSave = async () => {
-        if (!selectedNote || !accessToken) return;
-        
+        if (!selectedNote || !user) return;
+
         setIsSaving(true);
         try {
             const isNew = selectedNote.id === -1;
-            const url = isNew 
+            const url = isNew
                 ? `${process.env.NEXT_PUBLIC_API_URL}/whisone/notes/`
                 : `${process.env.NEXT_PUBLIC_API_URL}/whisone/notes/${selectedNote.id}/`;
-            
+
             const method = isNew ? 'POST' : 'PUT';
-            
+
             const res = await fetch(url, {
                 method,
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: "include",
                 body: JSON.stringify({
                     title: editedTitle,
                     content: editedContent,
                 }),
             });
-            
+
             if (!res.ok) throw new Error("Failed to save note.");
-            
+
             const savedNote: Note = await res.json();
             setSelectedNote(savedNote);
             setIsEditing(false);
@@ -115,18 +115,18 @@ export default function NotePage() {
 
     // Handle Delete
     const handleDelete = async () => {
-        if (!selectedNote || selectedNote.id === -1 || !accessToken) return;
-        
+        if (!selectedNote || selectedNote.id === -1 || !user) return;
+
         if (!confirm('Are you sure you want to delete this note?')) return;
-        
+
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/notes/${selectedNote.id}/`, {
                 method: 'DELETE',
-                headers: { Authorization: `Bearer ${accessToken}` },
+                credentials: "include",
             });
-            
+
             if (!res.ok) throw new Error("Failed to delete note.");
-            
+
             setSelectedNote(null);
             fetchNotes();
         } catch (error) {
@@ -135,8 +135,8 @@ export default function NotePage() {
     };
 
     // Filter notes by search
-    const filteredNotes = Array.isArray(notes) 
-        ? notes.filter(note => 
+    const filteredNotes = Array.isArray(notes)
+        ? notes.filter(note =>
             note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             note.content.toLowerCase().includes(searchQuery.toLowerCase())
         )
@@ -152,7 +152,7 @@ export default function NotePage() {
     const showList = !isMobile || selectedNote === null;
     const showEditor = !isMobile || selectedNote !== null;
 
-    if (loading) {
+    if (authLoading || loading) {
         return (
             <div className="flex items-center justify-center h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
                 <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
@@ -160,10 +160,18 @@ export default function NotePage() {
         );
     }
 
+    if (!user) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
+                <p className="text-xl text-gray-600">Please log in to view your notes</p>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
-                
+
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-6">
@@ -176,7 +184,7 @@ export default function NotePage() {
                                 <p className="text-sm text-gray-600">{notes.length} total notes</p>
                             </div>
                         </div>
-                        <button 
+                        <button
                             onClick={handleNewNote}
                             className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition shadow-lg hover:shadow-xl font-medium"
                         >
@@ -184,7 +192,7 @@ export default function NotePage() {
                             <span className="hidden sm:inline">New Note</span>
                         </button>
                     </div>
-                    
+
                     {/* Search Bar */}
                     <div className="relative">
                         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -199,7 +207,7 @@ export default function NotePage() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
+
                     {/* Notes Grid/List */}
                     {showList && (
                         <div className={`${showEditor ? 'lg:col-span-1' : 'lg:col-span-3'} space-y-4`}>
@@ -215,8 +223,8 @@ export default function NotePage() {
                                             key={note.id}
                                             onClick={() => handleSelectNote(note)}
                                             className={`bg-white rounded-2xl p-5 cursor-pointer transition hover:shadow-lg border-2 ${
-                                                selectedNote?.id === note.id 
-                                                    ? 'border-emerald-500 shadow-md' 
+                                                selectedNote?.id === note.id
+                                                    ? 'border-emerald-500 shadow-md'
                                                     : 'border-transparent shadow-sm'
                                             }`}
                                         >
@@ -305,7 +313,7 @@ export default function NotePage() {
                                                     onClick={handleDelete}
                                                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                                                 >
-                                                    <Trash2 className="w-5 h-5" />
+                                                    <Trash2 className="w-4 h-5" />
                                                 </button>
                                             )}
                                         </>

@@ -4,21 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
-  Brain,
-  Search,
-  Settings,
-  Clock,
-  CheckCircle2,
-  Calendar,
-  FileText,
-  Lightbulb,
-  AlertCircle,
-  Sparkles,
-  ChevronRight,
-  TrendingUp,
-  Target,
-  Zap,
-  ArrowRight,
+  Brain, Search, Settings, Clock, CheckCircle2, Calendar,
+  FileText, Lightbulb, AlertCircle, Sparkles, ChevronRight,
+  TrendingUp, Target, Zap, ArrowRight,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -45,7 +33,7 @@ const safeContent = (content: string | null | undefined): string =>
 
 export default function WhisoneDashboard() {
   const router = useRouter();
-  const { user, accessToken } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // No accessToken!
 
   const [overview, setOverview] = useState<OverviewResponse | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
@@ -59,7 +47,8 @@ export default function WhisoneDashboard() {
   const today = new Date().toDateString();
 
   useEffect(() => {
-    if (!accessToken) {
+    if (authLoading) return;
+    if (!user) {
       setLoading(false);
       return;
     }
@@ -69,10 +58,10 @@ export default function WhisoneDashboard() {
         const base = process.env.NEXT_PUBLIC_API_URL + "/whisone";
 
         const [ovRes, notesRes, remRes, todoRes] = await Promise.all([
-          fetch(`${base}/overview/`, { headers: { Authorization: `Bearer ${accessToken}` } }),
-          fetch(`${base}/notes/?ordering=-created_at&limit=6`, { headers: { Authorization: `Bearer ${accessToken}` } }),
-          fetch(`${base}/reminders/`, { headers: { Authorization: `Bearer ${accessToken}` } }),
-          fetch(`${base}/todos/`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+          fetch(`${base}/overview/`, { credentials: "include" }),
+          fetch(`${base}/notes/?ordering=-created_at&limit=6`, { credentials: "include" }),
+          fetch(`${base}/reminders/`, { credentials: "include" }),
+          fetch(`${base}/todos/`, { credentials: "include" }),
         ]);
 
         if (ovRes.ok) setOverview(await ovRes.json());
@@ -87,7 +76,7 @@ export default function WhisoneDashboard() {
     };
 
     load();
-  }, [accessToken]);
+  }, [user, authLoading]);
 
   const todayReminders = reminders.filter(r => !r.completed && new Date(r.remind_at).toDateString() === today);
   const overdueTodos = todos.filter(t => !t.done);
@@ -103,7 +92,7 @@ export default function WhisoneDashboard() {
     if (e.key === "Enter") handleSearch();
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center px-4">
         <div className="text-center">
@@ -120,12 +109,21 @@ export default function WhisoneDashboard() {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-xl text-gray-600">Please log in to access your dashboard</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50">
-      {/* Full-width container - safe & no horizontal scroll */}
       <div className="w-full">
 
-        {/* Header - Full width on mobile, constrained on large screens */}
+        {/* Header */}
         <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-2xl border-b border-gray-200/50 shadow-sm">
           <div className="px-4 sm:px-6 lg:px-8 py-4 max-w-7xl mx-auto w-full">
             <div className="flex items-center justify-between gap-4">
@@ -170,10 +168,10 @@ export default function WhisoneDashboard() {
           </div>
         </header>
 
-        {/* Main Content - Full width on mobile, max-width on desktop */}
+        {/* Main Content */}
         <main className="w-full px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto space-y-10">
 
-          {/* Hero Section - Full-width on mobile */}
+          {/* Hero Section */}
           <section className="w-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-3xl p-8 md:p-12 shadow-2xl overflow-hidden">
             <div className="absolute inset-0 bg-black/5" />
             <div className="relative z-10">
@@ -255,7 +253,6 @@ export default function WhisoneDashboard() {
           <div className="grid lg:grid-cols-3 gap-8 w-full">
             {/* Left Column */}
             <div className="lg:col-span-2 space-y-8">
-
               {/* Daily Briefing */}
               <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6">
@@ -409,7 +406,7 @@ export default function WhisoneDashboard() {
                     </div>
                     <div>
                       <h4 className="text-lg font-bold">Action Needed</h4>
-                      <p className="text-white/80 text-xs">Dont fall behind</p>
+                      <p className="text-white/80 text-xs">Don't fall behind</p>
                     </div>
                   </div>
                   <p className="mb-4 text-sm">

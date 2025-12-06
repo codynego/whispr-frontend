@@ -37,14 +37,20 @@ interface SearchResults {
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q")?.trim() || "";
-  const { accessToken } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // No accessToken!
 
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!query || !accessToken) {
+    if (!query) {
+      setLoading(false);
+      return;
+    }
+
+    if (authLoading) return;
+    if (!user) {
       setLoading(false);
       return;
     }
@@ -54,17 +60,22 @@ export default function SearchPage() {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/whisone/search/?q=${encodeURIComponent(query)}`,
           {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
+            credentials: "include", // Sends HttpOnly cookies automatically
           }
         );
 
-        if (!res.ok) throw new Error("Search failed");
+        if (!res.ok) {
+          if (res.status === 401) {
+            console.warn("Unauthorized — user may be logged out");
+            return;
+          }
+          throw new Error("Search failed");
+        }
+
         const data = await res.json();
         setResults(data);
       } catch (err) {
-        console.error(err);
+        console.error("Search error:", err);
         setError(true);
       } finally {
         setLoading(false);
@@ -72,19 +83,22 @@ export default function SearchPage() {
     };
 
     search();
-  }, [query, accessToken]);
+  }, [query, user, authLoading]);
 
   if (!query) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
-        <p className="text-xl text-gray-600">Type something to search your second brain</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center px-6">
+        <div className="text-center">
+          <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <p className="text-xl text-gray-600">Type something to search your second brain</p>
+        </div>
       </div>
     );
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center px-6">
         <div className="text-center">
           <Search className="w-12 h-12 text-emerald-600 animate-pulse mx-auto mb-4" />
           <p className="text-lg text-gray-600">Searching your entire memory...</p>
@@ -93,9 +107,17 @@ export default function SearchPage() {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center px-6">
+        <p className="text-xl text-gray-600">Please log in to search</p>
+      </div>
+    );
+  }
+
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center px-6">
         <p className="text-red-600">Something went wrong. Please try again.</p>
       </div>
     );

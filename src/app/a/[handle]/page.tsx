@@ -1,7 +1,12 @@
+// src/components/PublicChatShell.tsx
+
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Brain, MessageSquare,  Send } from "lucide-react";
+import { Loader2, Brain, MessageSquare, ArrowUp } from "lucide-react";
+import toast from "react-hot-toast";
+
+import { ChatMessageBubble } from "@/components/avatars/ChatMessageBubble";
 
 // --- Types ---
 interface AvatarProfile {
@@ -33,62 +38,13 @@ interface HistoryResponse {
 const CHAT_TIMEOUT_MS = 45000;
 const CHAT_POLL_INTERVAL_MS = 1200;
 
-// --- Chat Message Bubble Component ---
-function ChatMessageBubble({
-  message,
-  avatarPhotoUrl,
-  avatarName,
-}: {
-  message: Message;
-  avatarPhotoUrl: string | null;
-  avatarName: string;
-}) {
-  const isVisitor = message.role === "visitor";
-  
-  return (
-    <div className={`flex items-end gap-2 ${isVisitor ? 'flex-row-reverse' : 'flex-row'} mb-4`}>
-      {!isVisitor && (
-        <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 shadow-sm">
-          {avatarPhotoUrl ? (
-            <img src={avatarPhotoUrl} alt={avatarName} className="w-full h-full object-cover rounded-full" />
-          ) : (
-            <Brain className="w-4 h-4 text-white" />
-          )}
-        </div>
-      )}
-      
-      <div className={`flex flex-col max-w-[75%] ${isVisitor ? 'items-end' : 'items-start'}`}>
-        <div 
-          className={`px-4 py-2.5 rounded-2xl shadow-sm ${
-            isVisitor 
-              ? 'bg-emerald-500 text-white rounded-br-sm' 
-              : 'bg-white text-gray-800 rounded-bl-sm'
-          }`}
-        >
-          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
-        </div>
-        <span className="text-xs text-gray-400 mt-1 px-1">
-          {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </span>
-      </div>
-      
-      {isVisitor && (
-        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0 shadow-sm">
-          <MessageSquare className="w-4 h-4 text-gray-600" />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// --- Message Input Component ---
-function PublicMessageInput({
-  sendMessage,
-  isLoading,
-}: {
+// --- Helper Component ---
+interface PublicMessageInputProps {
   sendMessage: (message: string) => void;
   isLoading: boolean;
-}) {
+}
+
+function PublicMessageInput({ sendMessage, isLoading }: PublicMessageInputProps) {
   const [input, setInput] = useState("");
 
   const handleSend = () => {
@@ -99,45 +55,32 @@ function PublicMessageInput({
   };
 
   return (
-    <div className="px-4 py-3 bg-white border-t border-gray-100">
-      <div className="flex items-end gap-2">
-        <div className="flex-1 bg-gray-50 rounded-3xl px-4 py-2.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500 transition-all">
-          <input
-            type="text"
-            className="w-full bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none"
-            placeholder={isLoading ? "Waiting..." : "Type a message"}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={isLoading}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-          />
-        </div>
-        <button
-          className="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center hover:bg-emerald-600 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex-shrink-0"
-          onClick={handleSend}
-          disabled={isLoading || !input.trim()}
-          aria-label="Send message"
-        >
-          <Send className="w-4 h-4" />
-        </button>
-      </div>
+    <div className="flex items-center p-4 border-t border-gray-100 bg-white">
+      <input
+        type="text"
+        className="flex-1 px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+        placeholder={isLoading ? "Waiting for Avatar response..." : "Ask me anything..."}
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        disabled={isLoading}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") handleSend();
+        }}
+      />
+      <button
+        className="ml-3 p-3 bg-emerald-600 text-white rounded-xl flex items-center justify-center hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={handleSend}
+        disabled={isLoading || !input.trim()}
+        aria-label="Send message"
+      >
+        <ArrowUp className="w-5 h-5" />
+      </button>
     </div>
   );
 }
 
 // --- Main Component ---
-interface PublicChatShellProps {
-  params: {
-    handle: string;
-  };
-}
-
-export default function PublicChatShell({ params }: PublicChatShellProps) {
+export default function PublicChatShell({ params }: { params: { handle: string } }) {
   const avatarHandle = params.handle;
 
   // --- State ---
@@ -169,22 +112,23 @@ export default function PublicChatShell({ params }: PublicChatShellProps) {
     try {
       const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/public/`);
       if (!profileRes.ok) {
+        const errorText = await profileRes.text();
         throw new Error(`Avatar not found or not public. (${profileRes.status})`);
       }
       const profileData = await profileRes.json();
-      console.log("Fetched Profile:", profileData);
-      console.log("Avatar Handle:",  profileRes.url);
       setProfile(profileData);
 
       const historyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/history/?visitor_id=${visitorId}`);
       if (!historyRes.ok) throw new Error("Failed to load conversation history.");
 
-      const historyResponseData = await historyRes.json();
+      const historyResponseData: HistoryResponse = await historyRes.json();
       const fetchedMessages = historyResponseData.results;
 
-      const sortedMessages: Message[] = (fetchedMessages as Message[]).sort(
-        (a: Message, b: Message) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      const sortedMessages = fetchedMessages.sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
+
+      console.log("Fetched History:", sortedMessages);
 
       setMessages(
         sortedMessages.length > 0
@@ -198,8 +142,9 @@ export default function PublicChatShell({ params }: PublicChatShellProps) {
               },
             ]
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error("Fetch Error:", error);
+      toast.error(error.message || "Failed to load the Avatar page.");
       setProfile(null);
     } finally {
       setLoading(false);
@@ -247,15 +192,7 @@ export default function PublicChatShell({ params }: PublicChatShellProps) {
             ];
           });
         } else {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              role: "assistant",
-              content: "Failed to respond. Please try again.",
-              created_at: new Date().toISOString(),
-            },
-          ]);
+          toast.error("Avatar failed to respond. Please try again.");
         }
       }
     }, CHAT_POLL_INTERVAL_MS);
@@ -284,11 +221,7 @@ export default function PublicChatShell({ params }: PublicChatShellProps) {
   }, [currentTaskId, visitorId]);
 
   // 5. Send message
-  interface SendMessageParams {
-    message: string;
-  }
-
-  const sendMessage = async (message: string): Promise<void> => {
+  const sendMessage = async (message: string) => {
     if (!message.trim() || isSending || !visitorId) return;
 
     const userMsg: Message = {
@@ -297,31 +230,26 @@ export default function PublicChatShell({ params }: PublicChatShellProps) {
       content: message,
       created_at: new Date().toISOString(),
     };
-    setMessages((prev: Message[]) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setIsSending(true);
 
     try {
-      const res: Response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/chat/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/chat/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, visitor_id: visitorId }),
       });
 
       if (res.ok) {
-        interface SendMessageResponse {
-          task_id: string;
-        }
-        const data: SendMessageResponse = await res.json();
+        const data = await res.json();
         setCurrentTaskId(data.task_id);
       } else {
-        interface ErrorResponse {
-          error?: string;
-        }
-        const errorData: ErrorResponse = await res.json();
+        const errorData = await res.json();
         throw new Error(errorData.error || "Failed to send message to Avatar.");
       }
-    } catch (error) {
-      setMessages((prev: Message[]) => prev.filter((m) => m.id !== userMsg.id));
+    } catch (error: any) {
+      toast.error(error.message || "Failed to initiate chat.");
+      setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
       setIsSending(false);
     }
   };
@@ -329,94 +257,74 @@ export default function PublicChatShell({ params }: PublicChatShellProps) {
   // --- Render ---
   if (loading || !visitorId) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-emerald-500 mx-auto mb-4" />
-          <p className="text-lg text-gray-700 font-medium">Connecting to {avatarHandle}...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        <p className="ml-3 text-lg text-gray-700">Connecting to {avatarHandle}...</p>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 p-4 text-center">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md">
-          <Brain className="w-16 h-16 text-red-500 mb-4 mx-auto" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Avatar Not Available</h1>
-          <p className="text-gray-600">
-            The AI Avatar @{avatarHandle} could not be found or is not set to public access.
-          </p>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4 text-center">
+        <Brain className="w-12 h-12 text-red-500 mb-4" />
+        <h1 className="text-2xl font-bold text-gray-900">Avatar Not Available</h1>
+        <p className="text-lg text-gray-600 mt-2">
+          The AI Avatar @{avatarHandle} could not be found or is not set to public access.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
-      <div className="flex-1 flex items-center justify-center p-4">
-        <div className="flex flex-col h-full w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden">
-          {/* Header */}
-          <header className="flex items-center gap-3 px-5 py-4 bg-emerald-500 text-white shadow-lg">
-            <div className="w-11 h-11 rounded-full bg-white bg-opacity-20 flex items-center justify-center flex-shrink-0 shadow-md">
-              {profile.photo_url ? (
-                <img src={profile.photo_url} alt={`${profile.name} photo`} className="w-full h-full object-cover rounded-full" />
-              ) : (
-                <Brain className="w-6 h-6 text-white" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-semibold leading-tight truncate">{profile.name}'s AI</h1>
-              <p className="text-xs text-emerald-100 opacity-90">@{profile.handle} • Online</p>
-            </div>
-          </header>
-
-          {/* Disclaimer */}
-          {profile.settings.disclaimer_text && (
-            <div className="px-5 py-3 bg-amber-50 text-amber-800 text-xs border-b border-amber-100">
-              <span className="font-semibold">⚠️ Disclaimer:</span> {profile.settings.disclaimer_text}
-            </div>
+    <div className="flex flex-col h-screen md:max-h-[90vh] md:w-[95%] lg:w-[700px] mx-auto bg-white shadow-2xl rounded-xl overflow-hidden">
+      {/* Header */}
+      <header className="flex items-center gap-4 p-4 border-b border-gray-100 bg-white z-10 sticky top-0">
+        <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+          {profile.photo_url ? (
+            <img src={profile.photo_url} alt={`${profile.name} photo`} className="w-full h-full object-cover rounded-full" />
+          ) : (
+            <Brain className="w-5 h-5 text-white" />
           )}
-
-          {/* Messages */}
-          <div 
-            className="flex-1 overflow-y-auto px-5 py-4"
-            style={{
-              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 35px, rgba(0,0,0,.02) 35px, rgba(0,0,0,.02) 36px)',
-              backgroundColor: '#f0f2f5'
-            }}
-          >
-            {messages.map((msg) => (
-              <ChatMessageBubble
-                key={msg.id}
-                message={msg}
-                avatarPhotoUrl={profile.photo_url}
-                avatarName={profile.name}
-              />
-            ))}
-
-            {isSending && (
-              <div className="flex items-end gap-2 mb-4">
-                <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <MessageSquare className="w-4 h-4 text-white animate-pulse" />
-                </div>
-                <div className="bg-white px-4 py-2.5 rounded-2xl rounded-bl-sm shadow-sm">
-                  <div className="flex gap-1.5">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input */}
-          <PublicMessageInput sendMessage={sendMessage} isLoading={isSending} />
         </div>
+        <div>
+          <h1 className="text-lg font-bold text-gray-900 leading-tight">{profile.name}&apos;s AI</h1>
+          <p className="text-xs text-gray-500">Public Chat | @{profile.handle}</p>
+        </div>
+      </header>
+
+      {/* Disclaimer */}
+      {profile.settings.disclaimer_text && (
+        <div className="p-3 bg-yellow-50 text-yellow-800 text-sm border-b border-yellow-200">
+          <span className="font-semibold">Disclaimer:</span> {profile.settings.disclaimer_text}
+        </div>
+      )}
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-gray-50">
+        {messages.map((msg) => (
+          <ChatMessageBubble
+            key={msg.id}
+            message={msg}
+            avatarPhotoUrl={profile.photo_url}
+            avatarName={profile.name}
+          />
+        ))}
+
+        {isSending && (
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+              <MessageSquare className="w-4 h-4 text-emerald-600 animate-pulse" />
+            </div>
+            <div className="text-gray-600 italic mt-1.5">Avatar is thinking...</div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
       </div>
+
+      {/* Input */}
+      <PublicMessageInput sendMessage={sendMessage} isLoading={isSending} />
     </div>
   );
 }

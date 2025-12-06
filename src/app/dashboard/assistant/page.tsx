@@ -17,7 +17,7 @@ interface Message {
 const renderMessage = (content: string): React.ReactNode => {
   const lines = content.split("\n").map(line => line.trim()).filter(Boolean);
 
-  // Handle bullet lists: - Item or • Item
+  // Handle bullet lists: - Item or Item
   if (lines.every(line => /^\s*[-•]\s/.test(line))) {
     return (
       <ul className="space-y-2">
@@ -74,7 +74,7 @@ const formatInline = (text: string): React.ReactNode => {
 };
 
 export default function AssistantPage() {
-  const { accessToken } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // No accessToken!
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -89,12 +89,21 @@ export default function AssistantPage() {
 
   // Load history
   useEffect(() => {
-    if (!accessToken) return;
+    if (authLoading) return;
+    if (!user) {
+      setMessages([{
+        id: Date.now(),
+        role: "assistant",
+        content: "Hey! I'm your second brain. Log in to start chatting.",
+        created_at: new Date().toISOString(),
+      }]);
+      return;
+    }
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/chat/`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      credentials: "include", // Sends HttpOnly cookies
     })
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : [])
       .then(data => {
         const list = Array.isArray(data) ? data : data.results || [];
         const sorted = list.sort((a: any, b: any) =>
@@ -106,17 +115,20 @@ export default function AssistantPage() {
           content: "Hey! I'm your second brain. Ask me anything — I'll remember everything.",
           created_at: new Date().toISOString(),
         }]);
+      })
+      .catch(err => {
+        console.error("Failed to load chat history:", err);
       });
-  }, [accessToken]);
+  }, [user, authLoading]);
 
-  // Polling
+  // Polling for response
   useEffect(() => {
-    if (!currentTaskId || !accessToken) return;
+    if (!currentTaskId || !user) return;
 
     const interval = setInterval(async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/assistant/chat/response/${currentTaskId}/`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+        { credentials: "include" }
       );
 
       if (!res.ok) return;
@@ -150,10 +162,10 @@ export default function AssistantPage() {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [currentTaskId, accessToken]);
+  }, [currentTaskId, user]);
 
   const sendMessage = async () => {
-    if (!input.trim() || loading || !accessToken) return;
+    if (!input.trim() || loading || !user) return;
 
     const userMsg: Message = {
       id: Date.now(),
@@ -169,10 +181,8 @@ export default function AssistantPage() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/chat/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ message: input }),
       });
 
@@ -199,6 +209,14 @@ export default function AssistantPage() {
     "Remind me about Mom’s birthday",
     "Summarize my last 3 days",
   ];
+
+  if (authLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-emerald-50">
+        <p className="text-gray-600">Loading assistant...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50">
@@ -261,7 +279,7 @@ export default function AssistantPage() {
         </div>
 
         {/* Quick Prompts */}
-        {messages.length <= 1 && (
+        {messages.length <= 1 && user && (
           <div className="px-6 pb-4">
             <p className="text-sm text-gray-600 mb-3">Try asking:</p>
             <div className="flex flex-wrap gap-3">
@@ -287,13 +305,13 @@ export default function AssistantPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                placeholder="Ask me anything..."
+                placeholder={user ? "Ask me anything..." : "Log in to chat"}
                 className="flex-1 bg-transparent outline-none text-gray-800 placeholder-gray-500"
-                disabled={loading}
+                disabled={loading || !user}
               />
               <button
                 onClick={sendMessage}
-                disabled={!input.trim() || loading}
+                disabled={!input.trim() || loading || !user}
                 className="p-3 bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg hover:shadow-emerald-600/30"
               >
                 {loading ? (

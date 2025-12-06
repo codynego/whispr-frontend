@@ -203,11 +203,14 @@ export default function AvatarConfigurationPage({ params }: {
         ...(manualText.trim() ? [{ source_type: "text", metadata: { content: manualText.trim() } }] : []),
       ];
 
+      console.log("Sources payload:", sourcesPayload);
+
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/sources/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify(sourcesPayload),
       });
+      console
 
       const trainRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/train/`, {
         method: "POST",

@@ -1,5 +1,7 @@
+"use client";
+
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Brain, MessageSquare, ArrowUp, Send } from "lucide-react";
+import { Loader2, Brain, MessageSquare,  Send } from "lucide-react";
 
 // --- Types ---
 interface AvatarProfile {

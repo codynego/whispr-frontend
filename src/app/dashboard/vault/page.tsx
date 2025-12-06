@@ -51,7 +51,7 @@ const formatDate = (date: string) =>
   new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 export default function VaultPage() {
-  const { accessToken } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // No accessToken!
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -61,15 +61,19 @@ export default function VaultPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchFiles = async () => {
-    if (!accessToken) return;
+    if (authLoading || !user) return;
+
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/files/`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        credentials: "include", // Sends HttpOnly cookies
       });
-      if (!res.ok) throw new Error();
+
+      if (!res.ok) throw new Error("Failed to load files");
+
       const data = await res.json();
       setFiles(Array.isArray(data) ? data : data.results || []);
-    } catch {
+    } catch (err) {
+      console.error("Failed to load files:", err);
       toast.error("Failed to load files");
     } finally {
       setLoading(false);
@@ -77,6 +81,8 @@ export default function VaultPage() {
   };
 
   const uploadFile = async (file: File) => {
+    if (!user) return;
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -84,7 +90,7 @@ export default function VaultPage() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/files/`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}` },
+        credentials: "include", // Sends cookies
         body: formData,
       });
 
@@ -93,9 +99,10 @@ export default function VaultPage() {
         setFiles((prev) => [uploaded, ...prev]);
         toast.success(`"${file.name}" uploaded`);
       } else {
-        throw new Error();
+        throw new Error("Upload failed");
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Upload failed");
     } finally {
       setUploading(false);
@@ -104,17 +111,23 @@ export default function VaultPage() {
   };
 
   const reprocess = async (id: number) => {
+    if (!user) return;
+
     setReprocessingIds((s) => new Set(s).add(id));
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/files/${id}/reprocess/`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}` },
+        credentials: "include",
       });
+
       if (res.ok) {
         toast.success("Reprocessing started");
         fetchFiles();
+      } else {
+        throw new Error("Reprocess failed");
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Reprocess failed");
     } finally {
       setReprocessingIds((s) => {
@@ -127,25 +140,52 @@ export default function VaultPage() {
 
   const deleteFile = async (id: number) => {
     if (!confirm("Delete this file permanently?")) return;
+    if (!user) return;
+
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/files/${id}/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/whisone/files/${id}/`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${accessToken}` },
+        credentials: "include",
       });
-      setFiles((f) => f.filter((file) => file.id !== id));
-      toast.success("File deleted");
-    } catch {
+
+      if (res.ok) {
+        setFiles((f) => f.filter((file) => file.id !== id));
+        toast.success("File deleted");
+      } else {
+        throw new Error("Delete failed");
+      }
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to delete");
     }
   };
 
   useEffect(() => {
     fetchFiles();
-  }, [accessToken]);
+  }, [user, authLoading]);
 
   const filteredFiles = files.filter((file) =>
     (file.title || file.original_filename).toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (authLoading || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-emerald-500 mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Loading your vault...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50">
+        <p className="text-xl text-gray-600">Please log in to access your vault</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50">
@@ -199,14 +239,7 @@ export default function VaultPage() {
         </div>
 
         {/* Files Grid */}
-        {loading ? (
-          <div className="flex items-center justify-center py-32">
-            <div className="text-center">
-              <Loader2 className="w-12 h-12 animate-spin text-emerald-500 mx-auto mb-4" />
-              <p className="text-gray-600 font-medium">Loading your files...</p>
-            </div>
-          </div>
-        ) : filteredFiles.length === 0 ? (
+        {filteredFiles.length === 0 ? (
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-20 text-center">
             <div className="max-w-sm mx-auto">
               <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -236,7 +269,7 @@ export default function VaultPage() {
             {filteredFiles.map((file) => {
               const processing = reprocessingIds.has(file.id);
               const isMenuActive = activeMenu === file.id;
-              
+
               return (
                 <div
                   key={file.id}
@@ -265,7 +298,7 @@ export default function VaultPage() {
                       >
                         <MoreVertical className="w-5 h-5 text-gray-600" />
                       </button>
-                      
+
                       {isMenuActive && (
                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-10">
                           {!file.processed && (

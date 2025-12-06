@@ -103,7 +103,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     console.log("Login successful", email, password);
     await api.post("/users/login/", { email, password });
-   
     await fetchUser();
     router.push("/dashboard");
   };

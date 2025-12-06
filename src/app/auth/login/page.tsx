@@ -4,8 +4,9 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { MessageCircle, Mail, Lock, ArrowRight } from "lucide-react";
-
+import { useRouter } from "next/navigation";
 export default function LoginPage() {
+  const router = useRouter();
   const { login, loading: authLoading } = useAuth(); // login handles HttpOnly cookies
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +23,7 @@ export default function LoginPage() {
 
     try {
       await login(email.trim(), password);
-      // Success! Redirect handled by AuthContext
+      router.push("/dashboard");
     } catch (err: any) {
       console.error("Login failed:", err);
       setError(err.message || "Invalid email or password. Please try again.");

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loading: authLoading } = useAuth();
+  const { login, loading: actionLoading } = useAuth();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -73,7 +73,7 @@ export default function LoginPage() {
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-7 relative">
               {/* Overlay when loading */}
-              {authLoading && (
+              {actionLoading && (
                 <div className="absolute inset-0 bg-white/70 backdrop-blur-sm rounded-2xl z-10 flex items-center justify-center">
                   <div className="text-center">
                     <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mx-auto mb-3" />
@@ -94,7 +94,7 @@ export default function LoginPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={authLoading}
+                    disabled={actionLoading}
                     required
                     autoFocus
                     placeholder="you@example.com"
@@ -115,7 +115,7 @@ export default function LoginPage() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    disabled={authLoading}
+                    disabled={actionLoading}
                     required
                     placeholder="••••••••••••"
                     className="w-full pl-12 pr-5 py-4 bg-gray-50/70 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-60 disabled:cursor-not-allowed group-hover:border-gray-300"
@@ -126,11 +126,11 @@ export default function LoginPage() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={authLoading}
+                disabled={actionLoading}
                 className="w-full mt-10 py-5 bg-emerald-600 text-white font-bold text-lg rounded-2xl shadow-xl hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-100 flex items-center justify-center gap-3 group relative overflow-hidden"
               >
                 <span className="relative z-10 flex items-center gap-3">
-                  {authLoading ? (
+                  {actionLoading ? (
                     <>
                       <Loader2 className="w-6 h-6 animate-spin" />
                       Signing in...

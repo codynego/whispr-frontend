@@ -61,9 +61,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const isPublicPage = useCallback(() => {
+  const isPublicPage = () => {
     return PUBLIC_PATHS.some((path) => pathname?.startsWith(path));
-  }, [pathname]);
+  };
 
   const fetchUser = useCallback(async () => {
     if (isPublicPage()) {
@@ -80,14 +80,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (err: any) {
       if (err.response?.status === 401) {
         if (isMounted.current) setUser(null);
-      } else {
-        console.error("Failed to fetch user:", err);
       }
     } finally {
       if (isMounted.current) setLoading(false);
     }
-  }, [isPublicPage]);
-
+  }, [pathname]);
   // Initial auth check
   useEffect(() => {
     fetchUser();

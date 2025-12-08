@@ -124,12 +124,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Crucial: Await fetchUser to set state before we finish.
       await fetchUser(); 
     } catch (err: any) {
-      const message =
-        err.response?.data?.detail ||
-        err.response?.data?.email?.[0] ||
-        err.response?.data?.password?.[0] ||
-        "Invalid credentials. Please try again.";
-      throw new Error(message);
+      const message =
+        err.response?.data?.detail ||
+        err.response?.data?.email?.[0] ||
+        err.response?.data?.password?.[0] ||
+        "Invalid credentials. Please try again.";
+      throw new Error(message);
     } finally {
       // Set actionLoading to false only after all async work is done
       if (isMounted.current) setActionLoading(false); 

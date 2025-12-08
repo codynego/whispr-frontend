@@ -1,13 +1,15 @@
-// app/auth/login/page.tsx or wherever you have it
+// app/auth/login/page.tsx
 "use client";
 
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { MessageCircle, Mail, Lock, ArrowRight } from "lucide-react";
+import { MessageCircle, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loading: authLoading } = useAuth(); // login handles HttpOnly cookies
+  const { login, loading: authLoading } = useAuth();
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -31,125 +33,155 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center px-4 py-12">
-      {/* Subtle background glow */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center px-4 py-12 relative overflow-hidden">
+      {/* Animated Background Blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-400/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-teal-400/10 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
       <div className="relative w-full max-w-md">
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-100 p-8 sm:p-10">
-          {/* Logo & Title */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-2xl mb-5">
-              <MessageCircle className="w-9 h-9 text-emerald-600" />
-            </div>
-            <h1 className="text-4xl font-bold text-gray-900">Welcome back</h1>
-            <p className="mt-3 text-lg text-gray-600">
-              Sign in to your Whisone AI second brain
-            </p>
-          </div>
+        {/* Main Card */}
+        <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 sm:p-12 overflow-hidden relative">
+          {/* Optional subtle inner glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-transparent to-teal-50/30 pointer-events-none" />
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-center gap-3">
-              <span className="font-medium">Oops!</span> {error}
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={authLoading}
-                  required
-                  autoFocus
-                  placeholder="you@example.com"
-                  className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all disabled:opacity-60"
-                />
+          <div className="relative z-10">
+            {/* Logo & Heading */}
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-emerald-100 rounded-3xl mb-6 shadow-lg">
+                <MessageCircle className="w-11 h-11 text-emerald-600" />
               </div>
+              <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+                Welcome back
+              </h1>
+              <p className="mt-3 text-lg text-gray-600 font-light">
+                Sign in to your Whisone AI second brain
+              </p>
             </div>
 
-            {/* Password Field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={authLoading}
-                  required
-                  placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all disabled:opacity-60"
-                />
+            {/* Error Alert */}
+            {error && (
+              <div className="mb-8 p-4 bg-red-50/80 backdrop-blur border border-red-200 text-red-700 rounded-2xl text-sm flex items-center gap-3 animate-in slide-in-from-top-2">
+                <div className="w-5 h-5 bg-red-200 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs font-bold">!</span>
+                </div>
+                <span className="font-medium">{error}</span>
               </div>
-            </div>
+            )}
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={authLoading}
-              className="w-full mt-8 py-4 bg-emerald-600 text-white font-semibold text-lg rounded-xl shadow-lg hover:bg-emerald-700 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-emerald-500/50 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 group"
-            >
-              {authLoading ? (
-                <>Signing you in...</>
-              ) : (
-                <>
-                  Sign In
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </>
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-7 relative">
+              {/* Overlay when loading */}
+              {authLoading && (
+                <div className="absolute inset-0 bg-white/70 backdrop-blur-sm rounded-2xl z-10 flex items-center justify-center">
+                  <div className="text-center">
+                    <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mx-auto mb-3" />
+                    <p className="text-sm text-gray-600">Signing you in...</p>
+                  </div>
+                </div>
               )}
-            </button>
-          </form>
 
-          {/* Sign Up Link */}
-          <div className="mt-8 text-center">
-            <p className="text-gray-600">
-              Don't have an account yet?{" "}
-              <a
-                href="/auth/register"
-                className="font-semibold text-emerald-600 hover:text-emerald-700 underline-offset-4 hover:underline transition-all"
+              {/* Email Field */}
+              <div className="relative group">
+                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2.5">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors pointer-events-none" />
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={authLoading}
+                    required
+                    autoFocus
+                    placeholder="you@example.com"
+                    className="w-full pl-12 pr-5 py-4 bg-gray-50/70 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-60 disabled:cursor-not-allowed group-hover:border-gray-300"
+                  />
+                </div>
+              </div>
+
+              {/* Password Field */}
+              <div className="relative group">
+                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors pointer-events-none" />
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={authLoading}
+                    required
+                    placeholder="••••••••••••"
+                    className="w-full pl-12 pr-5 py-4 bg-gray-50/70 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-60 disabled:cursor-not-allowed group-hover:border-gray-300"
+                  />
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="w-full mt-10 py-5 bg-emerald-600 text-white font-bold text-lg rounded-2xl shadow-xl hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-100 flex items-center justify-center gap-3 group relative overflow-hidden"
               >
-                Get early access
-              </a>
-            </p>
-          </div>
+                <span className="relative z-10 flex items-center gap-3">
+                  {authLoading ? (
+                    <>
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      Sign In
+                      <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
+                    </>
+                  )}
+                </span>
+                {/* Shine effect on hover */}
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-white/20" />
+              </button>
+            </form>
 
-          {/* Footer Note */}
-          <p className="mt-10 text-center text-xs text-gray-500">
-            By signing in, you agree to our{" "}
-            <a href="#" className="underline hover:text-gray-700">
-              Terms
-            </a>{" "}
-            and{" "}
-            <a href="#" className="underline hover:text-gray-700">
-              Privacy Policy
-            </a>
-            .
-          </p>
+            {/* Register Link */}
+            <div className="mt-10 text-center">
+              <p className="text-gray-600 text-sm">
+                Don't have an account?{" "}
+                <a
+                  href="/auth/register"
+                  className="font-bold text-emerald-600 hover:text-emerald-700 underline underline-offset-4 hover:underline-offset-2 transition-all"
+                >
+                  Get early access
+                </a>
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-12 pt-8 border-t border-gray-100">
+              <p className="text-center text-xs text-gray-500 leading-relaxed">
+                By signing in, you agree to our{" "}
+                <a href="#" className="underline hover:text-gray-700 transition">
+                  Terms
+                </a>{" "}
+                and{" "}
+                <a href="#" className="underline hover:text-gray-700 transition">
+                  Privacy Policy
+                </a>
+                .
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Subtle brand tag */}
-        <div className="text-center mt-8">
-          <p className="text-sm text-gray-500">
+        {/* Brand Footer */}
+        <div className="text-center mt-10">
+          <p className="text-sm text-gray-500 font-medium">
             Powered by{" "}
-            <span className="font-semibold text-emerald-600">Whisone</span> — Your AI Agent on WhatsApp
+            <span className="font-bold text-emerald-600">Whisone</span> — Your AI Agent on WhatsApp
           </p>
         </div>
       </div>

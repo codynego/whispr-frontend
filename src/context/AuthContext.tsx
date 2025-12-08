@@ -136,7 +136,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await api.post("/users/login/", { email, password });
       await fetchUser();
-      router.push("/dashboard");
     } catch (err: any) {
       const message =
         err.response?.data?.detail ||

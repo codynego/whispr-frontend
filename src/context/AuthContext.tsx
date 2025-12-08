@@ -7,6 +7,7 @@ import {
   useState,
   useEffect,
   ReactNode,
+  useCallback,
   useRef,
 } from "react";
 import axios from "axios";
@@ -18,12 +19,13 @@ interface User {
   first_name: string;
   last_name: string;
   whatsapp?: string;
+  // add more fields as needed
 }
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
-  actionLoading: boolean;
+  loading: boolean;        // initial app load
+  actionLoading: boolean;  // login/register/logout in progress
   login: (email: string, password: string) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => Promise<void>;
@@ -42,75 +44,78 @@ const PUBLIC_PATHS = [
   "/auth/forgot-password",
   "/auth/reset-password",
   "/auth/verify",
-] as const;
+];
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [loading, setLoading] = useState(true);           // initial load
+  const [actionLoading, setActionLoading] = useState(false); // login/register/logout
 
   const router = useRouter();
   const pathname = usePathname();
-  const mountedRef = useRef(true);
-  const initRef = useRef(false); // Prevents double init in StrictMode
+  const isMounted = useRef(true);
 
-  // Stable check — no function recreation
-  const isPublicPage = PUBLIC_PATHS.some((path) => pathname?.startsWith(path));
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
-  // Fetch user profile
-  const fetchUser = async () => {
-    if (isPublicPage) {
-      setUser(null);
-      setLoading(false);
+  const isPublicPage = () => {
+    return PUBLIC_PATHS.some((path) => pathname?.startsWith(path));
+  };
+
+  const fetchUser = useCallback(async () => {
+    if (isPublicPage()) {
+      if (isMounted.current) {
+        setUser(null);
+        setLoading(false);
+      }
       return;
     }
 
     try {
       const res = await api.get("/users/profile/");
-      setUser(res.data);
+      if (isMounted.current) setUser(res.data);
     } catch (err: any) {
       if (err.response?.status === 401) {
-        setUser(null);
+        if (isMounted.current) setUser(null);
       }
     } finally {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
+    }
+  }, [pathname]);
+  // Initial auth check
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
+  // Token refresh logic (only on protected pages)
+  const refreshToken = async () => {
+    if (isPublicPage()) return;
+    try {
+      await api.post("/users/token/refresh/");
+    } catch (err) {
+      console.warn("Token refresh failed");
+      if (isMounted.current) logout();
     }
   };
 
-  // Initial load — runs only once per mount
-  useEffect(() => {
-    if (initRef.current) return;
-    initRef.current = true;
-
-    if (!mountedRef.current) return;
-
-    fetchUser();
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [pathname]); // Only re-run if route changes (e.g. login → dashboard)
-
-  // Axios 401 interceptor — stable dependency
+  // Axios 401 interceptor with retry
   useEffect(() => {
     const interceptor = api.interceptors.response.use(
-      (res) => res,
+      (response) => response,
       async (error) => {
         const originalRequest = error.config;
 
         if (
           error.response?.status === 401 &&
           !originalRequest._retry &&
-          !isPublicPage
+          !isPublicPage()
         ) {
           originalRequest._retry = true;
-          try {
-            await api.post("/users/token/refresh/");
-            return api(originalRequest);
-          } catch (refreshErr) {
-            setUser(null);
-            router.push("/auth/login");
-          }
+          await refreshToken();
+          return api(originalRequest);
         }
         return Promise.reject(error);
       }
@@ -119,9 +124,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       api.interceptors.response.eject(interceptor);
     };
-  }, [pathname, router]); // Stable deps only
+  }, [isPublicPage]);
 
-  // Login
   const login = async (email: string, password: string) => {
     if (actionLoading) return;
     setActionLoading(true);
@@ -129,20 +133,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await api.post("/users/login/", { email, password });
       await fetchUser();
-      router.push("/dashboard");
     } catch (err: any) {
-      const msg =
+      const message =
         err.response?.data?.detail ||
         err.response?.data?.email?.[0] ||
         err.response?.data?.password?.[0] ||
-        "Invalid email or password.";
-      throw new Error(msg);
+        "Invalid credentials. Please try again.";
+      throw new Error(message);
     } finally {
-      setActionLoading(false);
+      if (isMounted.current) setActionLoading(false);
     }
   };
 
-  // Register
   const register = async (data: any) => {
     if (actionLoading) return;
     setActionLoading(true);
@@ -152,19 +154,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await login(data.email, data.password);
     } catch (err: any) {
       const errors = err.response?.data;
-      let msg = "Registration failed.";
+      let message = "Registration failed. Please try again.";
 
       if (errors) {
-        msg = errors.email?.[0] || errors.whatsapp?.[0] || errors.password?.[0] || errors.detail || msg;
+        if (errors.email) message = errors.email[0];
+        else if (errors.whatsapp) message = errors.whatsapp[0];
+        else if (errors.password) message = errors.password[0];
+        else if (typeof errors === "string") message = errors;
       }
-
-      throw new Error(msg);
+      throw new Error(message);
     } finally {
-      setActionLoading(false);
+      if (isMounted.current) setActionLoading(false);
     }
   };
 
-  // Logout
   const logout = async () => {
     if (actionLoading) return;
     setActionLoading(true);
@@ -172,18 +175,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await api.post("/users/logout/", {});
     } catch (err) {
-      console.warn("Logout failed, continuing...");
+      console.warn("Logout request failed (continuing anyway)");
     } finally {
       setUser(null);
-      setActionLoading(false);
-      router.push("/auth/login");
+      if (isMounted.current) {
+        setActionLoading(false);
+        router.push("/auth/login");
+      }
     }
   };
 
-  const value: AuthContextType = {
+  const value = {
     user,
-    loading,
-    actionLoading,
+    loading,         // true only during initial load
+    actionLoading,   // true during login/register/logout
     login,
     register,
     logout,
@@ -194,6 +199,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
   return context;
 };

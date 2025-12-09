@@ -1,3 +1,5 @@
+"use client";
+
 import { Quote, Zap, MessageCircle, ArrowRight, Check, Brain, Sparkles, BookOpen, Briefcase, Heart } from "lucide-react";
 
 export default function WhisoneLandingPage() {

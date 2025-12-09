@@ -54,25 +54,25 @@ export default function WhisoneDashboard() {
       return;
     } 
     const load = async () => {
-      setLoading(true); // Ensure loading is true when fetching starts
-      try {
-        // You may want to use the axios instance from AuthContext instead of fetch
-        const base = process.env.NEXT_PUBLIC_API_URL + "/whisone"; 
-        const [ovRes, notesRes, remRes, todoRes] = await Promise.all([
-          fetch(`${base}/overview/`, { credentials: "include" }),
-          fetch(`${base}/notes/?ordering=-created_at&limit=6`, { credentials: "include" }),
-          fetch(`${base}/reminders/`, { credentials: "include" }),
-          fetch(`${base}/todos/`, { credentials: "include" }),
-        ]); 
-        if (ovRes.ok) setOverview(await ovRes.json());
-        if (notesRes.ok) setNotes(safeArray(await notesRes.json()));
-        if (remRes.ok) setReminders(safeArray(await remRes.json()));
-        if (todoRes.ok) setTodos(safeArray(await todoRes.json()));
-      } catch (err) {
-        console.error("Dashboard load error:", err);
-      } finally {
-        setLoading(false);
-      }
+      setLoading(true); // Ensure loading is true when fetching starts
+      try {
+        // You may want to use the axios instance from AuthContext instead of fetch
+        const base = process.env.NEXT_PUBLIC_API_URL + "/whisone"; 
+        const [ovRes, notesRes, remRes, todoRes] = await Promise.all([
+          fetch(`${base}/overview/`, { credentials: "include" }),
+          fetch(`${base}/notes/?ordering=-created_at&limit=6`, { credentials: "include" }),
+          fetch(`${base}/reminders/`, { credentials: "include" }),
+          fetch(`${base}/todos/`, { credentials: "include" }),
+        ]); 
+        if (ovRes.ok) setOverview(await ovRes.json());
+        if (notesRes.ok) setNotes(safeArray(await notesRes.json()));
+        if (remRes.ok) setReminders(safeArray(await remRes.json()));
+        if (todoRes.ok) setTodos(safeArray(await todoRes.json()));
+      } catch (err) {
+        console.error("Dashboard load error:", err);
+      } finally {
+        setLoading(false);
+      }
     }; 
     load();
   }, [user, authLoading]); // Dependencies 
@@ -88,36 +88,22 @@ export default function WhisoneDashboard() {
   // --- ERROR FIX IMPLEMENTATION START ---
   // Check 1: Display loading spinner while Auth or Dashboard data is loading.
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center px-4">
-        <div className="text-center">
-          <div className="relative">
-            <div className="w-24 h-24 bg-emerald-100 rounded-3xl flex items-center justify-center mx-auto mb-6 animate-pulse">
-              <Brain className="w-14 h-14 text-emerald-600" />
-            </div>
-            <Sparkles className="absolute -top-2 -right-2 w-8 h-8 text-emerald-500 animate-bounce" />
-          </div>
-          <p className="text-2xl font-bold text-gray-900 mb-2">Waking up your second brain</p>
-          <p className="text-gray-600">Just a moment...</p>
-        </div>
-      </div>
-    );
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="relative">
+            <div className="w-24 h-24 bg-emerald-100 rounded-3xl flex items-center justify-center mx-auto mb-6 animate-pulse">
+              <Brain className="w-14 h-14 text-emerald-600" />
+            </div>
+            <Sparkles className="absolute -top-2 -right-2 w-8 h-8 text-emerald-500 animate-bounce" />
+          </div>
+          <p className="text-2xl font-bold text-gray-900 mb-2">Waking up your second brain</p>
+          <p className="text-gray-600">Just a moment...</p>
+        </div>
+      </div>
+    );
   } 
-  // Check 2: If authLoading is false but no user, redirect/show message.
-  if (!user) {
-    // Optionally: router.push("/auth/login") to force the redirect.
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center px-4">
-        <div className="text-center">
-          <p className="text-xl text-gray-600">Please log in to access your dashboard</p>
-        </div>
-      </div>
-    );
-  } 
-  // FIX: ONLY calculate derived state AFTER ALL loading checks are passed.
-  const todayReminders = reminders.filter(r => !r.completed && new Date(r.remind_at).toDateString() === today);
-  const overdueTodos = todos.filter(t => !t.done);
-  const recentTwoNotes = notes.slice(0, 2);
+
 
   if (!user) {
     return (
@@ -128,6 +114,11 @@ export default function WhisoneDashboard() {
       </div>
     );
   }
+
+    // FIX: ONLY calculate derived state AFTER ALL loading checks are passed.
+  const todayReminders = reminders.filter(r => !r.completed && new Date(r.remind_at).toDateString() === today);
+  const overdueTodos = todos.filter(t => !t.done);
+  const recentTwoNotes = notes.slice(0, 2);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50">

@@ -97,20 +97,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Axios 401 interceptor with retry
   useEffect(() => {
     const interceptor = api.interceptors.response.use(
-      (response) => response,
-      async (error) => {
-        const originalRequest = error.config; 
-        if (
-          error.response?.status === 401 &&
-          !originalRequest._retry &&
-          !isPublicPage()
-        ) {
-          originalRequest._retry = true;
-          await refreshToken();
-          return api(originalRequest);
-        }
-        return Promise.reject(error);
-      }
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config; 
+        if (
+          error.response?.status === 401 &&
+          !originalRequest._retry &&
+          !isPublicPage()
+        ) {
+          originalRequest._retry = true;
+          await refreshToken();
+          return api(originalRequest);
+        }
+        return Promise.reject(error);
+      }
     ); 
     return () => {
       api.interceptors.response.eject(interceptor);
@@ -120,9 +120,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (actionLoading) return;
     setActionLoading(true); 
     try {
-      await api.post("/users/login/", { email, password });
+      await api.post("/users/login/", { email, password });
       // Crucial: Await fetchUser to set state before we finish.
-      await fetchUser(); 
+      await fetchUser(); 
     } catch (err: any) {
       const message =
         err.response?.data?.detail ||
@@ -132,7 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw new Error(message);
     } finally {
       // Set actionLoading to false only after all async work is done
-      if (isMounted.current) setActionLoading(false); 
+      if (isMounted.current) setActionLoading(false); 
     }
   }; 
   const register = async (data: any) => {

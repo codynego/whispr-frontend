@@ -19,7 +19,7 @@ const navItems = [
   { name: "Notifications", href: "/dashboard/settings/notifications", icon: Bell },
   { name: "Assistant Personality", href: "/dashboard/settings/personality", icon: Brain },
   { name: "Rules & Automations", href: "/dashboard/settings/rules", icon: Settings },
-  { name: "Integrations", href: "/dashboard/settings/integrations", icon: Link2 },
+  // { name: "Integrations", href: "/dashboard/settings/integrations", icon: Link2 },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {

@@ -14,10 +14,11 @@ import {
   EyeOff,
   ArrowRight,
   Loader2,
+  Check,
 } from "lucide-react";
 
 export default function RegisterPage() {
-  const { register, actionLoading } = useAuth(); // Use actionLoading from context!
+  const { register, actionLoading } = useAuth();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -70,232 +71,318 @@ export default function RegisterPage() {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
       });
-      // Success → redirect handled by context
     } catch (err: any) {
       setError(err.message || "Registration failed. Please try again.");
     }
   };
 
+  // Password strength indicator
+  const getPasswordStrength = () => {
+    const pwd = formData.password;
+    if (pwd.length === 0) return { strength: 0, label: "" };
+    if (pwd.length < 8) return { strength: 1, label: "Weak", color: "bg-red-500" };
+    if (pwd.length < 12) return { strength: 2, label: "Fair", color: "bg-yellow-500" };
+    if (pwd.length >= 12 && /[A-Z]/.test(pwd) && /[0-9]/.test(pwd))
+      return { strength: 3, label: "Strong", color: "bg-emerald-500" };
+    return { strength: 2, label: "Fair", color: "bg-yellow-500" };
+  };
+
+  const passwordStrength = getPasswordStrength();
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center px-4 py-12 relative overflow-hidden">
-      {/* Animated background blobs */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+      {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-400/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-teal-400/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-300/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-teal-300/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-emerald-200/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
       <div className="relative w-full max-w-lg">
-        {/* Main Card */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 sm:p-12 overflow-hidden relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-transparent to-teal-50/30 pointer-events-none" />
-
-          <div className="relative z-10">
-            {/* Header */}
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-emerald-100 rounded-3xl mb-6 shadow-lg">
-                <MessageCircle className="w-11 h-11 text-emerald-600" />
+        {/* Main Card with Glass Effect */}
+        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_0_rgba(16,185,129,0.15)] border border-white/30 overflow-hidden">
+          {/* Header Section with Gradient */}
+          <div className="relative px-8 pt-10 pb-8 bg-gradient-to-br from-emerald-50/80 via-white/50 to-teal-50/60">
+            <div className="text-center">
+              {/* Logo */}
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl mb-5 shadow-lg shadow-emerald-500/25 transform hover:scale-105 transition-transform duration-300">
+                <MessageCircle className="w-9 h-9 text-white" strokeWidth={2.5} />
               </div>
-              <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+              
+              {/* Title */}
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">
                 Join Whisone
               </h1>
-              <p className="mt-3 text-lg text-gray-600 font-light">
-                Start your second brain on WhatsApp — it takes 30 seconds
+              <p className="text-base text-gray-600">
+                Start your AI second brain on WhatsApp
               </p>
             </div>
+          </div>
 
+          {/* Form Section */}
+          <div className="px-8 pb-8 pt-6 relative">
             {/* Error Alert */}
             {error && (
-              <div className="mb-8 p-4 bg-red-50/80 backdrop-blur border border-red-200 text-red-700 rounded-2xl text-sm flex items-center gap-3 animate-in slide-in-from-top-2">
-                <div className="w-5 h-5 bg-red-200 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold">!</span>
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-xs font-bold text-white">!</span>
                 </div>
-                <span className="font-medium">{error}</span>
+                <span className="flex-1 leading-relaxed">{error}</span>
               </div>
             )}
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-6 relative">
+            {/* Form Container */}
+            <div className="space-y-5 relative">
               {/* Loading Overlay */}
               {actionLoading && (
                 <div className="absolute inset-0 bg-white/70 backdrop-blur-sm rounded-2xl z-20 flex items-center justify-center">
                   <div className="text-center">
                     <Loader2 className="w-12 h-12 text-emerald-600 animate-spin mx-auto mb-4" />
-                    <p className="text-gray-700 font-medium">Creating your second brain...</p>
+                    <p className="text-gray-700 font-medium">Creating your account...</p>
                   </div>
                 </div>
               )}
 
               {/* Name Fields */}
-              <div className="grid grid-cols-2 gap-5">
-                <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2.5">First Name</label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors pointer-events-none" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700 pl-1">
+                    First Name
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <User className="w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors duration-200" />
+                    </div>
                     <input
                       type="text"
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleChange}
+                      disabled={actionLoading}
                       required
                       placeholder="John"
-                      className="w-full pl-12 pr-5 py-4 bg-gray-50/70 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all placeholder-gray-400 group-hover:border-gray-300 disabled:opacity-60"
+                      className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-300"
                     />
                   </div>
                 </div>
 
-                <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2.5">Last Name</label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors pointer-events-none" />
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700 pl-1">
+                    Last Name
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <User className="w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors duration-200" />
+                    </div>
                     <input
                       type="text"
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleChange}
+                      disabled={actionLoading}
                       placeholder="Doe"
-                      className="w-full pl-12 pr-5 py-4 bg-gray-50/70 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all placeholder-gray-400 group-hover:border-gray-300 disabled:opacity-60"
+                      className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-300"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Email */}
-              <div className="group">
-                <label className="block text-sm font-semibold text-gray-700 mb-2.5">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors pointer-events-none" />
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700 pl-1">
+                  Email Address
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Mail className="w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors duration-200" />
+                  </div>
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
+                    disabled={actionLoading}
                     required
                     placeholder="john@example.com"
-                    className="w-full pl-12 pr-5 py-4 bg-gray-50/70 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all placeholder-gray-400 group-hover:border-gray-300"
+                    className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-300"
                   />
                 </div>
               </div>
 
               {/* WhatsApp */}
-              <div className="group">
-                <label className="block text-sm font-semibold text-gray-700 mb-2.5">WhatsApp Number</label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors pointer-events-none" />
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700 pl-1">
+                  WhatsApp Number
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Phone className="w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors duration-200" />
+                  </div>
                   <input
                     type="tel"
                     name="whatsapp"
                     value={formData.whatsapp}
                     onChange={handleChange}
+                    disabled={actionLoading}
                     required
                     placeholder="+1234567890"
-                    className="w-full pl-12 pr-5 py-4 bg-gray-50/70 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all placeholder-gray-400 group-hover:border-gray-300"
+                    className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-300"
                   />
                 </div>
-                <p className="mt-2 text-xs text-gray-500">
-                  We’ll send your AI agent here — make sure it’s active!
+                <p className="text-xs text-gray-500 pl-1">
+                  Your AI agent will be sent here — ensure it's active
                 </p>
               </div>
 
               {/* Password */}
-              <div className="group">
-                <label className="block text-sm font-semibold text-gray-700 mb-2.5">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors pointer-events-none" />
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700 pl-1">
+                  Password
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors duration-200" />
+                  </div>
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
+                    disabled={actionLoading}
                     required
-                    placeholder="••••••••••••"
-                    className="w-full pl-12 pr-12 py-4 bg-gray-50/70 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    placeholder="Create a strong password"
+                    className="w-full pl-11 pr-12 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-300"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                    tabIndex={-1}
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                {/* Password Strength Indicator */}
+                {formData.password && (
+                  <div className="space-y-1.5">
+                    <div className="flex gap-1">
+                      {[1, 2, 3].map((level) => (
+                        <div
+                          key={level}
+                          className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                            level <= passwordStrength.strength
+                              ? passwordStrength.color
+                              : "bg-gray-200"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    {passwordStrength.label && (
+                      <p className="text-xs text-gray-600 pl-1">
+                        Password strength: <span className="font-medium">{passwordStrength.label}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Confirm Password */}
-              <div className="group">
-                <label className="block text-sm font-semibold text-gray-700 mb-2.5">Confirm Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors pointer-events-none" />
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700 pl-1">
+                  Confirm Password
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="w-5 h-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors duration-200" />
+                  </div>
                   <input
                     type={showPasswordConfirm ? "text" : "password"}
                     name="passwordConfirm"
                     value={formData.passwordConfirm}
                     onChange={handleChange}
+                    disabled={actionLoading}
                     required
-                    placeholder="••••••••••••"
-                    className="w-full pl-12 pr-12 py-4 bg-gray-50/70 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    placeholder="Confirm your password"
+                    className="w-full pl-11 pr-12 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-300"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                    tabIndex={-1}
                   >
                     {showPasswordConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                {formData.passwordConfirm && formData.password === formData.passwordConfirm && (
+                  <div className="flex items-center gap-1.5 text-emerald-600 pl-1">
+                    <Check className="w-4 h-4" />
+                    <span className="text-xs font-medium">Passwords match</span>
+                  </div>
+                )}
               </div>
 
               {/* Submit Button */}
               <button
-                type="submit"
+                onClick={handleSubmit}
                 disabled={actionLoading}
-                className="w-full mt-10 py-5 bg-emerald-600 text-white font-bold text-lg rounded-2xl shadow-xl hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-100 flex items-center justify-center gap-3 group relative overflow-hidden"
+                className="relative w-full mt-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold text-base rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none overflow-hidden group"
               >
-                <span className="relative z-10 flex items-center gap-3">
+                <span className="relative z-10 flex items-center justify-center gap-2">
                   {actionLoading ? (
                     <>
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                      Creating your account...
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Creating your account...</span>
                     </>
                   ) : (
                     <>
-                      Create Account
-                      <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
+                      <span>Create Account</span>
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                     </>
                   )}
                 </span>
-                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-white/20" />
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </button>
-            </form>
+            </div>
 
             {/* Login Link */}
-            <div className="mt-10 text-center">
-              <p className="text-gray-600 text-sm">
-                Already have early access?{" "}
+            <div className="mt-8 text-center">
+              <p className="text-sm text-gray-600">
+                Already have an account?{" "}
                 <a
                   href="/auth/login"
-                  className="font-bold text-emerald-600 hover:text-emerald-700 underline underline-offset-4 hover:underline-offset-2 transition-all"
+                  className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors underline decoration-emerald-600/30 underline-offset-4 hover:decoration-emerald-600/60"
                 >
                   Sign in here
                 </a>
               </p>
             </div>
+          </div>
 
-            {/* Footer */}
-            <div className="mt-12 pt-8 border-t border-gray-100">
-              <p className="text-center text-xs text-gray-500 leading-relaxed">
-                By registering, you agree to our{" "}
-                <a href="#" className="underline hover:text-gray-700 transition">Terms</a> and{" "}
-                <a href="#" className="underline hover:text-gray-700 transition">Privacy Policy</a>.
-                Your data is encrypted and never shared.
-              </p>
-            </div>
+          {/* Footer */}
+          <div className="px-8 pb-8 pt-4 border-t border-gray-100">
+            <p className="text-center text-xs text-gray-500 leading-relaxed">
+              By registering, you agree to our{" "}
+              <a href="#" className="text-gray-700 underline hover:text-gray-900 transition-colors">
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a href="#" className="text-gray-700 underline hover:text-gray-900 transition-colors">
+                Privacy Policy
+              </a>
+              . Your data is encrypted and never shared.
+            </p>
           </div>
         </div>
 
-        {/* Brand */}
-        <div className="text-center mt-10">
-          <p className="text-sm text-gray-500 font-medium">
-            Powered by <span className="font-bold text-emerald-600">Whisone</span> — Your AI Agent on WhatsApp
+        {/* Brand Footer */}
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-600">
+            Powered by{" "}
+            <span className="font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              Whisone
+            </span>
+            {" "}— Your AI Agent on WhatsApp
           </p>
         </div>
       </div>

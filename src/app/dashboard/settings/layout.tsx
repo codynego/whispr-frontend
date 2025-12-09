@@ -18,7 +18,7 @@ const navItems = [
   { name: "Account", href: "/dashboard/settings/account", icon: User },
   { name: "Notifications", href: "/dashboard/settings/notifications", icon: Bell },
   { name: "Assistant Personality", href: "/dashboard/settings/personality", icon: Brain },
-  { name: "Rules & Automations", href: "/dashboard/settings/rules", icon: Settings },
+  // { name: "Rules & Automations", href: "/dashboard/settings/rules", icon: Settings },
   // { name: "Integrations", href: "/dashboard/settings/integrations", icon: Link2 },
 ];
 

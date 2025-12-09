@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 export default function LoginPage() {
   const router = useRouter();
   const { login, actionLoading } = useAuth();
-  console.log("Action Loading State:", actionLoading);
+
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,9 +26,7 @@ export default function LoginPage() {
 
     try {
       await login(email.trim(), password);
-      console.log("Logining , redirecting to dashboard.", actionLoading);
       router.push("/dashboard");
-      console.log("Login successful, redirecting to dashboard.", actionLoading);
     } catch (err: any) {
       console.error("Login failed:", err);
       setError(err.message || "Invalid email or password. Please try again.");

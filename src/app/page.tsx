@@ -1,4 +1,4 @@
-import { Mail, FileText, Calendar, CheckCircle, Users, Quote, Zap, Bell, MessageCircle, ArrowRight, Check, Brain, Sparkles, Clock, BookOpen, Briefcase, Heart } from "lucide-react";
+import { Quote, Zap, MessageCircle, ArrowRight, Check, Brain, Sparkles, BookOpen, Briefcase, Heart } from "lucide-react";
 
 export default function WhisoneLandingPage() {
   const handleGetEarlyAccess = () => {

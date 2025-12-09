@@ -25,7 +25,7 @@ interface AssistantConfig {
 }
 
 export default function PersonalityTab() {
-  const { user, loading: authLoading } = useAuth(); // No accessToken!
+  const { user, loading: authLoading } = useAuth();
 
   const [config, setConfig] = useState<AssistantConfig>({
     id: 0,
@@ -51,7 +51,7 @@ export default function PersonalityTab() {
     const fetchConfig = async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/config/`, {
-          credentials: "include", // Sends HttpOnly cookies automatically
+          credentials: "include",
         });
 
         if (!res.ok) {
@@ -116,41 +116,52 @@ export default function PersonalityTab() {
 
   if (authLoading || loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <p className="text-gray-600">Loading assistant config...</p>
+      <div className="flex items-center justify-center p-6 sm:p-8">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+          <p className="text-gray-600 font-medium text-sm sm:text-base">Loading assistant config...</p>
+        </div>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <p className="text-gray-600">Please log in to customize your assistant</p>
+      <div className="flex items-center justify-center p-6 sm:p-8">
+        <p className="text-gray-600 text-sm sm:text-base">Please log in to customize your assistant</p>
       </div>
     );
   }
 
   return (
-    <>
-      <CardHeader>
-        <CardTitle>Assistant Personality</CardTitle>
-        <CardDescription>
+    <div className="w-full overflow-x-hidden">
+      <CardHeader className="px-4 sm:px-6">
+        <CardTitle className="text-xl sm:text-2xl">Assistant Personality</CardTitle>
+        <CardDescription className="text-sm sm:text-base">
           Customize how WhisprAI communicates and prioritizes your messages.
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Label>Enable Assistant</Label>
+      <CardContent className="space-y-5 sm:space-y-6 px-4 sm:px-6">
+        {/* Enable Assistant Toggle */}
+        <div className="flex items-center justify-between gap-4 p-4 sm:p-5 bg-emerald-50/50 rounded-xl border border-emerald-200">
+          <div className="min-w-0 flex-1">
+            <Label className="font-medium text-sm sm:text-base text-gray-900">Enable Assistant</Label>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">Turn your AI assistant on or off</p>
+          </div>
           <Switch
             checked={config.is_enabled}
             onCheckedChange={(checked) => updateConfig("is_enabled", checked)}
             disabled={saving}
+            className="flex-shrink-0 data-[state=checked]:bg-emerald-600"
           />
         </div>
 
-        <div>
-          <Label htmlFor="max_response_length">Max Response Length</Label>
+        {/* Max Response Length */}
+        <div className="space-y-2 sm:space-y-3">
+          <Label htmlFor="max_response_length" className="text-sm sm:text-base font-medium text-gray-900">
+            Max Response Length
+          </Label>
           <Input
             id="max_response_length"
             type="number"
@@ -159,11 +170,21 @@ export default function PersonalityTab() {
               updateConfig("max_response_length", parseInt(e.target.value) || 0)
             }
             disabled={saving}
+            className="text-sm sm:text-base focus:ring-emerald-500 focus:border-emerald-600"
           />
+          <p className="text-xs sm:text-sm text-gray-500">Maximum number of characters in responses</p>
         </div>
 
-        <div>
-          <Label htmlFor="temperature">Temperature ({config.temperature})</Label>
+        {/* Temperature Slider */}
+        <div className="space-y-2 sm:space-y-3">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="temperature" className="text-sm sm:text-base font-medium text-gray-900">
+              Temperature
+            </Label>
+            <span className="text-sm font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+              {config.temperature.toFixed(1)}
+            </span>
+          </div>
           <Slider
             id="temperature"
             value={[config.temperature]}
@@ -172,11 +193,21 @@ export default function PersonalityTab() {
             max={1}
             step={0.1}
             disabled={saving}
+            className="w-full [&_[role=slider]]:bg-emerald-600 [&_[role=slider]]:border-emerald-600 [&>.relative>.absolute]:bg-emerald-600"
           />
+          <p className="text-xs sm:text-sm text-gray-500">Controls randomness: 0 is focused, 1 is creative</p>
         </div>
 
-        <div>
-          <Label htmlFor="top_p">Top P ({config.top_p})</Label>
+        {/* Top P Slider */}
+        <div className="space-y-2 sm:space-y-3">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="top_p" className="text-sm sm:text-base font-medium text-gray-900">
+              Top P
+            </Label>
+            <span className="text-sm font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+              {config.top_p.toFixed(1)}
+            </span>
+          </div>
           <Slider
             id="top_p"
             value={[config.top_p]}
@@ -185,34 +216,78 @@ export default function PersonalityTab() {
             max={1}
             step={0.1}
             disabled={saving}
+            className="w-full [&_[role=slider]]:bg-emerald-600 [&_[role=slider]]:border-emerald-600 [&>.relative>.absolute]:bg-emerald-600"
           />
+          <p className="text-xs sm:text-sm text-gray-500">Controls diversity of word choices</p>
         </div>
 
-        <div>
-          <Label className="mb-2 block">Select Tone</Label>
+        {/* Tone Selection */}
+        <div className="space-y-3 sm:space-y-4">
+          <Label className="text-sm sm:text-base font-medium text-gray-900 block">Select Tone</Label>
           <RadioGroup
             value={config.tone}
             onValueChange={(value) => updateConfig("tone", value)}
             disabled={saving}
+            className="space-y-3"
           >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="business" id="business" />
-              <Label htmlFor="business">Business (formal & focused)</Label>
+            <div className={`flex items-start space-x-3 p-3 sm:p-4 rounded-lg border-2 transition-all cursor-pointer ${
+              config.tone === 'business' 
+                ? 'bg-emerald-50 border-emerald-500' 
+                : 'bg-gray-50 border-gray-200 hover:bg-emerald-50/50 hover:border-emerald-300'
+            }`}>
+              <RadioGroupItem 
+                value="business" 
+                id="business" 
+                className="mt-0.5 flex-shrink-0 border-emerald-600 text-emerald-600" 
+              />
+              <div className="min-w-0 flex-1">
+                <Label htmlFor="business" className="font-medium text-sm sm:text-base text-gray-900 cursor-pointer">
+                  Business
+                </Label>
+                <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Formal & focused communication</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="friendly" id="friendly" />
-              <Label htmlFor="friendly">Friendly (warm & conversational)</Label>
+            <div className={`flex items-start space-x-3 p-3 sm:p-4 rounded-lg border-2 transition-all cursor-pointer ${
+              config.tone === 'friendly' 
+                ? 'bg-emerald-50 border-emerald-500' 
+                : 'bg-gray-50 border-gray-200 hover:bg-emerald-50/50 hover:border-emerald-300'
+            }`}>
+              <RadioGroupItem 
+                value="friendly" 
+                id="friendly" 
+                className="mt-0.5 flex-shrink-0 border-emerald-600 text-emerald-600" 
+              />
+              <div className="min-w-0 flex-1">
+                <Label htmlFor="friendly" className="font-medium text-sm sm:text-base text-gray-900 cursor-pointer">
+                  Friendly
+                </Label>
+                <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Warm & conversational style</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="personal" id="personal" />
-              <Label htmlFor="personal">Personal (casual & relaxed)</Label>
+            <div className={`flex items-start space-x-3 p-3 sm:p-4 rounded-lg border-2 transition-all cursor-pointer ${
+              config.tone === 'personal' 
+                ? 'bg-emerald-50 border-emerald-500' 
+                : 'bg-gray-50 border-gray-200 hover:bg-emerald-50/50 hover:border-emerald-300'
+            }`}>
+              <RadioGroupItem 
+                value="personal" 
+                id="personal" 
+                className="mt-0.5 flex-shrink-0 border-emerald-600 text-emerald-600" 
+              />
+              <div className="min-w-0 flex-1">
+                <Label htmlFor="personal" className="font-medium text-sm sm:text-base text-gray-900 cursor-pointer">
+                  Personal
+                </Label>
+                <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Casual & relaxed tone</p>
+              </div>
             </div>
           </RadioGroup>
         </div>
 
-        <div>
-          <Label htmlFor="instructions" className="mb-2 block">
-            Add Custom Instructions
+        {/* Custom Instructions */}
+        <div className="space-y-2 sm:space-y-3">
+          <Label htmlFor="instructions" className="text-sm sm:text-base font-medium text-gray-900 block">
+            Custom Instructions
           </Label>
           <Textarea
             id="instructions"
@@ -220,13 +295,23 @@ export default function PersonalityTab() {
             value={config.custom_instructions ?? ""}
             onChange={(e) => updateConfig("custom_instructions", e.target.value)}
             disabled={saving}
+            className="min-h-[120px] text-sm sm:text-base resize-none focus:ring-emerald-500 focus:border-emerald-600"
+            rows={5}
           />
+          <p className="text-xs sm:text-sm text-gray-500">Add specific guidelines for your assistant</p>
         </div>
 
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? "Saving..." : "Save Preferences"}
-        </Button>
+        {/* Save Button */}
+        <div className="pt-2 sm:pt-4">
+          <Button 
+            onClick={handleSave} 
+            disabled={saving}
+            className="w-full sm:w-auto px-6 sm:px-8 py-5 sm:py-6 text-sm sm:text-base font-medium bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg hover:shadow-emerald-600/30 transition-all"
+          >
+            {saving ? "Saving..." : "Save Preferences"}
+          </Button>
+        </div>
       </CardContent>
-    </>
+    </div>
   );
 }

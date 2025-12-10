@@ -254,7 +254,7 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name: avatar.name }), // Only send the name field
+        body: JSON.stringify({ name: avatar.name }),
       });
       console.log("Avatar name updated.", avatar.id);
 
@@ -287,7 +287,7 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
 
     setSaving(true); // Reuse saving state for visual feedback
     try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatar.id}/`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/profile/${avatar.id}/`, {
             method: "DELETE",
             credentials: "include",
         });

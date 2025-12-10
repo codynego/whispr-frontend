@@ -27,8 +27,16 @@ export default function DashboardLayout({
   const [chatOpen, setChatOpen] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted (client-side only)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
+    if (!mounted) return;
+
     const checkScreenSize = () => {
       const mobile = window.innerWidth < 1024;
       setIsMobile(mobile);
@@ -38,7 +46,7 @@ export default function DashboardLayout({
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
     return () => window.removeEventListener("resize", checkScreenSize);
-  }, []);
+  }, [mounted]);
 
   const toggleSidebar = () => {
     if (isMobile) {
@@ -56,7 +64,6 @@ export default function DashboardLayout({
       ? "lg:ml-72"
       : "lg:ml-20";
 
-  // Reset iframe state when opening chat
   const openChat = () => {
     setChatOpen(true);
     setIframeLoaded(false);
@@ -66,6 +73,19 @@ export default function DashboardLayout({
   const closeChat = () => {
     setChatOpen(false);
   };
+
+  // Prevent hydration mismatch - don't render until mounted
+  if (!mounted) {
+    return (
+      <ProtectedRoute>
+        <div className="flex min-h-screen bg-gray-50">
+          <div className="flex-1 flex items-center justify-center">
+            <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -168,14 +188,21 @@ export default function DashboardLayout({
                   </div>
                 )}
 
-                {/* Iframe - REPLACE WITH YOUR ACTUAL URL */}
+                {/* Iframe */}
                 <iframe
-                  src="https://whisone.app/a/whisone" // ← REPLACE THIS WITH YOUR ACTUAL CHAT URL
+                  src="https://whisone.app/a/whisone"
                   className={`w-full h-full border-0 ${!iframeLoaded ? 'invisible' : 'visible'}`}
                   title="Whisone Chat"
                   allow="microphone; camera"
-                  onLoad={() => setIframeLoaded(true)}
-                  onError={() => setIframeError(true)}
+                  onLoad={() => {
+                    setIframeLoaded(true);
+                    console.log('Chat iframe loaded successfully');
+                  }}
+                  onError={(e) => {
+                    setIframeError(true);
+                    console.error('Chat iframe error:', e);
+                  }}
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
                 />
               </div>
             </div>

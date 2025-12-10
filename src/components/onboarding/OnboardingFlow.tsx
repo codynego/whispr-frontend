@@ -8,7 +8,11 @@ import { useRouter } from "next/navigation";
 
 const ONBOARDING_KEY = "whisone_onboarding_completed";
 
-export default function OnboardingModal() {
+interface OnboardingModalProps {
+  onComplete?: () => void;
+}
+
+export default function OnboardingModal({ onComplete }: OnboardingModalProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState(1);
   const router = useRouter();
@@ -16,18 +20,23 @@ export default function OnboardingModal() {
 
   useEffect(() => {
     const hasCompleted = localStorage.getItem(ONBOARDING_KEY) === "true";
-    if (!hasCompleted && user) { // Only show if user is logged in and not completed
+    if (!hasCompleted && user) {
       setIsOpen(true);
+    } else if (hasCompleted && onComplete) {
+      onComplete(); // Call parent complete handler if already done
     }
-  }, [user]);
+  }, [user, onComplete]);
 
   useEffect(() => {
     if (!isOpen) setStep(1);
   }, [isOpen]);
 
-  const handleClose = () => {
+  const handleClose = (redirect = true) => {
     setIsOpen(false);
     localStorage.setItem(ONBOARDING_KEY, "true");
+    if (redirect && onComplete) {
+      onComplete();
+    }
   };
 
   if (!isOpen) return null;
@@ -38,7 +47,7 @@ export default function OnboardingModal() {
   };
 
   const handleAction = (path: string) => {
-    handleClose();
+    handleClose(false); // Close without calling onComplete immediately
     router.push(path);
   };
 
@@ -66,7 +75,7 @@ export default function OnboardingModal() {
         Here you save anything you don’t want to forget — tasks, notes, ideas, dates.
       </p>
       <button
-        onClick={() => handleAction("/dashboard/notes")} // Assuming path to create memory
+        onClick={() => handleAction("/dashboard/notes")}
         className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-3"
       >
         Create a Memory <ArrowRight className="w-6 h-6" />
@@ -82,7 +91,7 @@ export default function OnboardingModal() {
         Avatars act like personal assistants. You can create one for studying, support, business, Bible study, interviews, etc.
       </p>
       <button
-        onClick={() => handleAction("/dashboard/avatars")} // Assuming path to create avatar
+        onClick={() => handleAction("/dashboard/avatars")}
         className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-3"
       >
         Create Your First Avatar <ArrowRight className="w-6 h-6" />
@@ -102,7 +111,7 @@ export default function OnboardingModal() {
         <p className="italic">“Save this number: 08123456789.”</p>
       </div>
       <button
-        onClick={() => handleAction("/dashboard/assistant")} // Assuming demo chat path
+        onClick={() => handleAction("/dashboard/assistant")}
         className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-3"
       >
         Try a Demo Chat <ArrowRight className="w-6 h-6" />
@@ -118,10 +127,7 @@ export default function OnboardingModal() {
         You’re all set! Whisone will now help you remember everything important.
       </p>
       <button
-        onClick={() => {
-          handleClose();
-          router.push("/dashboard");
-        }}
+        onClick={() => handleClose()}
         className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-3"
       >
         Start Using Whisone <ArrowRight className="w-6 h-6" />
@@ -132,7 +138,7 @@ export default function OnboardingModal() {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
       <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative">
-        <button onClick={handleClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+        <button onClick={() => handleClose()} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
           <X className="w-6 h-6" />
         </button>
         {steps[step - 1]}
@@ -148,4 +154,3 @@ export default function OnboardingModal() {
     </div>
   );
 }
-

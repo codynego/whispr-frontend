@@ -1,9 +1,4 @@
-// app/auth/register/page.tsx
-"use client";
-
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 import {
   MessageCircle,
   User,
@@ -15,12 +10,11 @@ import {
   ArrowRight,
   Loader2,
   Check,
+  Sparkles,
+  Send,
 } from "lucide-react";
 
 export default function RegisterPage() {
-  const { register, actionLoading } = useAuth();
-  const router = useRouter();
-
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -33,6 +27,23 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [error, setError] = useState("");
+  const [showActivation, setShowActivation] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  interface RegisterFormData {
+    firstName: string;
+    lastName: string;
+    email: string;
+    whatsapp: string;
+    password: string;
+    passwordConfirm: string;
+  }
+
+  interface PasswordStrength {
+    strength: number;
+    label: string;
+    color: string;
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -52,7 +63,9 @@ export default function RegisterPage() {
     return null;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  interface HandleSubmitEvent extends React.FormEvent<HTMLButtonElement | HTMLFormElement> {}
+
+  const handleSubmit = async (e: HandleSubmitEvent) => {
     e.preventDefault();
     setError("");
 
@@ -62,22 +75,14 @@ export default function RegisterPage() {
       return;
     }
 
-    try {
-      await register({
-        email: formData.email.trim(),
-        password: formData.password,
-        password_confirm: formData.passwordConfirm,
-        whatsapp: formData.whatsapp.replace(/\s/g, ""),
-        first_name: formData.firstName.trim(),
-        last_name: formData.lastName.trim(),
-      });
-      router.push("/dashboard/overview");
-    } catch (err: any) {
-      setError(err.message || "Registration failed. Please try again.");
-    }
+    setIsLoading(true);
+    
+    setTimeout(() => {
+      setIsLoading(false);
+      setShowActivation(true);
+    }, 2000);
   };
 
-  // Password strength indicator
   const getPasswordStrength = () => {
     const pwd = formData.password;
     if (pwd.length === 0) return { strength: 0, label: "" };
@@ -90,27 +95,111 @@ export default function RegisterPage() {
 
   const passwordStrength = getPasswordStrength();
 
+  const handleWhatsAppActivation = () => {
+    const whatsappNumber = "1234567890";
+    const message = encodeURIComponent("Hi Whisone, activate my assistant");
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+    
+    window.open(whatsappUrl, "_blank");
+  };
+
+  if (showActivation) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-300/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-teal-300/15 rounded-full blur-3xl animate-pulse" />
+        </div>
+
+        <div className="relative w-full max-w-md">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 overflow-hidden">
+            <div className="relative px-8 pt-12 pb-8 bg-gradient-to-br from-emerald-50/80 via-white/50 to-teal-50/60">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full mb-6 shadow-lg shadow-emerald-500/30">
+                  <Sparkles className="w-10 h-10 text-white animate-pulse" strokeWidth={2.5} />
+                </div>
+                
+                <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-3">
+                  🎉 Your Whisone Account is Ready!
+                </h1>
+                <p className="text-base text-gray-600">
+                  One final step to activate your AI assistant
+                </p>
+              </div>
+            </div>
+
+            <div className="px-8 pb-8 pt-6">
+              <div className="mb-8 p-5 bg-gradient-to-br from-emerald-50 to-teal-50/50 rounded-2xl border border-emerald-100">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-emerald-600" />
+                  Activate Your WhatsApp Assistant
+                </h2>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  To complete your setup, tap the button below to open WhatsApp and send a quick activation message. This connects your AI assistant to your account.
+                </p>
+              </div>
+
+              <button
+                onClick={handleWhatsAppActivation}
+                className="relative w-full py-5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold text-lg rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 overflow-hidden group"
+              >
+                <span className="relative z-10 flex items-center justify-center gap-3">
+                  <Send className="w-6 h-6 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" />
+                  <span>Activate on WhatsApp</span>
+                  <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </button>
+
+              <div className="mt-6 text-center">
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  This will open WhatsApp with a pre-filled message.
+                  <br />
+                  Simply send it to activate your assistant instantly.
+                </p>
+              </div>
+
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => setShowActivation(false)}
+                  className="text-sm text-gray-600 hover:text-gray-900 underline underline-offset-4 transition-colors"
+                >
+                  Skip for now and go to dashboard
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center mt-8">
+            <p className="text-sm text-gray-600">
+              Powered by{" "}
+              <span className="font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                Whisone
+              </span>
+              {" "}— Your AI Agent on WhatsApp
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center px-4 py-8 relative overflow-hidden">
-      {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-300/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-teal-300/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-emerald-200/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-teal-300/15 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-emerald-200/10 rounded-full blur-3xl animate-pulse" />
       </div>
 
       <div className="relative w-full max-w-lg">
-        {/* Main Card with Glass Effect */}
-        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_0_rgba(16,185,129,0.15)] border border-white/30 overflow-hidden">
-          {/* Header Section with Gradient */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 overflow-hidden">
           <div className="relative px-8 pt-10 pb-8 bg-gradient-to-br from-emerald-50/80 via-white/50 to-teal-50/60">
             <div className="text-center">
-              {/* Logo */}
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl mb-5 shadow-lg shadow-emerald-500/25 transform hover:scale-105 transition-transform duration-300">
                 <MessageCircle className="w-9 h-9 text-white" strokeWidth={2.5} />
               </div>
               
-              {/* Title */}
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">
                 Join Whisone
               </h1>
@@ -120,11 +209,9 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Form Section */}
           <div className="px-8 pb-8 pt-6 relative">
-            {/* Error Alert */}
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-start gap-3">
                 <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <span className="text-xs font-bold text-white">!</span>
                 </div>
@@ -132,10 +219,8 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Form Container */}
             <div className="space-y-5 relative">
-              {/* Loading Overlay */}
-              {actionLoading && (
+              {isLoading && (
                 <div className="absolute inset-0 bg-white/70 backdrop-blur-sm rounded-2xl z-20 flex items-center justify-center">
                   <div className="text-center">
                     <Loader2 className="w-12 h-12 text-emerald-600 animate-spin mx-auto mb-4" />
@@ -144,7 +229,6 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 pl-1">
@@ -159,7 +243,7 @@ export default function RegisterPage() {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleChange}
-                      disabled={actionLoading}
+                      disabled={isLoading}
                       required
                       placeholder="John"
                       className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-300"
@@ -180,7 +264,7 @@ export default function RegisterPage() {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleChange}
-                      disabled={actionLoading}
+                      disabled={isLoading}
                       placeholder="Doe"
                       className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-300"
                     />
@@ -188,7 +272,6 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Email */}
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700 pl-1">
                   Email Address
@@ -202,7 +285,7 @@ export default function RegisterPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    disabled={actionLoading}
+                    disabled={isLoading}
                     required
                     placeholder="john@example.com"
                     className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-300"
@@ -210,7 +293,6 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* WhatsApp */}
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700 pl-1">
                   WhatsApp Number
@@ -224,7 +306,7 @@ export default function RegisterPage() {
                     name="whatsapp"
                     value={formData.whatsapp}
                     onChange={handleChange}
-                    disabled={actionLoading}
+                    disabled={isLoading}
                     required
                     placeholder="+1234567890"
                     className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-300"
@@ -235,7 +317,6 @@ export default function RegisterPage() {
                 </p>
               </div>
 
-              {/* Password */}
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700 pl-1">
                   Password
@@ -249,7 +330,7 @@ export default function RegisterPage() {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    disabled={actionLoading}
+                    disabled={isLoading}
                     required
                     placeholder="Create a strong password"
                     className="w-full pl-11 pr-12 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-300"
@@ -263,7 +344,6 @@ export default function RegisterPage() {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                {/* Password Strength Indicator */}
                 {formData.password && (
                   <div className="space-y-1.5">
                     <div className="flex gap-1">
@@ -287,7 +367,6 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Confirm Password */}
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700 pl-1">
                   Confirm Password
@@ -301,7 +380,7 @@ export default function RegisterPage() {
                     name="passwordConfirm"
                     value={formData.passwordConfirm}
                     onChange={handleChange}
-                    disabled={actionLoading}
+                    disabled={isLoading}
                     required
                     placeholder="Confirm your password"
                     className="w-full pl-11 pr-12 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all text-gray-900 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-300"
@@ -323,14 +402,13 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Submit Button */}
               <button
                 onClick={handleSubmit}
-                disabled={actionLoading}
-                className="relative w-full mt-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold text-base rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none overflow-hidden group"
+                disabled={isLoading}
+                className="relative w-full mt-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold text-base rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none overflow-hidden group"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
-                  {actionLoading ? (
+                  {isLoading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
                       <span>Creating your account...</span>
@@ -346,13 +424,12 @@ export default function RegisterPage() {
               </button>
             </div>
 
-            {/* Login Link */}
             <div className="mt-8 text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{" "}
                 <a
-                  href="/auth/login"
-                  className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors underline decoration-emerald-600/30 underline-offset-4 hover:decoration-emerald-600/60"
+                  href="#"
+                  className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors underline underline-offset-4"
                 >
                   Sign in here
                 </a>
@@ -360,7 +437,6 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Footer */}
           <div className="px-8 pb-8 pt-4 border-t border-gray-100">
             <p className="text-center text-xs text-gray-500 leading-relaxed">
               By registering, you agree to our{" "}
@@ -376,7 +452,6 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* Brand Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-600">
             Powered by{" "}
@@ -390,5 +465,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-const WHISONE_WHATSAPP_NUMBER = "+2348051385049";

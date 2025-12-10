@@ -65,9 +65,17 @@ export default function DashboardLayout({
       : "lg:ml-20";
 
   const openChat = () => {
-    setChatOpen(true);
-    setIframeLoaded(false);
-    setIframeError(false);
+    // Open chat in a centered popup window
+    const width = 800;
+    const height = 600;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+    
+    window.open(
+      'https://whisone.app/a/whisone',
+      'whisone-chat',
+      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+    );
   };
 
   const closeChat = () => {
@@ -133,81 +141,6 @@ export default function DashboardLayout({
         >
           <MessageCircle className="w-7 h-7" />
         </button>
-
-        {/* Chat Modal/Widget */}
-        {chatOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-            <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full h-[80vh] relative overflow-hidden flex flex-col">
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white rounded-t-3xl">
-                <h2 className="text-lg font-semibold text-gray-800">Chat Support</h2>
-                <button
-                  onClick={closeChat}
-                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-lg transition-colors"
-                  aria-label="Close chat"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              {/* Iframe Container */}
-              <div className="flex-1 relative bg-gray-50">
-                {/* Loading State */}
-                {!iframeLoaded && !iframeError && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                      <p className="text-gray-600">Loading chat...</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Error State */}
-                {iframeError && (
-                  <div className="absolute inset-0 flex items-center justify-center p-8">
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <X className="w-8 h-8 text-red-600" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                        Unable to Load Chat
-                      </h3>
-                      <p className="text-gray-600 mb-4">
-                        Please check the chat URL or try again later.
-                      </p>
-                      <button
-                        onClick={() => {
-                          setIframeError(false);
-                          setIframeLoaded(false);
-                        }}
-                        className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-                      >
-                        Retry
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Iframe */}
-                <iframe
-                  src="https://whisone.app/a/whisone"
-                  className={`w-full h-full border-0 ${!iframeLoaded ? 'invisible' : 'visible'}`}
-                  title="Whisone Chat"
-                  allow="microphone; camera"
-                  onLoad={() => {
-                    setIframeLoaded(true);
-                    console.log('Chat iframe loaded successfully');
-                  }}
-                  onError={(e) => {
-                    setIframeError(true);
-                    console.error('Chat iframe error:', e);
-                  }}
-                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
-                />
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </ProtectedRoute>
   );

@@ -71,6 +71,7 @@ export default function RegisterPage() {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
       });
+      router.push("/dashboard/overview");
     } catch (err: any) {
       setError(err.message || "Registration failed. Please try again.");
     }

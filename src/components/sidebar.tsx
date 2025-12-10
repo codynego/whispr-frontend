@@ -13,12 +13,14 @@ import {
   Settings,
   X,
   Brain,
-  ChevronLeft, // New icon for the collapse button
+  ChevronLeft,
+  LogOut, // New icon for logout
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext"; // Import useAuth
 
 interface SidebarProps {
   mobileOpen: boolean;
-  desktopOpen: boolean; // <<< NEW PROP
+  desktopOpen: boolean;
   isMobile: boolean;
   toggleSidebar: () => void;
   closeMobile?: () => void;
@@ -26,15 +28,15 @@ interface SidebarProps {
 
 export default function Sidebar({
   mobileOpen,
-  desktopOpen, // <<< USED HERE
+  desktopOpen,
   isMobile,
   toggleSidebar,
   closeMobile,
 }: SidebarProps) {
   const pathname = usePathname();
+  const { logout, actionLoading } = useAuth(); // Get logout function
 
   useEffect(() => {
-    // This logic ensures the mobile menu closes when navigating
     if (isMobile && mobileOpen) {
       closeMobile?.() || toggleSidebar();
     }
@@ -58,9 +60,17 @@ export default function Sidebar({
     }
   };
 
-  // Determine the effective state for rendering (mobile or desktop)
+  const handleLogout = async () => {
+    if (actionLoading) return;
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   const isOpen = isMobile ? mobileOpen : desktopOpen;
-  const isCollapsed = !isOpen && !isMobile; // Only collapsed when not mobile and not open
+  const isCollapsed = !isOpen && !isMobile;
 
   return (
     <aside
@@ -70,7 +80,7 @@ export default function Sidebar({
         transition-all duration-300 ease-out
         ${isMobile 
           ? mobileOpen ? "translate-x-0 w-72" : "-translate-x-full w-72" 
-          : isOpen ? "translate-x-0 w-72" : "translate-x-0 w-20" // <<< DESKTOP COLLAPSE LOGIC
+          : isOpen ? "translate-x-0 w-72" : "translate-x-0 w-20"
         }
       `}
     >
@@ -111,14 +121,13 @@ export default function Sidebar({
                 group relative flex items-center gap-4
                 px-4 py-3.5 rounded-2xl text-sm font-medium
                 transition-all duration-200
-                ${isCollapsed ? "justify-center w-12" : "w-auto"} // <<< COLLAPSED ITEM WIDTH
+                ${isCollapsed ? "justify-center w-12" : "w-auto"}
                 ${isActive
                   ? "bg-emerald-50 text-emerald-700 shadow-md shadow-emerald-600/10"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }
               `}
             >
-              {/* Active indicator */}
               {isActive && (
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-600 rounded-r-full" />
               )}
@@ -127,16 +136,38 @@ export default function Sidebar({
                 <Icon className={`w-5 h-5 ${isActive ? "text-emerald-700" : "text-gray-500 group-hover:text-gray-700"}`} />
               </div>
 
-              {/* Text hidden when collapsed */}
               <span className={`tracking-wide whitespace-nowrap overflow-hidden ${isCollapsed ? "hidden" : "block"}`}>
                 {item.name}
               </span>
 
-              {/* Subtle glow on hover */}
               <div className="absolute inset-0 bg-emerald-600/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             </Link>
           );
         })}
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          disabled={actionLoading}
+          className={`
+            group relative flex items-center gap-4
+            px-4 py-3.5 rounded-2xl text-sm font-medium
+            transition-all duration-200 w-full
+            ${isCollapsed ? "justify-center" : ""}
+            text-red-600 hover:bg-red-50 hover:text-red-700
+            disabled:opacity-50 disabled:cursor-not-allowed
+          `}
+        >
+          <div className="transition-transform flex-shrink-0 group-hover:scale-110">
+            <LogOut className="w-5 h-5" />
+          </div>
+
+          <span className={`tracking-wide whitespace-nowrap overflow-hidden ${isCollapsed ? "hidden" : "block"}`}>
+            {actionLoading ? "Logging out..." : "Logout"}
+          </span>
+
+          <div className="absolute inset-0 bg-red-600/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+        </button>
       </nav>
 
       {/* Footer / Toggle Button */}
@@ -145,15 +176,14 @@ export default function Sidebar({
           <button
             onClick={toggleSidebar}
             className={`
-                p-2 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-transform
-                ${isCollapsed ? "rotate-180" : ""}
+              p-2 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-transform
+              ${isCollapsed ? "rotate-180" : ""}
             `}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
         )}
-        {/* The original text footer is removed/simplified to make room for the toggle button when collapsed. */}
       </div>
     </aside>
   );

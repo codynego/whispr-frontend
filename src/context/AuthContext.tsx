@@ -1,4 +1,3 @@
-// context/AuthContext.tsx
 "use client";
 
 import {
@@ -8,6 +7,7 @@ import {
   useEffect,
   ReactNode,
   useCallback,
+  useRef,
 } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -22,8 +22,8 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;       // Initial auth check
-  actionLoading: boolean; // For login/register/logout
+  loading: boolean;
+  actionLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => Promise<void>;
@@ -38,11 +38,27 @@ const api = axios.create({
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);        // Initial load
+  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const router = useRouter();
+  
+  // Prevent multiple simultaneous refresh attempts
+  const refreshingRef = useRef<Promise<void> | null>(null);
 
-  // Fetch current user — always try (401 means not authenticated)
+  const logout = useCallback(async () => {
+    if (actionLoading) return;
+    setActionLoading(true);
+    try {
+      await api.post("/users/logout/", {});
+    } catch (err) {
+      console.warn("Logout request failed (continuing anyway)");
+    } finally {
+      setUser(null);
+      setActionLoading(false);
+      router.replace("/auth/login");
+    }
+  }, [actionLoading, router]);
+
   const fetchUser = useCallback(async () => {
     try {
       const res = await api.get("/users/profile/");
@@ -58,35 +74,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Initial auth check on mount
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
 
-  // Token refresh (only on protected pages if needed)
   const refreshToken = useCallback(async () => {
-    try {
-      await api.post("/users/token/refresh/");
-    } catch (err) {
-      console.warn("Token refresh failed");
-      await logout(); // Force logout on refresh failure
+    // If already refreshing, return the existing promise
+    if (refreshingRef.current) {
+      return refreshingRef.current;
     }
-  }, []);
 
-  // Axios 401 interceptor with retry
+    refreshingRef.current = (async () => {
+      try {
+        await api.post("/users/token/refresh/");
+      } catch (err) {
+        console.warn("Token refresh failed, logging out");
+        setUser(null);
+        router.replace("/auth/login");
+        throw err; // Re-throw to prevent retry of original request
+      } finally {
+        refreshingRef.current = null;
+      }
+    })();
+
+    return refreshingRef.current;
+  }, [router]);
+
+  // Axios interceptor
   useEffect(() => {
     const interceptor = api.interceptors.response.use(
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
+        
+        // Only retry once and only on 401
         if (
           error.response?.status === 401 &&
           !originalRequest._retry
         ) {
           originalRequest._retry = true;
-          await refreshToken();
-          return api(originalRequest);
+          
+          try {
+            await refreshToken();
+            return api(originalRequest); // Retry original request
+          } catch (refreshError) {
+            // Refresh failed, don't retry
+            return Promise.reject(error);
+          }
         }
+        
         return Promise.reject(error);
       }
     );
@@ -101,7 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setActionLoading(true);
     try {
       await api.post("/users/login/", { email, password });
-      await fetchUser(); // Refresh user data after login
+      await fetchUser();
     } catch (err: any) {
       const message =
         err.response?.data?.detail ||
@@ -133,20 +169,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw new Error(message);
     } finally {
       setActionLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    if (actionLoading) return;
-    setActionLoading(true);
-    try {
-      await api.post("/users/logout/", {});
-    } catch (err) {
-      console.warn("Logout request failed (continuing anyway)");
-    } finally {
-      setUser(null);
-      setActionLoading(false);
-      router.replace("/auth/login");
     }
   };
 

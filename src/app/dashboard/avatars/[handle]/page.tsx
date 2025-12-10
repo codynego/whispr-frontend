@@ -266,6 +266,7 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
         // Send all fields in settings object
         body: JSON.stringify(avatar.settings),
       });
+      console.log("Avatar settings updated.", avatar.settings);
 
       alert("Settings saved successfully!");
       fetchAvatar(); // Re-fetch to confirm latest state

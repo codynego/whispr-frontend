@@ -250,7 +250,7 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
     setSaving(true);
     try {
       // 1. Update Avatar Name (PATCH to main avatar endpoint)
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatar.id}/`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/profile/${avatar.id}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

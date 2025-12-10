@@ -7,7 +7,7 @@ import {
   FileText, Bell, CheckSquare, ChevronDown, Plus, File, Save
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
 
 type Tab = "training" | "settings" | "analytics";
 
@@ -37,7 +37,6 @@ interface FullAvatarData {
   analytics: AvatarAnalytics;
 }
 
-// ... Interface definitions remain the same ...
 interface Note { id: number; title: string; content: string; }
 interface Reminder { id: number; text: string; }
 interface Todo { id: number; task: string; }
@@ -52,7 +51,7 @@ interface UploadedFile {
 }
 
 export default function AvatarConfigurationPage({ params }: { params: Promise<{ handle: string }> }) {
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [avatarHandle, setAvatarHandle] = useState<string | null>(null);
 
@@ -63,7 +62,7 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
   const [avatar, setAvatar] = useState<FullAvatarData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("training");
-  const [saving, setSaving] = useState(false); // For settings save
+  const [saving, setSaving] = useState(false);
 
   // Sources
   const [notes, setNotes] = useState<Note[]>([]);
@@ -109,14 +108,14 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
     } catch (err) {
       console.error("Failed to load avatar:", err);
       if (err instanceof Error && err.message === "Failed to load avatar") {
-        setAvatar(null); // Explicitly set to null if 404/failure occurs
+        setAvatar(null);
       }
     } finally {
       setLoading(false);
     }
   }, [avatarHandle, user, authLoading]);
 
-  // Fetch sources - (Unchanged for brevity, but kept the function)
+  // Fetch sources
   const fetchSources = useCallback(async () => {
     if (!user || authLoading) return;
 
@@ -141,7 +140,7 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
     }
   }, [user, authLoading]);
 
-  // Poll job status - (Unchanged for brevity, but kept the function)
+  // Poll job status
   const pollJobStatus = useCallback(async () => {
     const jobId = currentJobIdRef.current;
     if (!jobId || !user) return;
@@ -183,9 +182,8 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
     fetchSources();
   }, [fetchAvatar, fetchSources]);
 
-  // Save sources + train - (Unchanged for brevity, but kept the function)
+  // Save sources + train
   const saveSourcesAndTrain = async () => {
-    // ... existing logic ...
     if (!user || !avatar) return;
 
     const hasSelection = selectedNotes.length > 0 ||
@@ -240,12 +238,11 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
     }
   };
 
-
   const saveSettings = async () => {
     if (!user || !avatar) return;
     setSaving(true);
     try {
-      // 1. Update Avatar Name (PATCH to main avatar endpoint)
+      // 1. Update Avatar Name
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/profile/${avatar.id}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -253,17 +250,16 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
         body: JSON.stringify({ name: avatar.name }),
       });
 
-      // 2. Update Avatar Settings (PATCH to dedicated settings endpoint)
+      // 2. Update Avatar Settings
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/${avatarHandle}/settings/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        // Send all fields in settings object
         body: JSON.stringify(avatar.settings),
       });
 
       alert("Settings saved successfully!");
-      fetchAvatar(); // Re-fetch to confirm latest state
+      fetchAvatar();
     } catch (err) {
       console.error("Failed to save settings:", err);
       alert("Failed to save settings. Check console for details.");
@@ -272,36 +268,31 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
     }
   };
   
-  /**
-   * NEW: Function to handle avatar deletion.
-   */
   const deleteAvatar = async () => {
     if (!user || !avatar || !confirm(`Are you sure you want to permanently delete the avatar "@${avatar.handle}"? This cannot be undone.`)) {
-        return;
+      return;
     }
 
-    setSaving(true); // Reuse saving state for visual feedback
+    setSaving(true);
     try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/profile/${avatar.id}/`, {
-            method: "DELETE",
-            credentials: "include",
-        });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/avatars/profile/${avatar.id}/`, {
+        method: "DELETE",
+        credentials: "include",
+      });
 
-        if (!res.ok) {
-            throw new Error("Failed to delete avatar");
-        }
+      if (!res.ok) {
+        throw new Error("Failed to delete avatar");
+      }
 
-        alert(`Avatar @${avatar.handle} deleted successfully.`);
-        // Redirect the user to the dashboard or avatar list page after successful deletion
-        router.push('/dashboard'); 
+      alert(`Avatar @${avatar.handle} deleted successfully.`);
+      router.push('/dashboard/avatars');
     } catch (err) {
-        console.error("Failed to delete avatar:", err);
-        alert("Failed to delete avatar. Please try again.");
+      console.error("Failed to delete avatar:", err);
+      alert("Failed to delete avatar. Please try again.");
     } finally {
-        setSaving(false);
+      setSaving(false);
     }
   };
-
 
   const CollapsibleSourceSection = ({ title, icon: Icon, items, selectedIds, onToggle, getTitle, getSubtitle }: {
     title: string;
@@ -314,7 +305,7 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
   }) => {
     const [open, setOpen] = useState(false);
     return (
-      <div className="border border-gray-200 rounded-2xl overflow-hidden">
+      <div className="border border-gray-200 rounded-2xl overflow-hidden w-full">
         <button onClick={() => setOpen(!open)} className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
           <div className="flex items-center gap-3">
             <Icon className="w-6 h-6 text-emerald-600" />
@@ -327,7 +318,7 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
         </button>
 
         {open && (
-          <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 space-y-3">
+          <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 space-y-3 max-h-96 overflow-y-auto">
             {items.length === 0 ? (
               <p className="text-center text-sm text-gray-500 py-6">No {title.toLowerCase()} yet</p>
             ) : (
@@ -363,14 +354,14 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-6">
+      <div className="w-full min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-6">
         <p className="text-xl text-gray-600">Please log in to configure your avatar</p>
       </div>
     );
   }
 
   if (!avatar) return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-6">
+    <div className="w-full min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-6">
       <div className="bg-white rounded-3xl shadow-2xl p-12 text-center max-w-md">
         <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <AlertTriangle className="w-10 h-10 text-red-500" />
@@ -384,44 +375,44 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
   const isTrainingActive = !!trainingJobId;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
-      <div className="w-full max-w-7xl mx-auto p-4 md:p-8">
-        <div className="flex space-x-4 mb-8">
-            <button
-                onClick={() => setActiveTab('training')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition ${
-                    activeTab === 'training'
-                        ? 'bg-emerald-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
-            >
-                <Database className="w-5 h-5" /> Training
-            </button>
-            <button
-                onClick={() => setActiveTab('settings')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition ${
-                    activeTab === 'settings'
-                        ? 'bg-emerald-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
-            >
-                <Settings className="w-5 h-5" /> Settings
-            </button>
-            <button
-                onClick={() => setActiveTab('analytics')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition ${
-                    activeTab === 'analytics'
-                        ? 'bg-emerald-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
-            >
-                <BarChart3 className="w-5 h-5" /> Analytics
-            </button>
+    <div className="w-full min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+      <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 py-4 md:py-8">
+        <div className="flex flex-wrap gap-4 mb-8">
+          <button
+            onClick={() => setActiveTab('training')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition ${
+              activeTab === 'training'
+                ? 'bg-emerald-600 text-white shadow-lg'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <Database className="w-5 h-5" /> Training
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition ${
+              activeTab === 'settings'
+                ? 'bg-emerald-600 text-white shadow-lg'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <Settings className="w-5 h-5" /> Settings
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition ${
+              activeTab === 'analytics'
+                ? 'bg-emerald-600 text-white shadow-lg'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <BarChart3 className="w-5 h-5" /> Analytics
+          </button>
         </div>
         
         {/* TRAINING TAB */}
         {activeTab === "training" && (
-          <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-6 text-white">
@@ -470,7 +461,7 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
                     getSubtitle={(f) => `${f.file_type.toUpperCase()} • ${(f.size / 1024 / 1024).toFixed(2)} MB`}
                   />
 
-                  <div className="border-2 border-dashed border-emerald-300 rounded-2xl p-6 bg-emerald-50/30">
+                  <div className="border-2 border-dashed border-emerald-300 rounded-2xl p-6 bg-emerald-50/30 w-full">
                     <div className="flex items-center gap-3 mb-4">
                       <Plus className="w-6 h-6 text-emerald-600" />
                       <h3 className="text-lg font-semibold text-gray-900">Add Custom Text</h3>
@@ -527,7 +518,7 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
                 )}
               </div>
 
-              {/* DANGER ZONE - UPDATED with deleteAvatar function */}
+              {/* DANGER ZONE */}
               <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl border-2 border-red-200 p-6 shadow-lg">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
@@ -537,14 +528,14 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
                 </div>
                 <p className="text-sm text-red-800 mb-4">Permanently delete this avatar and all data associated with it.</p>
                 <button
-                    onClick={deleteAvatar}
-                    disabled={saving}
-                    className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                  onClick={deleteAvatar}
+                  disabled={saving}
+                  className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {saving ? (
-                      <>Deleting... <Loader2 className="w-4 h-4 animate-spin" /></>
+                    <>Deleting... <Loader2 className="w-4 h-4 animate-spin" /></>
                   ) : (
-                      <> <Trash2 className="w-4 h-4" /> Delete Avatar </>
+                    <> <Trash2 className="w-4 h-4" /> Delete Avatar </>
                   )}
                 </button>
               </div>
@@ -552,9 +543,9 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
           </div>
         )}
 
-        {/* SETTINGS TAB - UPDATED with saveSettings, additional fields, and visual updates */}
+        {/* SETTINGS TAB */}
         {activeTab === "settings" && (
-          <div className="bg-white rounded-2xl shadow-lg p-8">
+          <div className="bg-white rounded-2xl shadow-lg p-8 w-full">
             <div className="flex items-center gap-3 mb-8">
               <Settings className="w-7 h-7 text-emerald-600" />
               <h2 className="text-2xl font-bold text-gray-900">Avatar Settings</h2>
@@ -575,33 +566,33 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gray-50 rounded-2xl border border-gray-200">
                 {/* Public Access */}
                 <div className="flex items-center justify-between col-span-full border-b pb-4 mb-4">
-                    <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">Public Access</h3>
-                        <p className="text-sm text-gray-600">Allow others to chat with your avatar</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={avatar.settings?.is_public ?? false}
-                            onChange={(e) => setAvatar(a => a ? { ...a, settings: { ...a.settings, is_public: e.target.checked } } : null)}
-                            className="sr-only peer"
-                        />
-                        <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500"></div>
-                    </label>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-1">Public Access</h3>
+                    <p className="text-sm text-gray-600">Allow others to chat with your avatar</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={avatar.settings?.is_public ?? false}
+                      onChange={(e) => setAvatar(a => a ? { ...a, settings: { ...a.settings, is_public: e.target.checked } } : null)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500"></div>
+                  </label>
                 </div>
                 
                 {/* Response Delay */}
                 <div>
-                    <label htmlFor="response-delay" className="block text-sm font-semibold text-gray-700 mb-2">Response Delay (ms)</label>
-                    <input
-                        id="response-delay"
-                        type="number"
-                        min="0"
-                        value={avatar.settings?.response_delay_ms ?? 0}
-                        onChange={(e) => setAvatar(a => a ? { ...a, settings: { ...a.settings, response_delay_ms: parseInt(e.target.value) || 0 } } : null)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Simulate human-like response time.</p>
+                  <label htmlFor="response-delay" className="block text-sm font-semibold text-gray-700 mb-2">Response Delay (ms)</label>
+                  <input
+                    id="response-delay"
+                    type="number"
+                    min="0"
+                    value={avatar.settings?.response_delay_ms ?? 0}
+                    onChange={(e) => setAvatar(a => a ? { ...a, settings: { ...a.settings, response_delay_ms: parseInt(e.target.value) || 0 } } : null)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Simulate human-like response time.</p>
                 </div>
 
                 {/* Owner Takeover */}

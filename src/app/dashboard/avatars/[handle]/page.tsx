@@ -240,11 +240,7 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
     }
   };
 
-  /**
-   * UPDATED: Separated Avatar Name and Settings updates to match the backend structure.
-   * - Avatar Name uses PATCH to the main endpoint: /avatars/{handle}/ (handled by AvatarSerializer)
-   * - Settings uses PATCH to the dedicated settings endpoint: /avatars/{handle}/settings/ (handled by AvatarSettingsSerializer)
-   */
+
   const saveSettings = async () => {
     if (!user || !avatar) return;
     setSaving(true);

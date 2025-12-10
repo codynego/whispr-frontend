@@ -157,11 +157,15 @@ export default function WhisoneDashboard() {
                   <Search className="w-5 h-5 text-gray-600" />
                 </button>
 
-                <button className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors flex-shrink-0">
+                <button
+                onClick={() => router.push("/dashboard/settings")}
+                className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors flex-shrink-0">
                   <Settings className="w-5 h-5 text-gray-700" />
                 </button>
 
-                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
+                <div
+                onClick={() => router.push("/dashboard/profile")}
+                className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
                   {user?.first_name?.[0]?.toUpperCase() || "U"}
                 </div>
               </div>

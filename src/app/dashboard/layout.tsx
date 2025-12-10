@@ -1,7 +1,8 @@
+// app/dashboard/layout.tsx (or wherever your layout lives)
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu } from "lucide-react";
+import { Menu, MessageCircle, X } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -14,6 +15,7 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(true);        // Desktop: expanded/collapsed
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // Mobile: overlay open
   const [isMobile, setIsMobile] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);             // New: Chat widget state
 
   // Detect screen size (lg breakpoint = 1024px)
   useEffect(() => {
@@ -85,13 +87,45 @@ export default function DashboardLayout({
             </div>
           </header>
 
-          {/* Page Content - This is the KEY FIX */}
+          {/* Page Content */}
           <main className="flex-1 pt-16 lg:pt-0">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
               {children}
             </div>
           </main>
         </div>
+
+        {/* Chat Widget - Floating Button */}
+        <button
+          onClick={() => setChatOpen(true)}
+          className="fixed bottom-6 right-6 z-50 p-4 bg-emerald-600 text-white rounded-full shadow-2xl hover:bg-emerald-700 transition-all flex items-center gap-3"
+          aria-label="Open Chat"
+        >
+          <MessageCircle className="w-7 h-7" />
+        </button>
+
+        {/* Chat Modal/Widget */}
+        {chatOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full h-[80vh] relative overflow-hidden">
+              {/* Close Button */}
+              <button
+                onClick={() => setChatOpen(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10"
+              >
+                <X className="w-7 h-7" />
+              </button>
+
+              {/* Iframe for Chat Page */}
+              <iframe
+                src="https://whisone/a/whisone"
+                className="w-full h-full border-0"
+                title="Whisone Chat"
+                allow="microphone; camera"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </ProtectedRoute>
   );

@@ -75,7 +75,7 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
 
   // Training state
   const [trainingJobId, setTrainingJobId] = useState<string | null>(null);
-  const [jobStatus, setJobStatus] = useState<"pending" | "running" | "completed" | "failed" | null>(null);
+  const [jobStatus, setJobStatus] = useState<"pending" | "running" | "completed" | "error" | null>(null);
   const [isSavingSources, setIsSavingSources] = useState(false);
   const currentJobIdRef = useRef<string | null>(null);
 
@@ -148,7 +148,7 @@ export default function AvatarConfigurationPage({ params }: { params: Promise<{ 
       const data = await res.json();
       setJobStatus(data.status);
 
-      if (data.status === "completed" || data.status === "failed") {
+      if (data.status === "completed" || data.status === "error") {
         setTrainingJobId(null);
         currentJobIdRef.current = null;
         setJobStatus(null);

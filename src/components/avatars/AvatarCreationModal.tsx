@@ -49,7 +49,7 @@ export const AvatarCreationModal = ({ isOpen, onClose, onAvatarCreated }: Avatar
         { credentials: "include" }
       );
       const data = await response.json();
-      setHandleAvailable(data.available);
+      setHandleAvailable(data.is_available);
     } catch (error) {
       // Fallback to basic validation if API fails
       setHandleAvailable(true);

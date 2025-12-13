@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Brain, MessageSquare, Send } from "lucide-react";
+import { Loader2, Brain, MessageSquare, Send, Sparkles, Lock, TrendingUp } from "lucide-react";
 
 // --- Types & Constants ---
 interface AvatarProfile {
@@ -8,6 +8,7 @@ interface AvatarProfile {
   name: string;
   handle: string;
   photo_url: string | null;
+  description?: string;
   settings: {
     is_public: boolean;
     disclaimer_text: string;
@@ -110,6 +111,79 @@ function ChatMessageBubble({
   );
 }
 
+// --- Auth Prompt Component ---
+function AuthPromptCard({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-40 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-slideUp">
+        {/* Header with gradient */}
+        <div className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-8 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+          <Sparkles className="w-12 h-12 mb-4 relative z-10" />
+          <h2 className="text-2xl font-bold mb-2 relative z-10">Unlock Full Experience</h2>
+          <p className="text-emerald-50 text-sm relative z-10">Sign up to access premium features and save your progress</p>
+        </div>
+
+        {/* Benefits */}
+        <div className="p-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+              <Lock className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-1">Unlimited Conversations</h3>
+              <p className="text-sm text-gray-600">Chat without limits and explore deeper insights</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
+              <TrendingUp className="w-5 h-5 text-teal-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-1">Save Your Progress</h3>
+              <p className="text-sm text-gray-600">Access your chat history anytime, anywhere</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-5 h-5 text-cyan-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-1">Premium Features</h3>
+              <p className="text-sm text-gray-600">Unlock advanced AI capabilities and tutorials</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="p-6 pt-2 space-y-3">
+          <a
+            href="/auth/register"
+            className="block w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold py-3 px-6 rounded-xl text-center transition-all transform hover:scale-105 shadow-lg"
+          >
+            Sign Up Free
+          </a>
+          <a
+            href="/auth/login"
+            className="block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl text-center transition-all"
+          >
+            Log In
+          </a>
+          <button
+            onClick={onClose}
+            className="block w-full text-gray-500 hover:text-gray-700 text-sm py-2 transition-colors"
+          >
+            Continue as Guest
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- Input Component ---
 function PublicMessageInput({
   sendMessage,
@@ -160,18 +234,28 @@ function PublicMessageInput({
 // --- Avatar Sidebar/Header Component ---
 function AvatarInfo({ profile }: { profile: AvatarProfile }) {
   return (
-    <div className="flex items-center gap-4 p-5 bg-emerald-500 text-white">
-      <div className="w-14 h-14 rounded-full bg-white bg-opacity-20 flex items-center justify-center flex-shrink-0 shadow-lg">
-        {profile.photo_url ? (
-          <img src={profile.photo_url} alt={profile.name} className="w-full h-full object-cover rounded-full" />
-        ) : (
-          <Brain className="w-8 h-8" />
-        )}
+    <div className="p-6 bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+      <div className="flex items-start gap-4 mb-4">
+        <div className="w-16 h-16 rounded-2xl bg-white bg-opacity-20 flex items-center justify-center flex-shrink-0 shadow-lg backdrop-blur-sm">
+          {profile.photo_url ? (
+            <img src={profile.photo_url} alt={profile.name} className="w-full h-full object-cover rounded-2xl" />
+          ) : (
+            <Brain className="w-9 h-9" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-bold mb-1">{profile.name}'s AI</h1>
+          <p className="text-sm opacity-90 flex items-center gap-2">
+            <span className="inline-block w-2 h-2 bg-green-300 rounded-full animate-pulse"></span>
+            @{profile.handle} • Online
+          </p>
+        </div>
       </div>
-      <div className="min-w-0 flex-1">
-        <h1 className="text-xl font-bold truncate">{profile.name}'s AI</h1>
-        <p className="text-sm opacity-90">@{profile.handle} • Online</p>
-      </div>
+      {profile.description && (
+        <p className="text-sm opacity-95 leading-relaxed bg-white bg-opacity-10 rounded-xl p-3 backdrop-blur-sm">
+          {profile.description}
+        </p>
+      )}
     </div>
   );
 }
@@ -185,6 +269,8 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
   const [loading, setLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -203,6 +289,19 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
       localStorage.setItem("whisone_visitor_id", id);
     }
     setVisitorId(id);
+
+    // Check authentication status
+    const checkAuth = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile/`, {
+          credentials: 'include'
+        });
+        setIsAuthenticated(res.ok);
+      } catch {
+        setIsAuthenticated(false);
+      }
+    };
+    checkAuth();
   }, []);
 
   // Fetch profile + history
@@ -246,6 +345,14 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
   }, [visitorId, avatarHandle, fetchProfileAndHistory]);
 
   useEffect(() => scrollToBottom(), [messages]);
+
+  // Show auth prompt after 6 messages for unauthenticated users
+  useEffect(() => {
+    if (!isAuthenticated && messages.length >= 6 && !showAuthPrompt) {
+      const timer = setTimeout(() => setShowAuthPrompt(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [messages.length, isAuthenticated, showAuthPrompt]);
 
   // Polling
   useEffect(() => {
@@ -348,6 +455,9 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
   // --- Main Layout ---
   return (
     <div className="flex h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+      {/* Auth Prompt Modal */}
+      {showAuthPrompt && <AuthPromptCard onClose={() => setShowAuthPrompt(false)} />}
+
       {/* Desktop Sidebar | Mobile Header */}
       <aside className="hidden md:block fixed left-0 top-0 bottom-0 w-80 bg-white shadow-2xl z-10 overflow-y-auto">
         <AvatarInfo profile={profile} />
@@ -436,6 +546,30 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
           margin: 8px 0;
           white-space: pre-wrap;
           border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+
+        .animate-slideUp {
+          animation: slideUp 0.4s ease-out;
         }
       `}</style>
     </div>

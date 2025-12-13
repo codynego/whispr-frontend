@@ -1,7 +1,7 @@
 // app/auth/register/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -17,7 +17,7 @@ import {
   Check,
 } from "lucide-react";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const { register, actionLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -430,5 +430,17 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }

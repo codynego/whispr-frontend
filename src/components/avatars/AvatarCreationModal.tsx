@@ -45,7 +45,7 @@ export const AvatarCreationModal = ({ isOpen, onClose, onAvatarCreated }: Avatar
     setCheckingHandle(true);
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/avatars/check-handle/?handle=${newHandle}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/avatars/check/handle/?handle=${newHandle}`,
         { credentials: "include" }
       );
       const data = await response.json();

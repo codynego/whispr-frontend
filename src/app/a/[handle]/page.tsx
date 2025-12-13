@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Brain, MessageSquare, Send, Sparkles, Lock, TrendingUp } from "lucide-react";
+import { Loader2, Brain, MessageSquare, Send, Sparkles, Lock, TrendingUp, MoreVertical, X } from "lucide-react";
 
 // --- Types & Constants ---
 interface AvatarProfile {
@@ -35,7 +35,7 @@ function formatMessageContent(content: string): React.ReactElement {
   const parts = content.split(/```[\s\S]*?```/g);
   const codeBlocks = content.match(/```[\s\S]*?```/g) || [];
   
-  const formattedParts = parts.map((part, index) => {
+  const formattedParts = parts.map((part) => {
     // Process bold (**text** or __text__)
     let processed = part.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
                         .replace(/__(.+?)__/g, '<strong>$1</strong>');
@@ -78,111 +78,141 @@ function ChatMessageBubble({
   const isVisitor = message.role === "visitor";
 
   return (
-    <div className={`flex items-end gap-3 ${isVisitor ? "flex-row-reverse" : "flex-row"} mb-5`}>
+    <div className={`flex items-end gap-2 ${isVisitor ? "justify-end" : "justify-start"} mb-2`}>
       {!isVisitor && (
-        <div className="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 shadow-md">
+        // Small Avatar for Assistant (Optional, but helps distinguish)
+        <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 self-start mt-1 hidden sm:flex">
           {avatarPhotoUrl ? (
             <img src={avatarPhotoUrl} alt={avatarName} className="w-full h-full object-cover rounded-full" />
           ) : (
-            <Brain className="w-5 h-5 text-white" />
+            <Brain className="w-3 h-3 text-white" />
           )}
         </div>
       )}
-      <div className={`flex flex-col ${isVisitor ? "items-end" : "items-start"} max-w-[80%]`}>
+      <div className={`flex flex-col ${isVisitor ? "items-end" : "items-start"} max-w-[85%] sm:max-w-[70%]`}>
         <div
-          className={`px-4 py-3 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap break-words ${
+          className={`px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words min-w-[70px] relative shadow-md ${
             isVisitor
-              ? "bg-emerald-500 text-white rounded-br-none"
-              : "bg-white text-gray-800 rounded-bl-none border border-gray-100"
+              ? "bg-emerald-500 text-white rounded-xl rounded-br-sm" // Visitor: Green/Blue, sharp corner bottom-right
+              : "bg-white text-gray-800 rounded-xl rounded-tl-sm border border-gray-100" // Assistant: White/Light, sharp corner top-left
           }`}
         >
           {formatMessageContent(message.content)}
+          <span className={`text-xs mt-1 block text-right ${isVisitor ? 'text-emerald-100' : 'text-gray-400'}`}>
+            {new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            {/* Optional: Add a checkmark icon here like WhatsApp does */}
+          </span>
         </div>
-        <span className="text-xs text-gray-400 mt-1 px-1">
-          {new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-        </span>
       </div>
-      {isVisitor && (
-        <div className="w-9 h-9 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0 shadow-md">
-          <MessageSquare className="w-5 h-5 text-gray-600" />
-        </div>
-      )}
     </div>
   );
 }
 
-// --- Auth Prompt Component ---
-function AuthPromptCard({ onClose }: { onClose: () => void }) {
+// --- Chat Header (Replaces Sidebar/Mobile Header) ---
+function ChatHeader({ profile, onInfoClick }: { profile: AvatarProfile, onInfoClick: () => void }) {
+  return (
+    <header className="flex-shrink-0 bg-white shadow-md border-b border-gray-100 p-4 sticky top-0 z-20">
+      <div className="flex items-center justify-between max-w-4xl mx-auto">
+        <div className="flex items-center gap-3 cursor-pointer" onClick={onInfoClick}>
+          <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+            {profile.photo_url ? (
+              <img src={profile.photo_url} alt={profile.name} className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <Brain className="w-5 h-5 text-white" />
+            )}
+          </div>
+          <div>
+            <h1 className="text-base font-semibold text-gray-900 leading-snug">{profile.name}'s AI</h1>
+            <p className="text-xs text-emerald-600 flex items-center gap-1">
+              <span className="inline-block w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+              Online
+            </p>
+          </div>
+        </div>
+        <button className="text-gray-500 hover:text-gray-700 p-1 rounded-full transition">
+          <MoreVertical className="w-5 h-5" />
+        </button>
+      </div>
+    </header>
+  );
+}
+
+// --- Auth Prompt Component (Sidebar/Modal for Info) ---
+function AuthPromptCard({ onClose, currentPath, profile }: { onClose: () => void; currentPath: string, profile: AvatarProfile }) {
+  const redirectUrl = encodeURIComponent(currentPath);
+  
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-40 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-slideUp">
-        {/* Header with gradient */}
-        <div className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-8 text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
-          <Sparkles className="w-12 h-12 mb-4 relative z-10" />
-          <h2 className="text-2xl font-bold mb-2 relative z-10">Unlock Full Experience</h2>
-          <p className="text-emerald-50 text-sm relative z-10">Sign up to access premium features and save your progress</p>
+      <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden animate-slideUp">
+        
+        {/* Header */}
+        <div className="flex justify-between items-center p-4 border-b border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-800">Chat Info & Settings</h2>
+            <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100">
+                <X className="w-5 h-5" />
+            </button>
+        </div>
+        
+        {/* Avatar Info */}
+        <div className="p-4 border-b border-gray-100">
+            <div className="flex flex-col items-center text-center">
+                <div className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 shadow-lg mb-3">
+                    {profile.photo_url ? (
+                        <img src={profile.photo_url} alt={profile.name} className="w-full h-full object-cover rounded-full" />
+                    ) : (
+                        <Brain className="w-10 h-10 text-white" />
+                    )}
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">{profile.name}'s AI</h3>
+                <p className="text-sm text-gray-500">@{profile.handle}</p>
+            </div>
+            {profile.description && (
+                <p className="text-sm text-gray-600 mt-4 p-3 bg-gray-50 rounded-lg italic border-l-4 border-emerald-400">
+                    "{profile.description}"
+                </p>
+            )}
         </div>
 
-        {/* Benefits */}
-        <div className="p-6 space-y-4">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
-              <Lock className="w-5 h-5 text-emerald-600" />
+        {/* Disclaimer */}
+        {profile.settings.disclaimer_text && (
+            <div className="p-4 border-b border-gray-100 bg-amber-50">
+                <p className="text-xs font-semibold text-amber-800 flex items-start gap-2">
+                    <span className="flex-shrink-0">⚠️ Disclaimer:</span> 
+                    <span>{profile.settings.disclaimer_text}</span>
+                </p>
             </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-1">Unlimited Conversations</h3>
-              <p className="text-sm text-gray-600">Chat without limits and explore deeper insights</p>
-            </div>
-          </div>
+        )}
 
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
-              <TrendingUp className="w-5 h-5 text-teal-600" />
+        {/* Authentication Section */}
+        <div className="p-4 space-y-3">
+            <h4 className="font-bold text-gray-700 text-sm border-b pb-2">Full Access Required</h4>
+             <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <Lock className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div className="flex-1">
+                    <h5 className="font-semibold text-gray-900 mb-1">Unlimited Chat & History</h5>
+                    <p className="text-xs text-gray-600">Sign up to keep your conversations saved.</p>
+                </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-1">Save Your Progress</h3>
-              <p className="text-sm text-gray-600">Access your chat history anytime, anywhere</p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-cyan-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-1">Premium Features</h3>
-              <p className="text-sm text-gray-600">Unlock advanced AI capabilities and tutorials</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="p-6 pt-2 space-y-3">
-          <a
-            href="/auth/register"
-            className="block w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold py-3 px-6 rounded-xl text-center transition-all transform hover:scale-105 shadow-lg"
-          >
-            Sign Up Free
-          </a>
-          <a
-            href="/auth/login"
-            className="block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl text-center transition-all"
-          >
-            Log In
-          </a>
-          <button
-            onClick={onClose}
-            className="block w-full text-gray-500 hover:text-gray-700 text-sm py-2 transition-colors"
-          >
-            Continue as Guest
-          </button>
+            <a
+              href={`/auth/register?redirect=${redirectUrl}`}
+              className="block w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold py-3 px-6 rounded-lg text-center transition-all shadow-lg text-sm"
+            >
+              Sign Up / Log In
+            </a>
+            <button
+              onClick={onClose}
+              className="block w-full text-gray-500 hover:text-gray-700 text-xs py-1 transition-colors"
+            >
+              Continue as Guest (Limited)
+            </button>
         </div>
       </div>
     </div>
   );
 }
+
 
 // --- Input Component ---
 function PublicMessageInput({
@@ -193,21 +223,26 @@ function PublicMessageInput({
   isLoading: boolean;
 }) {
   const [input, setInput] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const handleSend = () => {
     if (input.trim() && !isLoading) {
       sendMessage(input);
       setInput("");
+      // Keep focus on the input after sending
+      inputRef.current?.focus();
     }
   };
 
   return (
-    <div className="border-t border-gray-200 bg-white px-4 py-4">
-      <div className="flex items-end gap-3 max-w-4xl mx-auto">
-        <div className="flex-1 bg-gray-100 rounded-full px-5 py-3 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500 transition-all">
+    <div className="flex-shrink-0 bg-white border-t border-gray-200 p-3 sticky bottom-0 z-10">
+      <div className="flex items-end gap-2 max-w-4xl mx-auto">
+        <div className="flex-1 bg-gray-100 rounded-3xl px-4 py-2 focus-within:ring-2 focus-within:ring-emerald-500 transition-all border border-gray-200">
           <input
+            ref={inputRef}
             type="text"
-            className="w-full bg-transparent text-sm outline-none placeholder-gray-500"
-            placeholder={isLoading ? "Thinking..." : "Type your message..."}
+            className="w-full bg-transparent text-sm outline-none placeholder-gray-500 resize-none max-h-40 overflow-y-auto"
+            placeholder={isLoading ? "AI is typing..." : "Message @{AvatarHandle}"}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={isLoading}
@@ -222,40 +257,11 @@ function PublicMessageInput({
         <button
           onClick={handleSend}
           disabled={isLoading || !input.trim()}
-          className="w-11 h-11 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white shadow-lg transition"
+          className="w-11 h-11 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white shadow-lg transition flex-shrink-0"
         >
-          <Send className="w-5 h-5" />
+          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
         </button>
       </div>
-    </div>
-  );
-}
-
-// --- Avatar Sidebar/Header Component ---
-function AvatarInfo({ profile }: { profile: AvatarProfile }) {
-  return (
-    <div className="p-6 bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
-      <div className="flex items-start gap-4 mb-4">
-        <div className="w-16 h-16 rounded-2xl bg-white bg-opacity-20 flex items-center justify-center flex-shrink-0 shadow-lg backdrop-blur-sm">
-          {profile.photo_url ? (
-            <img src={profile.photo_url} alt={profile.name} className="w-full h-full object-cover rounded-2xl" />
-          ) : (
-            <Brain className="w-9 h-9" />
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold mb-1">{profile.name}'s AI</h1>
-          <p className="text-sm opacity-90 flex items-center gap-2">
-            <span className="inline-block w-2 h-2 bg-green-300 rounded-full animate-pulse"></span>
-            @{profile.handle} • Online
-          </p>
-        </div>
-      </div>
-      {profile.description && (
-        <p className="text-sm opacity-95 leading-relaxed bg-white bg-opacity-10 rounded-xl p-3 backdrop-blur-sm">
-          {profile.description}
-        </p>
-      )}
     </div>
   );
 }
@@ -271,6 +277,7 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [showInfoPanel, setShowInfoPanel] = useState(false); // New state for info panel/sidebar
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -281,7 +288,7 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
     params.then(p => setAvatarHandle(p.handle));
   }, [params]);
 
-  // Visitor ID
+  // Visitor ID & Auth Check
   useEffect(() => {
     let id = localStorage.getItem("whisone_visitor_id");
     if (!id) {
@@ -290,7 +297,6 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
     }
     setVisitorId(id);
 
-    // Check authentication status
     const checkAuth = async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile/`, {
@@ -328,7 +334,7 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
           : [{
               id: "intro",
               role: "assistant" as const,
-              content: `Hello! I'm ${profileData.name}'s AI Avatar!`,
+              content: `Hello! I'm **${profileData.name}**'s AI Avatar. How can I help you today?`,
               created_at: new Date().toISOString(),
             }]
       );
@@ -368,6 +374,7 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
         setIsSending(false);
         if (data.status === "SUCCESS" && data.assistant_reply) {
           setMessages(prev => {
+            // Simple check to prevent duplicates if polling lags
             if (prev.some(m => m.content === data.assistant_reply && m.role === "assistant")) return prev;
             return [...prev, {
               id: Date.now(),
@@ -387,7 +394,7 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
       setMessages(prev => [...prev, {
         id: "timeout",
         role: "assistant",
-        content: "Response timed out. Please try again.",
+        content: "*Response timed out. Please try again.*",
         created_at: new Date().toISOString(),
       }]);
     }, CHAT_TIMEOUT_MS);
@@ -423,6 +430,7 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
         throw new Error("Failed to send");
       }
     } catch {
+      // Rollback user message on failure
       setMessages(prev => prev.filter(m => m.id !== userMsg.id));
       setIsSending(false);
     }
@@ -431,7 +439,7 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
   // --- Loading / Error States ---
   if (loading || !visitorId) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
+      <div className="flex items-center justify-center h-screen w-screen bg-white">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-emerald-500 mx-auto mb-4" />
           <p className="text-lg text-gray-700">Connecting to @{avatarHandle}...</p>
@@ -442,11 +450,11 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
 
   if (!profile) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-emerald-50 to-teal-50 p-4">
-        <div className="bg-white rounded-3xl shadow-2xl p-10 text-center max-w-md">
+      <div className="flex items-center justify-center h-screen w-screen bg-white p-4">
+        <div className="bg-white rounded-xl shadow-2xl p-10 text-center max-w-md border border-gray-100">
           <Brain className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Avatar Not Found</h1>
-          <p className="text-gray-600">@{avatarHandle} is not public or doesn't exist.</p>
+          <p className="text-gray-600">The AI avatar @{avatarHandle} is not public or doesn't exist.</p>
         </div>
       </div>
     );
@@ -454,78 +462,60 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
 
   // --- Main Layout ---
   return (
-    <div className="flex h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
-      {/* Auth Prompt Modal */}
-      {showAuthPrompt && <AuthPromptCard onClose={() => setShowAuthPrompt(false)} />}
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-50">
+      
+      {/* Chat Header */}
+      <ChatHeader profile={profile} onInfoClick={() => setShowInfoPanel(true)} />
 
-      {/* Desktop Sidebar | Mobile Header */}
-      <aside className="hidden md:block fixed left-0 top-0 bottom-0 w-80 bg-white shadow-2xl z-10 overflow-y-auto">
-        <AvatarInfo profile={profile} />
-        {profile.settings.disclaimer_text && (
-          <div className="mx-5 mb-5 p-4 bg-amber-50 text-amber-800 rounded-xl text-sm border border-amber-200">
-            <span className="font-bold">⚠️ Disclaimer:</span> {profile.settings.disclaimer_text}
-          </div>
-        )}
-      </aside>
-
-      <div className="flex flex-col flex-1 md:ml-80">
-        {/* Mobile Header */}
-        <header className="md:hidden">
-          <AvatarInfo profile={profile} />
-          {profile.settings.disclaimer_text && (
-            <div className="px-5 py-3 bg-amber-50 text-amber-800 text-xs border-b border-amber-200">
-              <span className="font-bold">⚠️ Disclaimer:</span> {profile.settings.disclaimer_text}
-            </div>
-          )}
-        </header>
-
-        {/* Messages Area */}
-        <main className="flex-1 overflow-y-auto px-4 py-6 bg-gray-50">
-          <div className="max-w-4xl mx-auto">
-            {messages.map(msg => (
-              <ChatMessageBubble key={msg.id} message={msg} avatarPhotoUrl={profile.photo_url} avatarName={profile.name} />
-            ))}
-            {isSending && (
-              <div className="flex items-end gap-3 mb-5">
-                <div className="w-9 h-9 rounded-full bg-emerald-500 flex-shrink-0 shadow-md flex items-center justify-center">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
-                  </div>
-                </div>
-                <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-none border border-gray-100 shadow-sm">
-                  <div className="typing-dots">
-                    <span></span><span></span><span></span>
-                  </div>
+      {/* Messages Area (Scrollable Main Content) */}
+      <main className="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar" style={{backgroundImage: "url('/whatsapp-bg.png')", backgroundSize: 'auto'}}>
+        {/* Optional: Add a subtle background image here like WhatsApp's pattern */}
+        <div className="max-w-4xl mx-auto">
+          {messages.map(msg => (
+            <ChatMessageBubble 
+              key={msg.id} 
+              message={msg} 
+              avatarPhotoUrl={profile.photo_url} 
+              avatarName={profile.name} 
+            />
+          ))}
+          
+          {/* Typing Indicator */}
+          {isSending && currentTaskId === null && (
+            <div className="flex items-end gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-emerald-500 flex-shrink-0 self-start mt-1 hidden sm:flex">
+                <div className="flex gap-1">
+                  <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                  <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                  <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
                 </div>
               </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        </main>
+              <div className="bg-white px-3 py-2 rounded-xl rounded-tl-sm border border-gray-100 shadow-sm">
+                <div className="typing-dots">
+                  <span></span><span></span><span></span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div ref={messagesEndRef} />
+        </div>
+      </main>
 
-        {/* Fixed Input Bar */}
-        <PublicMessageInput sendMessage={sendMessage} isLoading={isSending} />
-      </div>
+      {/* Fixed Input Bar */}
+      <PublicMessageInput sendMessage={sendMessage} isLoading={isSending && currentTaskId !== null} />
+      
+      {/* Auth/Info Modal (Replaced AuthPromptCard for more general use) */}
+      {(showAuthPrompt || showInfoPanel) && (
+        <AuthPromptCard 
+          onClose={() => { setShowAuthPrompt(false); setShowInfoPanel(false); }} 
+          currentPath={`/chat/${avatarHandle}`}
+          profile={profile}
+        />
+      )}
 
-      <style jsx>{`
-        .typing-dots span {
-          display: inline-block;
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: #999;
-          margin: 0 2px;
-          animation: wave 1.2s infinite;
-        }
-        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes wave {
-          0%, 60%, 100% { transform: translateY(0); }
-          30% { transform: translateY(-10px); }
-        }
-        
+      <style jsx global>{`
+        /* Global styles for code blocks and markdown */
         .formatted-message strong {
           font-weight: 600;
           color: inherit;
@@ -546,8 +536,34 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
           margin: 8px 0;
           white-space: pre-wrap;
           border: 1px solid rgba(0, 0, 0, 0.1);
+          color: #333; /* Darker text for readability in code block */
+        }
+      `}</style>
+
+      <style jsx>{`
+        /* Typing indicator dots */
+        .typing-dots {
+            display: flex;
+            align-items: center;
+            height: 16px; /* Ensure space for dots */
+        }
+        .typing-dots span {
+          display: inline-block;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #999;
+          margin: 0 2px;
+          animation: wave 1.2s infinite;
+        }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes wave {
+          0%, 60%, 100% { transform: translateY(0); }
+          30% { transform: translateY(-5px); } /* Reduced bounce height */
         }
 
+        /* Animations for Modal */
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
@@ -570,6 +586,18 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
 
         .animate-slideUp {
           animation: slideUp 0.4s ease-out;
+        }
+
+        /* Optional: Custom Scrollbar for subtle look */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: #ccc;
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background-color: #f1f1f1;
         }
       `}</style>
     </div>

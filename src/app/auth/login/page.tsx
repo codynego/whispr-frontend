@@ -1,19 +1,29 @@
 // app/auth/login/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { MessageCircle, Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, actionLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
+
+  // Get redirect URL from query params
+  useEffect(() => {
+    const redirect = searchParams.get('redirect');
+    if (redirect) {
+      setRedirectUrl(decodeURIComponent(redirect));
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +36,9 @@ export default function LoginPage() {
 
     try {
       await login(email.trim(), password);
-      router.push("/dashboard");
+      // Redirect to the specified URL or default to dashboard
+      const destination = redirectUrl || "/dashboard";
+      router.push(destination);
     } catch (err: any) {
       console.error("Login failed:", err);
       setError(err.message || "Invalid email or password. Please try again.");
@@ -58,13 +70,25 @@ export default function LoginPage() {
                 Welcome back
               </h1>
               <p className="text-base text-gray-600">
-                Sign in to continue to Whisone AI
+                {redirectUrl ? "Sign in to continue your conversation" : "Sign in to continue to Whisone AI"}
               </p>
             </div>
           </div>
 
           {/* Form Section */}
           <div className="px-8 pb-8 pt-6 relative">
+            {/* Redirect Notice */}
+            {redirectUrl && (
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm flex items-start gap-3">
+                <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <ArrowRight className="w-3 h-3 text-white" />
+                </div>
+                <span className="flex-1 leading-relaxed">
+                  You'll be redirected back to your chat after signing in
+                </span>
+              </div>
+            )}
+
             {/* Error Alert */}
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -177,7 +201,7 @@ export default function LoginPage() {
               <p className="text-sm text-gray-600">
                 Don't have an account?{" "}
                 <a
-                  href="/auth/register"
+                  href={redirectUrl ? `/auth/register?redirect=${encodeURIComponent(redirectUrl)}` : "/auth/register"}
                   className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors underline decoration-emerald-600/30 underline-offset-4 hover:decoration-emerald-600/60"
                 >
                   Get early access

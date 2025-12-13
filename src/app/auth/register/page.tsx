@@ -1,7 +1,8 @@
+// app/auth/register/page.tsx
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
   MessageCircle,
@@ -19,6 +20,8 @@ import {
 export default function RegisterPage() {
   const { register, actionLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -31,7 +34,16 @@ export default function RegisterPage() {
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [error, setError] = useState("");
   const [isRegistered, setIsRegistered] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
   const WHATSAPP_NUMBER = "2348051385049";
+
+  // Get redirect URL from query params
+  useEffect(() => {
+    const redirect = searchParams.get('redirect');
+    if (redirect) {
+      setRedirectUrl(decodeURIComponent(redirect));
+    }
+  }, [searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -86,7 +98,9 @@ export default function RegisterPage() {
   const passwordStrength = getPasswordStrength();
 
   const handleSkip = () => {
-    router.push("/dashboard/overview");
+    // If there's a redirect URL, go there; otherwise go to dashboard
+    const destination = redirectUrl || "/dashboard";
+    router.push(destination);
   };
 
   return (
@@ -112,12 +126,27 @@ export default function RegisterPage() {
                 {isRegistered ? "Your Whisone Account is Ready!" : "Join Whisone"}
               </h1>
               <p className="text-base text-gray-600">
-                {isRegistered ? "One final step to activate your AI assistant" : "Start your AI second brain on WhatsApp"}
+                {isRegistered 
+                  ? (redirectUrl ? "One final step before returning to your chat" : "One final step to activate your AI assistant")
+                  : (redirectUrl ? "Create an account to continue your conversation" : "Start your AI second brain on WhatsApp")
+                }
               </p>
             </div>
           </div>
           {/* Form or Activation Section */}
           <div className="px-8 pb-8 pt-6 relative">
+            {/* Redirect Notice (for registration form) */}
+            {redirectUrl && !isRegistered && (
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm flex items-start gap-3">
+                <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <ArrowRight className="w-3 h-3 text-white" />
+                </div>
+                <span className="flex-1 leading-relaxed">
+                  You'll be redirected back to your chat after registration
+                </span>
+              </div>
+            )}
+
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -149,7 +178,7 @@ export default function RegisterPage() {
                   onClick={handleSkip}
                   className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
                 >
-                  Skip for now and go to dashboard
+                  {redirectUrl ? "Skip activation and return to chat" : "Skip for now and go to dashboard"}
                 </button>
               </div>
             ) : (
@@ -365,7 +394,7 @@ export default function RegisterPage() {
                 <p className="text-sm text-gray-600">
                   Already have an account?{" "}
                   <a
-                    href="/auth/login"
+                    href={redirectUrl ? `/auth/login?redirect=${encodeURIComponent(redirectUrl)}` : "/auth/login"}
                     className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors underline decoration-emerald-600/30 underline-offset-4 hover:decoration-emerald-600/60"
                   >
                     Sign in here

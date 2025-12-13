@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Brain, MessageSquare, Send, Sparkles, Lock, TrendingUp, MoreVertical, X } from "lucide-react";
+import { Loader2, Brain, Send, Lock,  MoreVertical, X } from "lucide-react";
 
 // --- Types & Constants ---
 interface AvatarProfile {
@@ -137,82 +137,90 @@ function ChatHeader({ profile, onInfoClick }: { profile: AvatarProfile, onInfoCl
   );
 }
 
-// --- Auth Prompt Component (Sidebar/Modal for Info) ---
-function AuthPromptCard({ onClose, currentPath, profile }: { onClose: () => void; currentPath: string, profile: AvatarProfile }) {
+// --- Info Panel Content (Shared between modal and sidebar) ---
+function InfoPanelContent({ 
+  profile, 
+  currentPath, 
+  isAuthenticated,
+  onClose 
+}: { 
+  profile: AvatarProfile; 
+  currentPath: string; 
+  isAuthenticated: boolean;
+  onClose: () => void;
+}) {
   const redirectUrl = encodeURIComponent(currentPath);
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-40 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden animate-slideUp">
-        
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800">Chat Info & Settings</h2>
-            <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100">
-                <X className="w-5 h-5" />
-            </button>
-        </div>
-        
-        {/* Avatar Info */}
-        <div className="p-4 border-b border-gray-100">
-            <div className="flex flex-col items-center text-center">
-                <div className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 shadow-lg mb-3">
-                    {profile.photo_url ? (
-                        <img src={profile.photo_url} alt={profile.name} className="w-full h-full object-cover rounded-full" />
-                    ) : (
-                        <Brain className="w-10 h-10 text-white" />
-                    )}
-                </div>
-                <h3 className="text-xl font-bold text-gray-900">{profile.name}'s AI</h3>
-                <p className="text-sm text-gray-500">@{profile.handle}</p>
-            </div>
-            {profile.description && (
-                <p className="text-sm text-gray-600 mt-4 p-3 bg-gray-50 rounded-lg italic border-l-4 border-emerald-400">
-                    "{profile.description}"
-                </p>
-            )}
-        </div>
-
-        {/* Disclaimer */}
-        {profile.settings.disclaimer_text && (
-            <div className="p-4 border-b border-gray-100 bg-amber-50">
-                <p className="text-xs font-semibold text-amber-800 flex items-start gap-2">
-                    <span className="flex-shrink-0">⚠️ Disclaimer:</span> 
-                    <span>{profile.settings.disclaimer_text}</span>
-                </p>
-            </div>
-        )}
-
-        {/* Authentication Section */}
-        <div className="p-4 space-y-3">
-            <h4 className="font-bold text-gray-700 text-sm border-b pb-2">Full Access Required</h4>
-             <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                    <Lock className="w-4 h-4 text-emerald-600" />
-                </div>
-                <div className="flex-1">
-                    <h5 className="font-semibold text-gray-900 mb-1">Unlimited Chat & History</h5>
-                    <p className="text-xs text-gray-600">Sign up to keep your conversations saved.</p>
-                </div>
-            </div>
-            <a
-              href={`/auth/register?redirect=${redirectUrl}`}
-              className="block w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold py-3 px-6 rounded-lg text-center transition-all shadow-lg text-sm"
-            >
-              Sign Up / Log In
-            </a>
-            <button
-              onClick={onClose}
-              className="block w-full text-gray-500 hover:text-gray-700 text-xs py-1 transition-colors"
-            >
-              Continue as Guest (Limited)
-            </button>
-        </div>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex justify-between items-center p-4 border-b border-gray-100">
+        <h2 className="text-lg font-semibold text-gray-800">Chat Info & Settings</h2>
+        <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-100">
+          <X className="w-5 h-5" />
+        </button>
       </div>
+      
+      {/* Avatar Info */}
+      <div className="p-4 border-b border-gray-100">
+        <div className="flex flex-col items-center text-center">
+          <div className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 shadow-lg mb-3">
+            {profile.photo_url ? (
+              <img src={profile.photo_url} alt={profile.name} className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <Brain className="w-10 h-10 text-white" />
+            )}
+          </div>
+          <h3 className="text-xl font-bold text-gray-900">{profile.name}'s AI</h3>
+          <p className="text-sm text-gray-500">@{profile.handle}</p>
+        </div>
+        {profile.description && (
+          <p className="text-sm text-gray-600 mt-4 p-3 bg-gray-50 rounded-lg italic border-l-4 border-emerald-400">
+            "{profile.description}"
+          </p>
+        )}
+      </div>
+
+      {/* Disclaimer */}
+      {profile.settings.disclaimer_text && (
+        <div className="p-4 border-b border-gray-100 bg-amber-50">
+          <p className="text-xs font-semibold text-amber-800 flex items-start gap-2">
+            <span className="flex-shrink-0">⚠️ Disclaimer:</span> 
+            <span>{profile.settings.disclaimer_text}</span>
+          </p>
+        </div>
+      )}
+
+      {/* Authentication Section (only if not authenticated) */}
+      {!isAuthenticated && (
+        <div className="p-4 space-y-3 mt-auto">
+          <h4 className="font-bold text-gray-700 text-sm border-b pb-2">Full Access Required</h4>
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+              <Lock className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="flex-1">
+              <h5 className="font-semibold text-gray-900 mb-1">Unlimited Chat & History</h5>
+              <p className="text-xs text-gray-600">Sign up to keep your conversations saved.</p>
+            </div>
+          </div>
+          <a
+            href={`/auth/register?redirect=${redirectUrl}`}
+            className="block w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold py-3 px-6 rounded-lg text-center transition-all shadow-lg text-sm"
+          >
+            Sign Up / Log In
+          </a>
+          <button
+            onClick={onClose}
+            className="block w-full text-gray-500 hover:text-gray-700 text-xs py-1 transition-colors"
+          >
+            Continue as Guest (Limited)
+          </button>
+        </div>
+      )}
     </div>
   );
 }
-
 
 // --- Input Component ---
 function PublicMessageInput({
@@ -276,8 +284,7 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
   const [isSending, setIsSending] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const [showInfoPanel, setShowInfoPanel] = useState(false); // New state for info panel/sidebar
+  const [showInfoPanel, setShowInfoPanel] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -352,13 +359,13 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
 
   useEffect(() => scrollToBottom(), [messages]);
 
-  // Show auth prompt after 6 messages for unauthenticated users
+  // Show info panel after 6 messages for unauthenticated users
   useEffect(() => {
-    if (!isAuthenticated && messages.length >= 6 && !showAuthPrompt) {
-      const timer = setTimeout(() => setShowAuthPrompt(true), 1000);
+    if (!isAuthenticated && messages.length >= 6 && !showInfoPanel) {
+      const timer = setTimeout(() => setShowInfoPanel(true), 1000);
       return () => clearTimeout(timer);
     }
-  }, [messages.length, isAuthenticated, showAuthPrompt]);
+  }, [messages.length, isAuthenticated, showInfoPanel]);
 
   // Polling
   useEffect(() => {
@@ -462,56 +469,75 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
 
   // --- Main Layout ---
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen w-screen overflow-hidden bg-gray-50">
       
-      {/* Chat Header */}
-      <ChatHeader profile={profile} onInfoClick={() => setShowInfoPanel(true)} />
+      {/* Chat Column */}
+      <div className="flex flex-col flex-1 min-w-0">
+        {/* Chat Header */}
+        <ChatHeader profile={profile} onInfoClick={() => setShowInfoPanel(true)} />
 
-      {/* Messages Area (Scrollable Main Content) */}
-      <main className="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar" style={{backgroundImage: "url('/whatsapp-bg.png')", backgroundSize: 'auto'}}>
-        {/* Optional: Add a subtle background image here like WhatsApp's pattern */}
-        <div className="max-w-4xl mx-auto">
-          {messages.map(msg => (
-            <ChatMessageBubble 
-              key={msg.id} 
-              message={msg} 
-              avatarPhotoUrl={profile.photo_url} 
-              avatarName={profile.name} 
+        {/* Messages Area (Scrollable Main Content) */}
+        <main className="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar" style={{backgroundImage: "url('/whatsapp-bg.png')", backgroundSize: 'auto'}}>
+          <div className="max-w-4xl mx-auto">
+            {messages.map(msg => (
+              <ChatMessageBubble 
+                key={msg.id} 
+                message={msg} 
+                avatarPhotoUrl={profile.photo_url} 
+                avatarName={profile.name} 
+              />
+            ))}
+            
+            {/* Typing Indicator */}
+            {isSending && currentTaskId === null && (
+              <div className="flex items-end gap-2 mb-2">
+                <div className="w-6 h-6 rounded-full bg-emerald-500 flex-shrink-0 self-start mt-1 hidden sm:flex">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                  </div>
+                </div>
+                <div className="bg-white px-3 py-2 rounded-xl rounded-tl-sm border border-gray-100 shadow-sm">
+                  <div className="typing-dots">
+                    <span></span><span></span><span></span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div ref={messagesEndRef} />
+          </div>
+        </main>
+
+        {/* Fixed Input Bar */}
+        <PublicMessageInput sendMessage={sendMessage} isLoading={isSending && currentTaskId !== null} />
+      </div>
+
+      {/* Desktop Sidebar */}
+      {showInfoPanel && (
+        <aside className="hidden lg:flex flex-col w-80 bg-white border-l border-gray-100 shadow-lg overflow-y-auto">
+          <InfoPanelContent 
+            profile={profile}
+            currentPath={`/a/${avatarHandle}`}
+            isAuthenticated={isAuthenticated}
+            onClose={() => setShowInfoPanel(false)}
+          />
+        </aside>
+      )}
+
+      {/* Mobile Modal */}
+      {showInfoPanel && (
+        <div className="lg:hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-40 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden animate-slideUp">
+            <InfoPanelContent 
+              profile={profile}
+              currentPath={`/a/${avatarHandle}`}
+              isAuthenticated={isAuthenticated}
+              onClose={() => setShowInfoPanel(false)}
             />
-          ))}
-          
-          {/* Typing Indicator */}
-          {isSending && currentTaskId === null && (
-            <div className="flex items-end gap-2 mb-2">
-              <div className="w-6 h-6 rounded-full bg-emerald-500 flex-shrink-0 self-start mt-1 hidden sm:flex">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                  <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                  <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
-                </div>
-              </div>
-              <div className="bg-white px-3 py-2 rounded-xl rounded-tl-sm border border-gray-100 shadow-sm">
-                <div className="typing-dots">
-                  <span></span><span></span><span></span>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} />
+          </div>
         </div>
-      </main>
-
-      {/* Fixed Input Bar */}
-      <PublicMessageInput sendMessage={sendMessage} isLoading={isSending && currentTaskId !== null} />
-      
-      {/* Auth/Info Modal (Replaced AuthPromptCard for more general use) */}
-      {(showAuthPrompt || showInfoPanel) && (
-        <AuthPromptCard 
-          onClose={() => { setShowAuthPrompt(false); setShowInfoPanel(false); }} 
-          currentPath={`/chat/${avatarHandle}`}
-          profile={profile}
-        />
       )}
 
       <style jsx global>{`

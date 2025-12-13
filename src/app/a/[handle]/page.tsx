@@ -429,6 +429,7 @@ export default function PublicChatShell({ params }: { params: Promise<{ handle: 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, visitor_id: visitorId }),
+        credentials: 'include',
       });
       if (res.ok) {
         const { task_id } = await res.json();

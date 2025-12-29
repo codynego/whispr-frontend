@@ -152,9 +152,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (data: any) => {
     if (actionLoading) return;
+    console.log("b - action loading ",actionLoading)
     setActionLoading(true);
     try {
       await api.post("/users/register/", data);
+      console.log("Registration successful, logging in...");
     } catch (err: any) {
       const errors = err.response?.data;
       let message = "Registration failed. Please try again.";
@@ -168,6 +170,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw new Error(message);
     } finally {
       setActionLoading(false);
+      console.log("c - action loading ",actionLoading)
     }
   };
 

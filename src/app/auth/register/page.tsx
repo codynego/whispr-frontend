@@ -70,6 +70,7 @@ function RegisterForm() {
       return;
     }
     try {
+      console.log("a - action loading ",actionLoading)
       await register({
         email: formData.email.trim(),
         password: formData.password,
@@ -78,6 +79,7 @@ function RegisterForm() {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
       });
+      console.log("action loading ",actionLoading)
       setIsRegistered(true);
     } catch (err: any) {
       setError(err.message || "Registration failed. Please try again.");

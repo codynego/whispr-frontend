@@ -155,7 +155,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setActionLoading(true);
     try {
       await api.post("/users/register/", data);
-      await login(data.email, data.password);
     } catch (err: any) {
       const errors = err.response?.data;
       let message = "Registration failed. Please try again.";
